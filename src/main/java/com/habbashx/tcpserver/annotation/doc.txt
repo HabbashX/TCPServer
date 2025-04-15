@@ -1,0 +1,1 @@
+MayEmpty annotations is just for documentation, and show if is local variable may be empty or not :D

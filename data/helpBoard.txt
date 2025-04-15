@@ -1,0 +1,12 @@
+----------------------------- [HELP] -----------------------------
+1. /help -> print help board
+2. /online -> give the number of online users
+3. /msg <username> <message> message users in private
+4. /ban <username> block user from joining the server
+5. /unban <username> un block user from joining the server
+6. /mute <username> mute user from chat
+7. /unmute <username> unmute user from chat
+8. /nickname <nickname> change your name to another name
+9. /find <username|id> get a user information details
+10. /info get an info about your account
+11. /setrole <username> <role> change user role

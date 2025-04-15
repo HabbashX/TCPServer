@@ -1,0 +1,3 @@
+userIP,userID,userRole,username,password,userEmail,phoneNumber,isActiveAccount
+192.168.213.1,2025460979,DEFAULT,abood,$2a$10$g8W.tmEjT00Dc3d1Kglfd.eHv9Q.d511MXAs3MPWvfCCF9XAiY.1.,abood@gmail.com,0599,true
+,,,,,

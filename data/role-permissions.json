@@ -1,0 +1,18 @@
+[
+  {
+    "default" : [0]
+  },
+  {
+    "moderator": [3,4,6]
+  },
+  {
+    "operator": [1,2,3,4,6]
+  },
+  {
+    "administrator": [1,2,3,5,4,6,7]
+  },
+  {
+    "super-administrator": [3834,7]
+  }
+
+]

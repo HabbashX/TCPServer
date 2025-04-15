@@ -1,0 +1,28 @@
+[ {
+  "password" : "$2a$10$M1a8SglWav7RyjFSpDFF.uIMttwj0QbunLmYyFq5fENxvi4225YYm",
+  "phoneNumber" : "0599",
+  "userIP" : "192.168.213.1",
+  "userEmail" : "abood@gmail.com",
+  "isActiveAccount" : true,
+  "userRole" : "ADMINISTRATOR",
+  "userID" : "2025947519",
+  "username" : "habbashx"
+}, {
+  "password" : "$2a$10$BBbcq7vxcB2Q5vRMzjUXiepqIrAf40LOvU4.a8pA0z9szOdqopLnu",
+  "phoneNumber" : "0599",
+  "userIP" : "192.168.213.1",
+  "userEmail" : "khaled@gmail.com",
+  "isActiveAccount" : true,
+  "userRole" : "DEFAULT",
+  "userID" : "2025516680",
+  "username" : "khaled"
+}, {
+  "password" : "$2a$10$RmofY9tDqpQUxvoeX8fq5uBynUZQJcaMEgch5MQgmZfmRYDPbHzVK",
+  "phoneNumber" : "0599",
+  "userIP" : "192.168.213.1",
+  "userEmail" : "abood@gmail.com",
+  "isActiveAccount" : true,
+  "userRole" : "OPERATOR",
+  "userID" : "2025576727",
+  "username" : "abood"
+} ]
