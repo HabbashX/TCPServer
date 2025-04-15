@@ -13,23 +13,25 @@ public class VersionChecker {
     public static void checkProjectVersion(Server server) {
 
         try {
-            URL url = new URL("https://github/habbashx/TCPServer/master/src/java/main/com/habbashx/tcpserver/version/version.txt");
+            URL url = new URL("https://raw.githubusercontent.com/HabbashX/TCPServer/main/src/main/java/com/habbashx/tcpserver/version/version.txt");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
-            BufferedReader currentVersionReader = new BufferedReader(new FileReader("com/habbashx/tcpserver/version/version.txt"));
-            BufferedReader newestVersionReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            if (connection.getResponseCode() == 200) {
+                BufferedReader currentVersionReader = new BufferedReader(new FileReader("src/main/java/com/habbashx/tcpserver/version/version.txt"));
+                BufferedReader newestVersionReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
-            String currentVersion = currentVersionReader.readLine();
-            String newestVersion = newestVersionReader.readLine();
+                String currentVersion = currentVersionReader.readLine();
+                String newestVersion = newestVersionReader.readLine().trim();
 
-            if (currentVersion.equals(newestVersion)){
-                server.getServerLogger().info("project version: "+currentVersion);
-            } else {
-                server.getServerLogger().warning("project is running on old version "+currentVersion+" update it to the version "+newestVersion);
+                if (currentVersion.contentEquals(newestVersion)) {
+                    server.getServerLogger().info("project version: " + currentVersion);
+                } else {
+                    server.getServerLogger().warning("project is running on old version " + currentVersion + " update it to the new version " + newestVersion);
+                }
+                currentVersionReader.close();
+                newestVersionReader.close();
             }
-            currentVersionReader.close();;
-            newestVersionReader.close();
         } catch (IOException e) {
            server.getServerLogger().error("cannot check project version please check your internet connection");
         }
