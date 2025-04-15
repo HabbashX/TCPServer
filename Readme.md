@@ -1,7 +1,7 @@
-# Multi-User Chat Application
+# TCP-Server with Multi-User Chat Application
 
 A multi-user chat application that allows users to communicate with each other in real-time. The application supports user registration, login, chat messages, and the management of user roles and permissions. It's designed to be easily extendable for adding new features and functionalities.
-
+you can just use TCP server for your own purposes.
 ## Features
 
 - **User Registration & Login**: Secure registration and login functionality with username, password, email, and phone number, you can implement your authentication system just by extends the authentication class, the default registration system support storing data in json and csv and database you can just go to server settings file and change the auth storage to any type do you want.
