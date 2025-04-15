@@ -1,4 +1,4 @@
-# TCP-Server with Multi-User Chat Application
+# TCP-Server with Multi-User Chat Application 
 
 A multi-user chat application that allows users to communicate with each other in real-time. The application supports user registration, login, chat messages, and the management of user roles and permissions. It's designed to be easily extendable for adding new features and functionalities.
 you can just use TCP server for your own purposes.
