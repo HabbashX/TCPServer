@@ -8,6 +8,7 @@ module TCPServer {
     requires java.desktop;
     requires java.management.rmi;
     requires mysql.connector.j;
+    requires property.parser;
 
     exports com.habbashx.tcpserver.security;
     exports com.habbashx.tcpserver.socket;
@@ -31,4 +32,7 @@ module TCPServer {
     exports com.habbashx.tcpserver.cooldown;
     exports com.habbashx.tcpserver.command.configuration;
     exports com.habbashx.tcpserver.annotation;
+
+    opens com.habbashx.tcpserver.socket;
+    opens com.habbashx.tcpserver.settings;
 }

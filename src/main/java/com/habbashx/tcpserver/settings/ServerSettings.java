@@ -1,55 +1,97 @@
 package com.habbashx.tcpserver.settings;
 
+import com.habbashx.annotation.InjectProperty;
+import com.habbashx.injector.PropertyInjector;
+
+
+import java.io.File;
 
 public final class ServerSettings {
 
-    private final Settings settings = new Settings();
+    @InjectProperty("port")
+    private int port;
+
+    @InjectProperty("reusableAddress")
+    private boolean isReusableAddress;
+
+    @InjectProperty("security.keystore.path")
+    private String keyStorePath;
+
+    @InjectProperty("security.keystore.password")
+    private String keyStorePassword;
+
+    @InjectProperty("security.truststore.path")
+    private String trustStorePath;
+
+    @InjectProperty("security.truststore.password")
+    private String trustStorePassword;
+
+    @InjectProperty("configuration.type")
+    private String getConfigurationType;
+
+    @InjectProperty("chat.cooldown.second")
+    private String userChatCooldown;
+
+    @InjectProperty("security.authentication.datastorage.type")
+    private String authStorageType;
+
+    @InjectProperty("database.url")
+    private String databaseURL;
+
+    @InjectProperty("database.username")
+    private String databaseUsername;
+
+    @InjectProperty("database.password")
+    private String databasePassword;
+
+    public ServerSettings() {
+    }
 
     public int getPort() {
-        return Integer.parseInt(settings.getValue("server.setting.port"));
+        return port;
     }
 
     public boolean isReusableAddress() {
-        return Boolean.parseBoolean(settings.getValue("server.setting.reusableAddress"));
-    }
-
-    public String getKeystorePath() {
-        return settings.getValue("server.security.setting.keystore.path");
+        return isReusableAddress;
     }
 
     public String getKeystorePassword() {
-        return settings.getValue("server.security.setting.keystore.password");
+        return keyStorePassword;
+    }
+
+    public String getKeystorePath() {
+        return keyStorePath;
     }
 
     public String getTruststorePath() {
-        return settings.getValue("server.security.setting.truststore.path");
+        return trustStorePath;
     }
 
     public String getTruststorePassword() {
-        return settings.getValue("server.security.setting.truststore.password");
+        return trustStorePassword;
     }
 
     public String getConfigurationType() {
-        return settings.getValue("server.setting.configuration.type");
+        return getConfigurationType;
     }
 
     public String getUserChatCooldown() {
-        return settings.getValue("user.setting.chat.cooldown.second");
+        return userChatCooldown;
     }
 
     public String getAuthStorageType() {
-        return settings.getValue("server.security.setting.authentication.datastorage.type");
+        return authStorageType;
     }
 
     public String getDatabaseURL() {
-        return settings.getValue("server.setting.database.url");
+        return databaseURL;
     }
 
     public String getDatabaseUsername() {
-        return settings.getValue("server.setting.database.username");
+        return databaseUsername;
     }
 
     public String getDatabasePassword() {
-        return settings.getValue("server.setting.database.password");
+        return databasePassword;
     }
 }

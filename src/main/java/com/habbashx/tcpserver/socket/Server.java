@@ -2,6 +2,8 @@ package com.habbashx.tcpserver.socket;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.habbashx.annotation.InjectPrefix;
+import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.command.defaultcommand.BanCommand;
 import com.habbashx.tcpserver.command.defaultcommand.ChangeRoleCommand;
 import com.habbashx.tcpserver.command.defaultcommand.HelpCommand;
@@ -44,6 +46,7 @@ import com.habbashx.tcpserver.security.Authentication;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.settings.ServerSettings;
 import com.habbashx.tcpserver.user.UserDetails;
+import com.habbashx.tcpserver.util.ServerUtils;
 import com.habbashx.tcpserver.version.VersionChecker;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -88,6 +91,7 @@ public final class Server implements Runnable, Closeable {
 
     private final ServerLogger serverLogger = new ServerLogger();
 
+    @InjectPrefix("server.setting")
     private final ServerSettings serverSettings = new ServerSettings();
 
     private final ServerDataManager serverDataManager = new ServerDataManager(this);
@@ -100,6 +104,7 @@ public final class Server implements Runnable, Closeable {
     private boolean running = true;
 
     public Server() {
+        injectServerSettings();
         registerDefaultEvents();
         registerDefaultDelayEvents();
         registerDefaultCommands();
@@ -262,6 +267,14 @@ public final class Server implements Runnable, Closeable {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
 
+    private void injectServerSettings() {
+        try {
+            new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH)).inject(this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public void close() throws IOException {
 
@@ -305,6 +318,7 @@ public final class Server implements Runnable, Closeable {
         private final UserDao userDao;
 
         public ServerDataManager(@NotNull Server server) {
+            server.injectServerSettings();
             this.server = server;
             String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
             authStorageType = AuthStorageType.valueOf(authType);
@@ -430,12 +444,13 @@ public final class Server implements Runnable, Closeable {
         private final Connection connection;
         @Contract(pure = true)
         public UserDao(@NotNull Server server) {
-          this.server = server;
-          try {
-              connection = getConnection();
-          } catch (SQLException e) {
-              throw new RuntimeException(e);
-          }
+            server.injectServerSettings();
+            this.server = server;
+            try {
+                connection = getConnection();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private Connection getConnection() throws SQLException {
