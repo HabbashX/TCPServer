@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Deprecated
+@Deprecated(since = "1.0") // soon it will become as mark for removal
 public @interface RequiredPermission {
     int value();
 }
