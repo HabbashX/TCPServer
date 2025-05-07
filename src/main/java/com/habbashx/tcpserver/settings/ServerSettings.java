@@ -1,10 +1,6 @@
 package com.habbashx.tcpserver.settings;
 
 import com.habbashx.annotation.InjectProperty;
-import com.habbashx.injector.PropertyInjector;
-
-
-import java.io.File;
 
 public final class ServerSettings {
 

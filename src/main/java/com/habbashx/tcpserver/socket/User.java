@@ -1,5 +1,7 @@
 package com.habbashx.tcpserver.socket;
 
+import com.habbashx.annotation.InjectPrefix;
+import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.handler.console.UserConsoleInputHandler;
 import com.habbashx.tcpserver.settings.ServerSettings;
 import com.habbashx.tcpserver.util.UserUtil;
@@ -9,6 +11,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.BufferedReader;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -16,6 +19,7 @@ import java.net.ConnectException;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.util.ServerUtils.SERVER_SETTINGS_PATH;
 
 public final class User implements Runnable , Closeable {
 
@@ -26,12 +30,14 @@ public final class User implements Runnable , Closeable {
 
     private boolean running = true;
 
+    @InjectPrefix("server.setting")
     private final ServerSettings serverSettings = new ServerSettings();
 
     private UserConsoleInputHandler userConsoleInputHandler;
 
     public User(int port) {
         this.port = port;
+        injectServerSettings();
         registerTruststore();
     }
 
@@ -107,6 +113,15 @@ public final class User implements Runnable , Closeable {
         output.close();;
         userConsoleInputHandler.closeUserInput();
 
+    }
+
+    public void injectServerSettings() {
+        try {
+            PropertyInjector propertyInjector = new PropertyInjector(new File(SERVER_SETTINGS_PATH));
+            propertyInjector.inject(this);
+         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
     public static void main(String[] args) {
 
