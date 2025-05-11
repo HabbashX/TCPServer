@@ -13,6 +13,8 @@ import com.habbashx.tcpserver.socket.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.UN_MUTE_PERMISSION;
@@ -35,8 +37,6 @@ public final class UnMuteCommand extends CommandExecutor {
     private final Server server;
     private final MuteCommandManager muteCommandManager;
 
-    //EmptyPossible
-
     public UnMuteCommand(Server server ,MuteCommandManager muteCommandManager) {
         this.server = server;
         this.muteCommandManager = muteCommandManager;
@@ -56,10 +56,17 @@ public final class UnMuteCommand extends CommandExecutor {
         @Nullable
         UserHandler targetUser = server.getServerDataManager().getOnlineUserByUsername(username);
 
-        if (targetUser != null) {
-            muteCommandManager.unMuteUser(targetUser,commandContext.getSender());
-        } else {
-            sendMessage(commandContext.getSender(),USER_NOT_FOUND_MESSAGE);
+        ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
+        reentrantLock.lock();
+
+        try {
+            if (targetUser != null) {
+                muteCommandManager.unMuteUser(targetUser, commandContext.getSender());
+            } else {
+                sendMessage(commandContext.getSender(), USER_NOT_FOUND_MESSAGE);
+            }
+        } finally {
+            reentrantLock.unlock();
         }
 
     }

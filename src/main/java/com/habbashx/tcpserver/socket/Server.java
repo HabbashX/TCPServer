@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public final class Server implements Runnable, Closeable {
@@ -175,10 +176,13 @@ public final class Server implements Runnable, Closeable {
 
     public void broadcast(String message) {
         for (final UserHandler user : getConnections()) {
-            synchronized (this) {
-                if (user != null) {
-                    user.sendMessage(message);
-                }
+            ReentrantLock reentrantLock = user.getReentrantLock();
+            reentrantLock.lock();
+
+            try {
+                user.sendMessage(message);
+            } finally {
+                reentrantLock.unlock();
             }
         }
     }

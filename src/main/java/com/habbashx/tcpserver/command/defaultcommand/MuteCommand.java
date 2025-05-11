@@ -13,6 +13,8 @@ import com.habbashx.tcpserver.socket.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.MUTE_PERMISSION;
@@ -53,26 +55,33 @@ public final class MuteCommand extends CommandExecutor {
             return;
         }
 
+        final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
+
         @PossibleEmpty
         final String targetUsername = commandContext.getArgs().get(0);
         @Nullable
         final UserHandler target = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
 
-        if (target != null) {
-            if (commandContext.getSender() instanceof UserHandler userHandler) {
-                String senderUsername = userHandler.getUserDetails().getUsername();
+        reentrantLock.lock();
+        try {
+            if (target != null) {
+                if (commandContext.getSender() instanceof UserHandler userHandler) {
+                    String senderUsername = userHandler.getUserDetails().getUsername();
 
 
-                if (senderUsername.equals(targetUsername)) {
-                    sendMessage(commandContext.getSender(), RED+"you cannot ban yourself."+RESET);
-                    return;
+                    if (senderUsername.equals(targetUsername)) {
+                        sendMessage(commandContext.getSender(), RED + "you cannot ban yourself." + RESET);
+                        return;
+                    }
                 }
+                muteCommandManager.muteUser(target, commandContext.getSender());
+            } else {
+                sendMessage(commandContext.getSender(), USER_NOT_FOUND_MESSAGE);
             }
-            muteCommandManager.muteUser(target, commandContext.getSender());
-        } else {
-            sendMessage(commandContext.getSender(),USER_NOT_FOUND_MESSAGE);
-        }
 
+        } finally {
+            reentrantLock.unlock();
+        }
     }
 
     private void sendMessage(CommandSender commandSender ,String message) {

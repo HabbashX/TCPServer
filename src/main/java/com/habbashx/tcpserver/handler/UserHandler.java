@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.BG_BRIGHT_BLUE;
 import static com.habbashx.tcpserver.logger.ConsoleColor.BG_ORANGE;
@@ -164,6 +165,11 @@ public final class UserHandler extends CommandSender implements Runnable {
             }
 
         } catch (IOException ignored){}
+    }
+
+    @Override
+    public ReentrantLock getReentrantLock() {
+        return super.getReentrantLock();
     }
 
     @Override

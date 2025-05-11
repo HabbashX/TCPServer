@@ -10,6 +10,8 @@ import com.habbashx.tcpserver.handler.UserHandler;
 import com.habbashx.tcpserver.util.UserUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.NICKNAME_PERMISSION;
@@ -33,23 +35,31 @@ public class NicknameCommand extends CommandExecutor {
 
         if (commandContext.getSender() instanceof UserHandler userHandler) {
 
-            if (commandContext.getArgs().isEmpty()) {
-                userHandler.sendMessage(COMMAND_USAGE);
-                return;
+            final ReentrantLock reentrantLock = userHandler.getReentrantLock();
+
+            reentrantLock.lock();
+
+            try {
+                if (commandContext.getArgs().isEmpty()) {
+                    userHandler.sendMessage(COMMAND_USAGE);
+                    return;
+                }
+
+                @PossibleEmpty final String nickname = commandContext.getArgs().get(0);
+
+                if (!UserUtil.isValidUsername(nickname)) {
+                    userHandler.getUserDetails().setUsername(nickname);
+                } else {
+                    userHandler.sendMessage(INVALID_USERNAME_MESSAGE);
+                }
+
+            } finally {
+                reentrantLock.unlock();
             }
-
-            @PossibleEmpty
-            final String nickname = commandContext.getArgs().get(0);
-
-            if (!UserUtil.isValidUsername(nickname)) {
-                userHandler.getUserDetails().setUsername(nickname);
             } else {
-                userHandler.sendMessage(INVALID_USERNAME_MESSAGE);
+                System.out.println(CONSOLE_EXECUTED_COMMAND_WARNING_MESSAGE);
             }
 
-        } else {
-            System.out.println(CONSOLE_EXECUTED_COMMAND_WARNING_MESSAGE);
-        }
     }
     @Override
     public CooldownManager getCooldownManager() {

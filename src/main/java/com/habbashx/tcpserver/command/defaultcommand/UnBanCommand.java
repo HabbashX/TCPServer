@@ -14,6 +14,8 @@ import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.UN_BAN_PERMISSION;
@@ -56,10 +58,17 @@ public final class UnBanCommand extends CommandExecutor {
         @Nullable
         UserDetails targetUser = server.getServerDataManager().getUserByUsername(targetUsername);
 
-        if (targetUser != null) {
-            banCommandManager.unBanUser(targetUser, commandContext.getSender());
-        } else {
-            sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
+        final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
+
+        reentrantLock.lock();
+        try {
+            if (targetUser != null) {
+                banCommandManager.unBanUser(targetUser, commandContext.getSender());
+            } else {
+                sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
+            }
+        } finally {
+            reentrantLock.unlock();
         }
     }
 

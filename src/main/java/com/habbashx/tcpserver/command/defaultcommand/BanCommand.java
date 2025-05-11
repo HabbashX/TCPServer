@@ -13,6 +13,8 @@ import com.habbashx.tcpserver.socket.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.BAN_PERMISSION;
@@ -53,20 +55,28 @@ public final class BanCommand extends CommandExecutor {
         @Nullable
         final UserHandler targetUser = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
 
-        if (targetUser != null) {
-            if (commandContext.getSender() instanceof UserHandler userHandler) {
-                String username = userHandler.getUserDetails().getUsername();
+        final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
 
-                if (username.equals(targetUsername)) {
-                    sendMessage(commandContext.getSender(), CANNOT_BAN_SELF_MESSAGE);
-                    return;
+        reentrantLock.lock();
+
+        try {
+            if (targetUser != null) {
+                if (commandContext.getSender() instanceof UserHandler userHandler) {
+                    String username = userHandler.getUserDetails().getUsername();
+
+                    if (username.equals(targetUsername)) {
+                        sendMessage(commandContext.getSender(), CANNOT_BAN_SELF_MESSAGE);
+                        return;
+                    }
                 }
+                banManager.banUser(targetUser, commandContext.getSender());
+            } else {
+                sendMessage(commandContext.getSender(), USER_NOT_FOUND_MESSAGE);
             }
-            banManager.banUser(targetUser,commandContext.getSender());
-        } else {
-            sendMessage(commandContext.getSender(),USER_NOT_FOUND_MESSAGE);
-        }
 
+        } finally {
+            reentrantLock.unlock();
+        }
     }
 
     private void sendMessage(CommandSender commandSender, String message) {

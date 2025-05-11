@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
@@ -57,52 +58,66 @@ public final class DefaultAuthentication extends Authentication {
     }
 
     @Override
-    public synchronized void register(@NotNull String username ,@NotNull String password ,String email, String phoneNumber ,@NotNull UserHandler userHandler) {
+    public void register(@NotNull String username ,@NotNull String password ,String email, String phoneNumber ,@NotNull UserHandler userHandler) {
 
-        if (!isUserExists(username)) {
+        ReentrantLock reentrantLock = userHandler.getReentrantLock();
+        reentrantLock.lock();
 
-            if (!isValidUsername(username)) {
-                userHandler.sendMessage(RED + "invalid username please try to select name without any symbols and spaces" + RESET);
-                return;
-            }
+        try {
+            if (!isUserExists(username)) {
 
-            if (!isValidPhoneNumber(phoneNumber)) {
-                userHandler.sendMessage(RED + "invalid phone number" + RESET);
-                return;
-            }
+                if (!isValidUsername(username)) {
+                    userHandler.sendMessage(RED + "invalid username please try to select name without any symbols and spaces" + RESET);
+                    return;
+                }
 
-            if (!isValidEmail(email)) {
-                userHandler.sendMessage(RED+"invalid email"+RESET);
-            }
+                if (!isValidPhoneNumber(phoneNumber)) {
+                    userHandler.sendMessage(RED + "invalid phone number" + RESET);
+                    return;
+                }
 
-            if (!file.exists()) {
-                if (!authStorageType.equals(AuthStorageType.SQL)) {
-                    server.getServerLogger().info("users.%s file have been created successfully".formatted(authStorageType));
-                    try {
-                        file.createNewFile();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                if (!isValidEmail(email)) {
+                    userHandler.sendMessage(RED + "invalid email" + RESET);
+                }
+
+                if (!file.exists()) {
+                    if (!authStorageType.equals(AuthStorageType.SQL)) {
+                        server.getServerLogger().info("users.%s file have been created successfully".formatted(authStorageType));
+                        try {
+                            file.createNewFile();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
-            }
 
-            switch (authStorageType) {
-                case CSV -> csvRegister(username, password, email, phoneNumber, userHandler);
-                case SQL -> sqlRegister(username, password, email, phoneNumber, userHandler);
-                case JSON -> jsonRegister(username, password, email, phoneNumber, userHandler);
+                switch (authStorageType) {
+                    case CSV -> csvRegister(username, password, email, phoneNumber, userHandler);
+                    case SQL -> sqlRegister(username, password, email, phoneNumber, userHandler);
+                    case JSON -> jsonRegister(username, password, email, phoneNumber, userHandler);
+                }
             }
+        } finally {
+            reentrantLock.unlock();
         }
     }
 
 
 
     @Override
-    public synchronized void login(@NotNull String username, @NotNull String password ,@NotNull UserHandler userHandler) {
+    public void login(@NotNull String username, @NotNull String password ,@NotNull UserHandler userHandler) {
 
-        switch (authStorageType) {
-            case CSV -> csvLogin(username,password,userHandler);
-            case JSON ->  jsonLogin(username,password,userHandler);
-            case SQL -> sqlLogin(username,password,userHandler);
+        ReentrantLock reentrantLock = userHandler.getReentrantLock();
+
+        reentrantLock.lock();
+        try {
+            switch (authStorageType) {
+                case CSV -> csvLogin(username, password, userHandler);
+                case JSON -> jsonLogin(username, password, userHandler);
+                case SQL -> sqlLogin(username, password, userHandler);
+            }
+        } finally {
+            reentrantLock.unlock();
         }
     }
 
