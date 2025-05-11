@@ -9,9 +9,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.GRAY;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 public final class ServerConsoleHandler extends CommandSender implements Runnable , Closeable {
 
