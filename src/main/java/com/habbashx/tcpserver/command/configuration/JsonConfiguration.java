@@ -16,13 +16,13 @@ import java.util.Map;
 public class JsonConfiguration extends Configuration {
 
     private final File configurationFile;
-    private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String,Object> configData;
 
 
     public JsonConfiguration(@NotNull String configurationFile , Server server) {
         this.configurationFile = new File(configurationFile);
         try {
+            ObjectMapper mapper = new ObjectMapper();
             configData = mapper.readValue(this.configurationFile,Map.class);
         } catch (IOException e) {
             server.getServerLogger().error(e.getMessage());
