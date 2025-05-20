@@ -22,16 +22,38 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
-// Warning do not modify any line of code in this class,
-// only if you understand what`s going on right here,
-// if you want to add anything do you want features optimizing code feel free to modify it :D .
-// see LICENCE arguments.
+/**
+ * Manages the banning and unbanning of users using a file-based storage system.
+ * This class is responsible for enforcing bans, maintaining a record of banned users,
+ * and interacting with command senders to notify them of outcomes.
+ * <p>
+ * The banned user data is stored in a CSV file named "bannedUsers.csv".
+ * The file contains a single column with the header "username".
+ *
+ * Key operations include:
+ * - Banning a user by adding their username to the file.
+ * - Unbanning a user by removing their username from the file.
+ * - Querying the list of all banned users.
+ * - Checking if a specific user is banned.
+ * - Sending notifications to command senders and affected users about the results of commands.
+ */
 public final class BanCommandManager {
 
     private final File file = new File("data/bannedUsers.csv");
 
     private static final String HEADER = "username";
 
+    /**
+     * Bans a specified user from the server by adding their username to the ban list.
+     * The method checks if the user is already banned before proceeding to ban them.
+     * If the user is successfully banned, a confirmation message is sent to both the
+     * command sender and the user being banned. The banned user is then shut down.
+     * If the user is already banned, an appropriate message is sent to the command sender.
+     *
+     * @param user the target user who is to be banned
+     * @param commandSender the person or system issuing the ban command
+     * @throws RuntimeException if an I/O error occurs during file operations
+     */
     @SuppressWarnings("deprecation")
     public synchronized void banUser(@NotNull UserHandler user , @NotNull CommandSender commandSender) {
 
@@ -60,6 +82,13 @@ public final class BanCommandManager {
 
     }
 
+    /**
+     * Unbans a user by removing their username from the banned users list and updating the related data source.
+     * Sends a confirmation message to the command sender upon successful unbanning.
+     *
+     * @param userDetails The details of the user to be unbanned, must not be null.
+     * @param commandSender The sender of the command requesting the unban operation.
+     */
     @SuppressWarnings("deprecation")
     public synchronized void unBanUser(@NotNull UserDetails userDetails, CommandSender commandSender) {
 
@@ -99,6 +128,12 @@ public final class BanCommandManager {
             System.out.println(message);
         }
     }
+    /**
+     * Checks if a user is banned by verifying if their username exists in the banned users list.
+     *
+     * @param username the username of the user to check; must not be null
+     * @return true if the username is found in the list of banned users, false otherwise
+     */
     public boolean isUserBanned(String username) {
 
         for (String user : getBannedUsers()) {
@@ -111,6 +146,17 @@ public final class BanCommandManager {
         return false;
     }
 
+    /**
+     * Retrieves the list of banned users from the data source.
+     * The method reads a file containing banned user information
+     * and extracts the usernames into a``` setjava.
+
+     /**
+     * Retrieves the list *
+     * @return a set of usernames representing of the users who banned are currently users banned
+    .
+     * @ * Thisthrows method RuntimeException if reads an from I/O error occurs a while accessing file the file
+     */
     @SuppressWarnings("deprecation")
     public @NotNull Set<String> getBannedUsers() {
 

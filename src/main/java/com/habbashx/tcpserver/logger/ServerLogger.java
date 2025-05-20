@@ -7,6 +7,11 @@ import java.util.Date;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
+/**
+ * A utility class for logging messages on the server with formatting and color-coded levels.
+ * This class supports different levels of logging such as INFO, WARNING, ERROR, and MONITOR,
+ * each with its own color-coded output for better visibility in console logs.
+ */
 public class ServerLogger {
 
     private final SimpleDateFormat simpleDateFormat;

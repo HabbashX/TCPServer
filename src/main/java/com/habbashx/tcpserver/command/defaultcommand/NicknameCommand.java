@@ -16,6 +16,28 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.NICKNAME_PERMISSION;
 
+/**
+ * Represents a command to update a user's nickname in the system. This command
+ * can only be executed by a user, and not from the console. It validates the
+ * provided nickname to ensure it is free of invalid characters, such as symbols
+ * or spaces, and applies a cooldown period after execution.
+ *
+ * The class extends CommandExecutor and overrides the execute method
+ * to handle the execution logic specific to the "nickname" command. The cooldown
+ * mechanism, command usage validation, and response messages are managed within
+ * this class.
+ *
+ * Attributes:
+ * - This command requires the {@code NICKNAME_PERMISSION} to be executed.
+ * - It enforces a cooldown of 60 seconds between executions.
+ * - The command runs asynchronously.
+ * - Execution logs are recorded for this command.
+ *
+ * Usage:
+ * The command expects a single argument representing the desired nickname. If the
+ * argument is missing or invalid, an appropriate usage or error message is sent to
+ * the user.
+ */
 @Command(
         name = "nickname",
         permission = NICKNAME_PERMISSION,

@@ -36,6 +36,58 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.CHANGE_RANK_PERMISSION;
 
+/**
+ * The ChangeRoleCommand class handles the execution of commands to change the role of a user.
+ * It provides functionality to interact with the server's user and role management system.
+ * This command requires the proper permissions and has a cooldown period to prevent abuse.
+ *
+ * Command Details:
+ * - Name: setrole
+ * - Aliases: changerole
+ * - Permission: CHANGE_RANK_PERMISSION
+ * - Cooldown: 30 seconds
+ *
+ * Features:
+ * - Allows authorized users to modify the role of other users.
+ * - Supports multiple storage backends (CSV, JSON, and SQL) to persist role changes.
+ * - Provides feedback to the command sender about the success or failure of the operation.
+ * - Prevents users from changing their own roles for security purposes.
+ *
+ * Restrictions:
+ * - The specified role must exist within the pre-defined set of roles.
+ * - Command execution requires specific permissions.
+ *
+ * Storage Backend Support:
+ * - CSV: Reads and updates the role for users in a CSV file.
+ * - JSON: Reads and updates the role for users in a JSON file.
+ * - SQL: Updates the role directly in the database.
+ *
+ * Core Components:
+ * - Server: Manages server state and user data.
+ * - CommandContext: Encapsulates the context in which the command is executed.
+ * - UserHandler: Handles the interaction with individual users.
+ *
+ * Constants:
+ * - DEFAULT_FORMAT: Defines the CSV format for parsing and writing user data.
+ * - COMMAND_USAGE_MESSAGE: Message prompting the proper usage of the command.
+ * - AVAILABLE_ROLES_MESSAGE: Message displaying all available roles.
+ * - AVAILABLE_ROLES: List of valid roles.
+ * - RANK_CHANGED_MESSAGE: Success message for role changes.
+ * - CANNOT_CHANGE_ROLE_MESSAGE: Error message for attempts to change one's own role.
+ *
+ * Core Methods:
+ * - execute(CommandContext commandContext): Main method to handle the command execution.
+ * - changeRankInUsersFile(String username, Role role): Updates the user's role based on the storage backend.
+ * - isRoleExists(String role): Verifies if the provided role exists in the system.
+ * - sendMessage(CommandSender commandSender, String message): Sends feedback messages to the command sender.
+ *
+ * Helper Methods:
+ * - readAllUsersFromCsvFile(): Reads all user data from a CSV file.
+ * - rewriteAllUsersToCsvFile(List<Map<String, Object>> users): Rewrites user data to a CSV file.
+ * - changeRankFromCsvFile(String username, Role role): Changes the user's role in a CSV file.
+ * - changeRankFromJsonFile(String username, Role role): Changes the user's role in a JSON file.
+ * - changeRankFromDatabase(String username, String newRole): Changes the user's role in an SQL database.
+ */
 @Command(
         name = "setrole",
         aliases = "changerole",
@@ -47,6 +99,16 @@ import static com.habbashx.tcpserver.security.Permission.CHANGE_RANK_PERMISSION;
 @SuppressWarnings("deprecation")
 public final class ChangeRoleCommand extends CommandExecutor {
 
+    /**
+     * The default CSV format used within the {@code ChangeRoleCommand} class for handling
+     * user-related data in CSV files. This format includes headers corresponding to user
+     * attributes such as "userIP", "userID", "userRole", "username", "password", "userEmail",
+     * "phoneNumber", and "isActiveAccount".
+     *
+     * The {@code DEFAULT_FORMAT} is a pre-configured instance of {@code CSVFormat}, designed
+     * to ensure consistency in CSV file reading and writing operations performed by various
+     * methods in the class.
+     */
     private static final CSVFormat DEFAULT_FORMAT = CSVFormat.DEFAULT.withHeader("userIP","userID","userRole","username","password","userEmail","phoneNumber","isActiveAccount");
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /setrole <username> <rank>";
@@ -60,6 +122,17 @@ public final class ChangeRoleCommand extends CommandExecutor {
         this.server = server;
     }
 
+    /**
+     * Executes the role change command. This method is responsible for processing the command
+     * context provided by the sender to change the role of a specified user to the role provided
+     * in the command arguments. It performs necessary validations such as ensuring the role exists,
+     * the sender does not try to modify their own role, and that the target user is online.
+     *
+     * @param commandContext The context of the command execution, containing the sender's details,
+     *                       command arguments, and other execution-related data. The arguments must
+     *                       include at least two elements: the target username and the desired role.
+     *                       If insufficient arguments are provided, an error message is sent to the sender.
+     */
     @Override
     public void execute(@NotNull CommandContext commandContext) {
 
@@ -92,6 +165,12 @@ public final class ChangeRoleCommand extends CommandExecutor {
         }
     }
 
+    /**
+     * Updates the rank of a user in the appropriate storage file or database based on the server's authentication storage type.
+     *
+     * @param username the username of the user whose rank is to be changed
+     * @param role the new role to be assigned to the user
+     */
     private void changeRankInUsersFile(String username,Role role) {
 
         String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
@@ -105,6 +184,14 @@ public final class ChangeRoleCommand extends CommandExecutor {
         }
     }
 
+    /**
+     * Reads and parses all users from a CSV file and returns a list of users as maps.
+     * Each user is represented as a map containing key-value pairs corresponding to the columns in the CSV file.
+     * The CSV file should have columns such as userIP, userID, userRole, username, password, userEmail, phoneNumber, and isActiveAccount.
+     *
+     * @return A list of maps where each map represents a user and contains their data extracted from the CSV file.
+     *         If the file cannot be read, an empty list is returned.
+     */
     private @NotNull List<Map<String,Object>> readAllUsersFromCsvFile() {
 
         List<Map<String,Object>> userList = new ArrayList<>();
@@ -131,6 +218,15 @@ public final class ChangeRoleCommand extends CommandExecutor {
         return userList;
     }
 
+    /**
+     * Overwrites an existing CSV file or creates a new file to store a list of users.
+     * Each user's details are written as a record in the CSV file.
+     * The file is written to "data/users.csv" and includes user properties such as IP, ID, role, username, password, email, phone number, and activity status.
+     *
+     * @param users A non-null list of maps where each map represents a user's details.
+     *              Each map should contain the following keys: "userIP", "userID", "userRole", "username",
+     *              "password", "userEmail", "phoneNumber", "isActiveAccount".
+     */
     private void rewriteAllUsersToCsvFile(@NotNull List<Map<String,Object>> users) {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("data/users.csv"))) {
@@ -155,6 +251,13 @@ public final class ChangeRoleCommand extends CommandExecutor {
             server.getServerLogger().error(e.getMessage());
         }
     }
+    /**
+     * Updates the rank (role) of a specific user in a CSV file. It searches for a user by their username
+     * and changes their role to the provided value, rewriting the updated user list back to the CSV file.
+     *
+     * @param username The username of the user whose role is to be updated.
+     * @param role The new role to be assigned to the specified user.
+     */
     private void changeRankFromCsvFile(String username,Role role) {
 
         List<Map<String,Object>> users = readAllUsersFromCsvFile();
@@ -168,6 +271,12 @@ public final class ChangeRoleCommand extends CommandExecutor {
             }
         }
     }
+    /**
+     * Updates the role of a specified user in the users JSON file.
+     *
+     * @param username the username of the user whose role needs to be updated
+     * @param role the new role to be assigned to the user
+     */
     private void changeRankFromJsonFile(String username,Role role) {
 
         try {
@@ -189,6 +298,12 @@ public final class ChangeRoleCommand extends CommandExecutor {
 
     }
 
+    /**
+     * Updates the role of a user in the database based on the provided username and new role.
+     *
+     * @param username the username of the user whose role needs to be updated
+     * @param newRole  the new role to assign to the user
+     */
     private void changeRankFromDatabase(String username , String newRole) {
         try {
             server.getServerDataManager().getUserDao().updateUser("username", "userRole", username,newRole);
@@ -197,6 +312,15 @@ public final class ChangeRoleCommand extends CommandExecutor {
         }
     }
 
+    /**
+     * Sends a message to the specified command sender. If the command sender is an instance
+     * of UserHandler, the message will be sent using the UserHandler's sendMessage method.
+     * Otherwise, the message will be printed to the system output.
+     *
+     * @param commandSender the sender of the command, which could be an instance of
+     *                      UserHandler or another type
+     * @param message       the message to be sent or printed
+     */
     private void sendMessage(CommandSender commandSender ,String message) {
 
         if (commandSender instanceof UserHandler userHandler) {
@@ -206,6 +330,13 @@ public final class ChangeRoleCommand extends CommandExecutor {
         }
     }
 
+    /**
+     * Checks if the specified role exists in the list of available roles.
+     *
+     * @param role The role to check for existence. This should be a non-null string
+     *             representing the role name.
+     * @return true if the role exists in the available roles list, false otherwise.
+     */
     private boolean isRoleExists(String role) {
 
         for (String r : AVAILABLE_ROLES) {

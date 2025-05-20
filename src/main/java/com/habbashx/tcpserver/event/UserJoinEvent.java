@@ -2,6 +2,15 @@ package com.habbashx.tcpserver.event;
 
 import com.habbashx.tcpserver.handler.UserHandler;
 
+/**
+ * Represents an event that is triggered when a user joins the system or server.
+ * This event carries information about the user who is joining, such as their username
+ * and corresponding user handler. It also supports cancellation, allowing handlers to
+ * prevent the user from successfully joining.
+ *
+ * This class extends the base {@code Event} class and inherits its functionality while
+ * adding additional properties specific to user join events.
+ */
 public class UserJoinEvent extends Event {
 
     private final String username;

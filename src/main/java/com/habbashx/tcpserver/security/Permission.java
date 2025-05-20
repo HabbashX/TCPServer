@@ -1,6 +1,12 @@
 package com.habbashx.tcpserver.security;
 
 
+/**
+ * The Permission class defines various constants representing
+ * different types of permissions within a system. Each constant
+ * represents a specific action or privilege that can be granted
+ * or restricted to users or roles.
+ */
 public class Permission {
 
     public static final int NO_PERMISSION_REQUIRED = 0X00;

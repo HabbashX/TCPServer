@@ -9,6 +9,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Utility class for managing role-based permissions.
+ * Provides methods to retrieve predefined sets of permissions
+ * associated with specific user roles within the application.
+ */
 public class RolePermissionUtils {
 
     public static Set<Integer> getDefaultRolePermissions() {
@@ -23,10 +28,28 @@ public class RolePermissionUtils {
     public static Set<Integer> getAdministratorRolePermissions() {
         return getRolePermissions("administrator");
     }
+
+
+    /**
+     * Retrieves the permissions associated with the "super-administrator" role.
+     *
+     * This method provides the set of permission IDs assigned specifically
+     * to the "super-administrator" role in the application.
+     *
+     * @return a set of integer permission IDs for the "super-administrator" role
+     */
     public static Set<Integer> getSuperAdministratorRolePermissions() {
         return getRolePermissions("super-administrator");
     }
 
+    /**
+     * Retrieves the permissions associated with a given role.
+     *
+     * The method reads from a JSON file containing role-to-permissions mappings
+     * and returns the set of permission IDs assigned to the specified role.
+     *
+     * @param role the name of the role for which permissions should be retrieved
+     * @return a set of permission IDs*/
     private static @Nullable Set<Integer> getRolePermissions(String role) {
 
         final File file = new File("data/role-permissions.json");

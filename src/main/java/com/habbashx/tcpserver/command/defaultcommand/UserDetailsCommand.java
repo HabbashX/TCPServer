@@ -20,6 +20,43 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 
+/**
+ * The UserDetailsCommand class is responsible for executing the "find" command,
+ * which retrieves user details based on a provided username or user ID.
+ * The command can handle both administrative and normal user contexts, displaying
+ * different levels of detail depending on the user's role.
+ *
+ * This class extends CommandExecutor to integrate with the server's command execution framework.
+ * It is annotated with the {@code @Command} annotation, specifying command metadata such as name,
+ * cooldown time, and execution logging.
+ *
+ * Key functionalities include:
+ * - Resolving user details by username or ID.
+ * - Providing a more detailed response for administrators and super administrators.
+ * - Managing output formatting and messaging for both command senders and logged output.
+ * - Validating command input and handling invalid usages.
+ *
+ * Constructor:
+ * - UserDetailsCommand(Server server): Initializes the command with the given server context.
+ *
+ * Overridden methods:
+ * - execute(CommandContext commandContext): Executes the command using the provided command context,
+ *   retrieving and sending user details to the command sender.
+ * - getCooldownManager(): Retrieves the CooldownManager to apply cooldowns to the command execution.
+ *
+ * Utility methods:
+ * - sendUserDetails(Role commandSenderRole, UserDetails userDetails, CommandSender sender): Formats
+ *   and sends the appropriate user detail message based on the sender's role and the retrieved user details.
+ * - sendMessage(CommandSender commandSender, String message): Sends a message to the command sender,
+ *   either via direct sender communication or system output.
+ *
+ * Annotations:
+ * - {@code @Command}: Specifies the command metadata including its name ("find"), cooldown time
+ *   management (10 seconds), and execution logging.
+ *
+ * This class handles exceptions such as missing arguments or invalid input formats,
+ * and provides appropriate usage messages to guide the user.
+ */
 @Command(
         name = "find",
         cooldownTimeUnit = TimeUnit.SECONDS,
@@ -30,6 +67,13 @@ public class UserDetailsCommand extends CommandExecutor {
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /find <username|id>";
 
+    /**
+     * A template message used to provide comprehensive details of an administrator user.
+     * This message includes placeholders for user-specific information such as IP address,
+     * ID, role, username, email, phone number, and account status.
+     * The placeholders, denoted by `%s`, are dynamically replaced with actual user information
+     * when the message is formatted.
+     */
     private static final String ADMINISTRATOR_USER_DETAILS_MESSAGE = """
             User found !
             userIP: %s
@@ -41,6 +85,19 @@ public class UserDetailsCommand extends CommandExecutor {
             isActiveAccount: %s
             """;
 
+    /**
+     * A constant string used as a template to represent user details messages.
+     * The message includes placeholders for user-specific information such as
+     * userID, userRole, and username.
+     *
+     * The format includes:
+     * - userID: The unique identifier for the user.
+     * - userRole: The role assigned to the user.
+     * - username: The name associated with the user.
+     *
+     * This string is expected to be formatted with actual user details
+     * before being sent or displayed.
+     */
     private static final String USER_DETAILS_MESSAGE = """
             userID: %s
             userRole: %s
@@ -55,6 +112,17 @@ public class UserDetailsCommand extends CommandExecutor {
         this.server = server;
     }
 
+    /**
+     * Executes the given command based on the provided context. This method processes
+     * the command arguments to fetch user details either by username or user ID and
+     * sends the appropriate response to the command sender.
+     *
+     * If no arguments are provided or an error occurs during processing, a usage
+     * message is sent to the sender.
+     *
+     * @param commandContext the context of the command execution, containing
+     *                       the sender, command arguments, and other metadata; cannot be null
+     */
     @Override
     public void execute(@NotNull CommandContext commandContext) {
 
@@ -90,6 +158,13 @@ public class UserDetailsCommand extends CommandExecutor {
         }
     }
 
+    /**
+     * Sends user details to the specified command sender based on their role.
+     *
+     * @param commandSenderRole the role of the command sender, which determines the level of detail provided
+     * @param userDetails the details of the user to be sent; may include properties such as IP, ID, role, username, email, etc.
+     * @param sender the recipient of the message, which can be a user or console command sender
+     */
     private void sendUserDetails(Role commandSenderRole ,UserDetails userDetails , CommandSender sender) {
 
         if (userDetails != null) {

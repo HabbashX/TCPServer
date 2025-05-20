@@ -10,6 +10,16 @@ import org.jetbrains.annotations.NotNull;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
+/**
+ * The DefaultUserJoinHandler class is an implementation of the Listener interface
+ * that handles `UserJoinEvent`. It is responsible for processing user join events
+ * on the server.
+ *
+ * This class checks if a user attempting to join the server is banned. If the user
+ * is not banned, a join message is broadcasted to the chat, and the connection is
+ * logged. If the user is banned, the join event is canceled, the user is notified,
+ * and the connection attempt is logged and terminated.
+ */
 @EventHandler(priority = Priority.HIGHEST)
 public final class DefaultUserJoinHandler implements Listener<UserJoinEvent> {
 

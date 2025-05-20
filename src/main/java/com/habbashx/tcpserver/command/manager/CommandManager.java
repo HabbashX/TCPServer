@@ -24,6 +24,17 @@ import java.util.concurrent.Executors;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
+/**
+ * The CommandManager class is responsible for managing the registration, execution,
+ * and lifecycle of commands within a server environment. It allows commands to be
+ * registered with specified executors and provides an interface for executing those
+ * commands with proper checks for permissions, cooldowns, and other command-specific configurations.
+ *
+ * This class ensures that commands follow specified rules and restrictions as determined
+ * by annotations, such as permission requirements and cooldown times. It supports both
+ * synchronous and asynchronous execution of commands. Additionally, all registered
+ * commands can be disabled individually or in bulk.
+ */
 public final class CommandManager {
 
     private static final String NO_PERMISSION_MESSAGE = RED+"you don`t have permission to execute this command."+RESET;
@@ -31,10 +42,33 @@ public final class CommandManager {
     private static final String UNKNOWN_COMMAND_MESSAGE = "unknown command try /help.";
     private static final String ON_COOLDOWN_MESSAGE = RED + "you`re on cooldown for %s %s"+RESET;
 
+    /**
+     * A thread-safe map that stores the registered command executors associated with their command names.
+     * The map ensures synchronization when modifying or accessing its contents, thereby supporting
+     * concurrent access in a multi-threaded environment.
+     *
+     * Key: The name of the command to which the executor is bound.
+     * Value: The {@link CommandExecutor} responsible for handling the execution logic of the command.
+     *
+     * This map is utilized throughout the {@code CommandManager} class to manage command registration,
+     * lookup, and execution. It acts as the central storage for all command executors.
+     */
     private final Map<String, CommandExecutor> executors = Collections.synchronizedMap(new HashMap<>());
 
     private final Server server;
 
+    /**
+     * A thread pool-based {@link ExecutorService} used for executing tasks asynchronously in the
+     * context of command management within the {@code CommandManager} class. This executor
+     * employs a cached thread pool, which creates new threads as needed and reuses previously
+     * constructed threads when they are available.
+     *
+     * The {@code asyncExecutor} is particularly useful for executing long-running or resource-intensive
+     * tasks outside the main execution thread, ensuring that synchronous workflows are not blocked.
+     *
+     * Note that it is important to properly shut down the executor service to release resources when
+     * the system or application is being terminated.
+     */
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
 
@@ -42,10 +76,30 @@ public final class CommandManager {
         this.server = server;
     }
 
+    /**
+     * Registers a command with the given name and associates it with a specified {@link CommandExecutor}.
+     * The registered command can later be executed by using its name.
+     *
+     * @param commandName the name of the command to register
+     * @param commandExecutor the {@link CommandExecutor} instance responsible for handling the command logic
+     */
     public void registerCommand(String commandName ,CommandExecutor commandExecutor) {
         executors.put(commandName,commandExecutor);
     }
 
+    /**
+     * Registers a command with the system by mapping the provided {@code CommandExecutor} to the
+     * command's name and aliases. The method first checks if the given {@code CommandExecutor} is
+     * annotated with the {@code @Command} annotation to retrieve the necessary command metadata
+     * (name, aliases). If the annotation is missing, an error is logged, and the registration process
+     * is aborted for this specific command.
+     *
+     * @param commandExecutor the command executor to register. This object must be annotated with
+     *                        {@code @Command} to provide metadata about the command,
+     *                        including its name and optional aliases. If the annotation is missing,
+     *                        the command will not be registered, and an error message will
+     *                        be logged.
+     */
     public void registerCommand(@NotNull CommandExecutor commandExecutor) {
 
         final Class<? extends CommandExecutor> commandExecutorClass = commandExecutor.getClass();
@@ -71,6 +125,13 @@ public final class CommandManager {
         }
     }
 
+    /**
+     * Executes a given command based on the provided input and permissions.
+     *
+     * @param senderName    The name of the sender executing the command. Cannot be null.
+     * @param message       The command message input by the sender. Cannot be null and must start with a "/".
+     * @param commandSender The CommandSender instance representing the entity executing the command. Cannot be null.
+     */
     @SuppressWarnings("deprecation")
     public void executeCommand(@NotNull String senderName , @NotNull String message , @NotNull CommandSender commandSender) {
         // Warning do not modify any line of code in this method,
@@ -130,6 +191,14 @@ public final class CommandManager {
         }
     }
 
+    /**
+     * Executes a command using the given {@link CommandExecutor} and {@link CommandContext}.
+     * The execution can be done either synchronously or asynchronously depending on the value of {@code isAsync}.
+     *
+     * @param commandExecutor the executor responsible for handling the command logic
+     * @param commandContext the context of the command containing details such as sender and arguments
+     * @param isAsync indicates whether the command should be executed asynchronously
+     */
     private void executeCommand(CommandExecutor commandExecutor,CommandContext commandContext, boolean isAsync) {
 
         if (isAsync) {
@@ -147,6 +216,15 @@ public final class CommandManager {
         }
     }
 
+    /**
+     * Calculates the cooldown time in the specified time unit.
+     * If the provided time unit is invalid, logs an error and returns the cooldown unchanged.
+     *
+     * @param cooldown The cooldown value to be converted.
+     * @param timeUnit The time unit to which the cooldown value should be converted.
+     *                 Accepted values are {@link TimeUnit#MILLI_SECONDS} and {@link TimeUnit#SECONDS}.
+     * @return The cooldown value converted to the specified time unit, or the original cooldown if the time unit is invalid.
+     */
     private long getCooldownTimeUnit(long cooldown ,int timeUnit) {
         if (timeUnit == TimeUnit.MILLI_SECONDS) {
             return cooldown / 1000;
@@ -157,10 +235,22 @@ public final class CommandManager {
             return cooldown;
         }
     }
+    /**
+     * Disables all registered commands by clearing the internal mapping of command executors.
+     * After invoking this method, no commands will be executable until they are re-registered.
+     */
     public void disableAllCommands() {
         executors.clear();
     }
 
+    /**
+     * Disables a specified command by removing it and its aliases
+     * from the command executors registry.
+     *
+     * @param command the command to be disabled
+     * @return {@code true} if the command and its aliases are successfully removed,
+     *         {@code false} if the command does not exist in the registry
+     */
     public boolean disableCommand(String command) {
 
         final CommandExecutor executor = executors.get(command);
@@ -181,10 +271,22 @@ public final class CommandManager {
     }
 
 
+    /**
+     * Retrieves a mapping of command names to their corresponding {@link CommandExecutor} instances.
+     * This map represents all currently registered commands and their executors.
+     *
+     * @return a {@link Map} where the keys are command names (as {@link String}) and the values are
+     *         {@link CommandExecutor} instances responsible for handling the command logic.
+     */
     public Map<String, CommandExecutor> getExecutors() {
         return executors;
     }
 
+    /**
+     * Retrieves a list of all registered command names.
+     *
+     * @return a list of command names that have been registered with the system.
+     */
     public @NotNull List<String> getAllCommands() {
 
         final List<String> command = new ArrayList<>();
@@ -194,6 +296,11 @@ public final class CommandManager {
         return command;
     }
 
+    /**
+     * Retrieves a list of all executor names currently registered in the system.
+     *
+     * @return a non-null list of all registered executor names as strings.
+     */
     public @NotNull List<String> getAllExecutors() {
 
         final List<String> executorList = new ArrayList<>();

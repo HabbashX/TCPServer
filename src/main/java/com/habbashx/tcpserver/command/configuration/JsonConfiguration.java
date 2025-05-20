@@ -12,6 +12,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A subclass of Configuration that handles configuration files stored in JSON format.
+ * This class provides functionality to parse JSON files and interact with configuration data.
+ */
 @SuppressWarnings("unchecked")
 public class JsonConfiguration extends Configuration {
 

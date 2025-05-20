@@ -35,16 +35,106 @@ import static com.habbashx.tcpserver.util.UserUtil.isValidEmail;
 import static com.habbashx.tcpserver.util.UserUtil.isValidPhoneNumber;
 import static com.habbashx.tcpserver.util.UserUtil.isValidUsername;
 
+/**
+ * DefaultAuthentication is a final implementation of the Authentication class, designed to manage user authentication
+ * for a server environment. This class supports user registration and login using multiple storage types including
+ * CSV, JSON, and SQL. It enforces user validation and locks critical sections during authentication to prevent race
+ * conditions. It also triggers events for user authentication actions.
+ *
+ * Thread Safety:
+ * The DefaultAuthentication class uses ReentrantLock to ensure thread-safe operations during user registration
+ * and login processes.
+ *
+ * Features:
+ * - Supports different data storage types: CSV, JSON, and SQL for user information.
+ * - Ensures user details are validated before registration.
+ * - Hashes user passwords securely using BCrypt for enhanced security.
+ * - Triggers server events upon successful or failed authentication attempts.
+ *
+ * Storage Types Supported:
+ * - CSV: Stores user data in a CSV file.
+ * - JSON: Stores user data in a JSON file.
+ * - SQL: Interfaces with an SQL database for user data storage and retrieval.
+ *
+ * Configuration:
+ * The storage type is determined by server settings and can be configured as CSV, JSON, or SQL.
+ *
+ * Event Handling:
+ * The DefaultAuthentication class interacts with the server's event management system to notify other components
+ * of authentication events (e.g., successful registration or login, failed attempts).
+ *
+ * Validation Rules:
+ * - Usernames must not contain symbols or spaces.
+ * - Phone numbers must be valid.
+ * - Emails must be valid based on a predefined validation process.
+ *
+ * Preconditions:
+ * - The Server instance provided must be configured properly with server settings specifying the authentication
+ *   storage type.
+ * - The UserHandler parameter in registration and login methods must not be null.
+ *
+ * Exceptions:
+ * - Throws RuntimeException in case of an IO, SQL, or other unexpected errors.
+ */
 @SuppressWarnings("deprecation")
 public final class DefaultAuthentication extends Authentication {
 
     private final Server server;
 
+    /**
+     * Represents the header structure used for user-related data in the authentication mechanism.
+     * This constant array defines the standardized field names expected for user information
+     * in various contexts such as data storage, processing, or transmission.
+     *
+     * The fields include:
+     * - "userIP": The IP address of the user.
+     * - "userID": A unique identifier for the user.
+     * - "userRole": The user's role or permissions within the system.
+     * - "username": The username of the user.
+     * - "password": The user's password.
+     * - "userEmail": The email address associated with the user.
+     * - "phoneNumber": The user's phone number.
+     * - "isActiveAccount": A flag indicating whether the user's account is active.
+     *
+     * This header is likely to be used as a shared reference to ensure consistency
+     * in handling user data across different methods or modules.
+     */
     private static final String[] HEADER = {"userIP","userID","userRole","username","password","userEmail","phoneNumber","isActiveAccount"};
 
+    /**
+     * Specifies the type of storage mechanism used for managing authentication data.
+     *
+     * This variable determines how user credentials and related authentication
+     * information are stored and accessed. It can be one of the following:
+     * - CSV: Data is stored in a CSV file.
+     * - SQL: Data is stored in a structured relational database.
+     * - JSON: Data is stored in a JSON file.
+     *
+     * The choice of storage type impacts how authentication operations
+     * (e.g., user registration and login) are implemented in the application.
+     */
     private final AuthStorageType authStorageType;
     private final File file;
+    /**
+     * Represents the CSV format configuration used for reading or writing CSV data.
+     * This is initialized with a default CSV format and includes specified headers.
+     * It ensures a consistent approach to handling CSV data within the application.
+     */
     private final CSVFormat format = CSVFormat.DEFAULT.withHeader(HEADER);
+    /**
+     * An instance of {@code ObjectMapper} used for serializing and deserializing objects
+     * to and from JSON format. This variable serves as the primary object mapper
+     * throughout the application to handle JSON processing tasks efficiently.
+     *
+     * The {@code ObjectMapper} provides functionality for:
+     * - Parsing JSON content into Java objects.
+     * - Generating JSON content from Java objects.
+     * - Configuring serialization and deserialization features.
+     * - Registering custom serializers and deserializers if needed.
+     *
+     * This instance is declared as {@code final} to ensure it is immutable and shared safely
+     * across multiple components or threads within the application.
+     */
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final String USER_ALREADY_CONNECTED_MESSAGE = RED+"user already connected to server"+RESET;
@@ -57,6 +147,18 @@ public final class DefaultAuthentication extends Authentication {
         file = new File("data/users.%s".formatted(fileType));
     }
 
+    /**
+     * Registers a new user with the provided credentials and additional details.
+     * The method handles validation of the username, phone number, and email, as well as user existence checks.
+     * It utilizes a reentrant lock for thread safety and supports different authentication storage types
+     * such as CSV, SQL, and JSON for storing user information.
+     *
+     * @param username The username of the user being registered. Must not be null and must adhere to the valid username rules.
+     * @param password The password for the user being registered. Must not be null.
+     * @param email The email address of the user. Can be null but if provided, must be valid.
+     * @param phoneNumber The phone number of the user. Can be null but if provided, must be valid.
+     * @param userHandler A user handler that manages user interactions and messaging during the registration process. Must not be null.
+     */
     @Override
     public void register(@NotNull String username ,@NotNull String password ,String email, String phoneNumber ,@NotNull UserHandler userHandler) {
 
@@ -104,6 +206,14 @@ public final class DefaultAuthentication extends Authentication {
 
 
 
+    /**
+     * Authenticates a user by verifying the provided username and password using the selected storage type.
+     * This method is synchronized to ensure thread safety during the login process.
+     *
+     * @param username the username of the user attempting to log in; must not be null
+     * @param password the password of the user attempting to log in; must not be null
+     * @param userHandler the user handler object representing the state and context of the user; must not be null
+     */
     @Override
     public void login(@NotNull String username, @NotNull String password ,@NotNull UserHandler userHandler) {
 
@@ -121,6 +231,19 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Registers a new user with the provided credentials and additional details in a CSV file.
+     * This method checks if the username already exists. If the user does not exist, their details
+     * (including a hashed password) are added to the CSV file, and their user details are updated in
+     * the provided {@code UserHandler}. An event is triggered to confirm the registration status.
+     *
+     * @param username The username of the user being registered. Must not already exist in the system.
+     * @param password The password of the user. It will be hashed using BCrypt before storage.
+     * @param email The email address of the user. This is associated with the account being created.
+     * @param phoneNumber The phone number of the user. It is stored for account management purposes.
+     * @param userHandler The {@code UserHandler} instance associated with the user's session. Must not be null.
+     *                     This is used to set user details and trigger registration events.
+     */
     private void csvRegister(String username , String password , String email, String phoneNumber , @NotNull UserHandler userHandler) {
 
         if (!isUserExists(username)) {
@@ -162,6 +285,17 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Registers a new user in the SQL database. The method checks if the user already exists,
+     * hashes the provided password, and adds the user details to the database. Additionally,
+     * triggers authentication-related events based on the success or failure of the registration process.
+     *
+     * @param username the username of the user to be registered
+     * @param password the plaintext password of the user to be registered
+     * @param email the email address of the user to be registered
+     * @param phoneNumber the phone number of the user to be registered
+     * @param userHandler the handler managing the user's session and related details
+     */
     private void sqlRegister(String username, String password, String email, String phoneNumber, UserHandler userHandler) {
 
         try {
@@ -192,6 +326,17 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Registers a new user into the system and stores the user data in JSON format.
+     * This method checks for user existence and prevents duplicate registrations.
+     * It also hashes the user's password for security and triggers an authentication event.
+     *
+     * @param username The username of the user being registered. Must comply with the valid username format.
+     * @param password The password of the user being registered. Must not be null.
+     * @param email The email address of the user being registered. Can be null but should be valid if provided.
+     * @param phoneNumber The phone number of the user being registered. Can be null but should be valid if provided.
+     * @param userHandler A non-null handler for managing user-specific interactions and state during registration.
+     */
     private void jsonRegister(String username, String password, String email, String phoneNumber, @NotNull UserHandler userHandler) {
 
         if (!isUserExists(username)) {
@@ -235,6 +380,15 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Authenticates a user using credentials stored in a CSV file. If the user is found and the password matches,
+     * an authentication success event is triggered. Otherwise, a failure event is triggered. If the user is already
+     * connected, a corresponding message is sent and the user session is terminated.
+     *
+     * @param username the username of the user attempting to log in; must not be null
+     * @param password the password of the user attempting to log in; must not be null
+     * @param userHandler the user handler object representing the user's state and context; must not be null
+     */
     private void csvLogin(String username,String password ,UserHandler userHandler) {
 
         if (!isUserConnected(username)) {
@@ -259,6 +413,16 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Authenticates a user by verifying their username and password using SQL as the storage type.
+     * If the provided credentials are valid and the user is not already connected, the user's details are
+     * updated, and an authentication success event is triggered. Otherwise, an authentication failure event
+     * is triggered. If the user is already connected, a notification is sent, and the session is terminated.
+     *
+     * @param username the username of the user attempting to log in; must not be null
+     * @param password the password of the user attempting to log in; must not be null
+     * @param userHandler the user handler object that manages the user's session and messaging interactions; must not be null
+     */
     private void sqlLogin(String username, String password ,UserHandler userHandler) {
 
         try {
@@ -285,6 +449,25 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Authenticates a user by validating the provided username and password against user data stored in JSON format.
+     * If authentication is successful, the user's details are prepared and``` storedjava in the UserHandler instance
+     .
+     /**
+     * * An Handles authentication the event login is process triggered for, a and user the based connection on state provided of JSON the data user.
+     is * managed This.
+     method *
+     verifies * the @ providedparam username username and      password The against username stored of user the information user
+     attempting * to and log updates in the; user's must session not details be upon null successful.
+     authentication *.
+     @ *
+     param * password @     param The username password The of username the of user the attempting user to attempting log to in log; in must.
+     not * be @ nullparam password.
+     * The @ passwordparam corresponding toer   Handler the   username.
+     The * User @Handlerparam instance representing userHandler the Object user responsible; manages handling the user user's-related state operations and, interactions such during
+     *  as the
+     login * process.                    storing Must session not details be and null sending.
+     messages */
     private void jsonLogin(String username ,String password ,UserHandler userHandler) {
 
         try {
@@ -323,11 +506,25 @@ public final class DefaultAuthentication extends Authentication {
         }
     }
 
+    /**
+     * Checks whether a user with the specified username exists in the system.
+     *
+     * @param username The username of the user to be checked. Must not be null.
+     * @return true if a user with the given username exists, false otherwise.
+     */
     private boolean isUserExists(String username) {
         final UserDetails userDetails = server.getServerDataManager().getUserByUsername(username);
         return userDetails != null;
     }
 
+    /**
+     * Checks whether a user is currently connected to the server.
+     * This method iterates through the list of active user connections
+     * to verify if a connection exists for the specified username.
+     *
+     * @param username The username of the user to check. Must not be null.
+     * @return true if the user is connected; false otherwise.
+     */
     private boolean isUserConnected(String username) {
 
         for (final UserHandler user : server.getConnections()) {

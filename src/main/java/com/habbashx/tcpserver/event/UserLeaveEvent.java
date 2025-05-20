@@ -2,6 +2,14 @@ package com.habbashx.tcpserver.event;
 
 import com.habbashx.tcpserver.handler.UserHandler;
 
+/**
+ * Represents an event that is triggered when a user leaves the system.
+ * This event extends the base {@link Event} class and contains information
+ * about the user who triggered the event and their username.
+ *
+ * The {@code UserLeaveEvent} is utilized to notify the system of a user's departure
+ * and allows for additional processing, such as logging or broadcasting the user's disconnection.
+ */
 public class UserLeaveEvent extends Event {
 
     private final String username;

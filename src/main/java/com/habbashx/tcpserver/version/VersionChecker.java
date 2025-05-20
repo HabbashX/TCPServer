@@ -8,8 +8,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+/**
+ * The VersionChecker class is responsible for verifying if the current version
+ * of the project matches the latest version available online.
+ */
 public class VersionChecker {
 
+    /**
+     * Checks the current project version against the latest version available online.
+     * Logs appropriate messages indicating whether the project is up-to-date or outdated.
+     * In case of an error, logs an appropriate error message.
+     *
+     * @param server An instance of the Server class that provides logger functionality.
+     */
     public static void checkProjectVersion(Server server) {
 
         try {

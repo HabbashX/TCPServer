@@ -2,6 +2,25 @@ package com.habbashx.tcpserver.settings;
 
 import com.habbashx.annotation.InjectProperty;
 
+/**
+ * The ServerSettings class encapsulates configuration properties required for server setup,
+ * security settings, user management, and database connectivity.
+ *
+ * Properties are injected via the {@code @InjectProperty} annotation, allowing external
+ * configuration to be defined and automatically loaded. This class functions as a central
+ * repository for the server's settings, supporting ease of access and maintainability.
+ *
+ * The injected properties include:
+ *  - Network settings like port and address reuse preferences.
+ *  - SSL/TLS security configurations for keystore and truststore paths and passwords.
+ *  - User interaction settings such as chat cooldown duration.
+ *  - Authentication storage type for user management.
+ *  - Database configurations including URL, username, and password.
+ *
+ * This class is immutable, ensuring thread safety for concurrent access in a multi-threaded
+ * server environment. The provided getter methods allow controlled access to the configuration
+ * values after they are injected during initialization.
+ */
 public final class ServerSettings {
 
     @InjectProperty("port")

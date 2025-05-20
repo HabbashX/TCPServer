@@ -1,5 +1,10 @@
 package com.habbashx.tcpserver.event;
 
+/**
+ * Represents an abstract base class for all events in the system.
+ * This class defines the core properties and methods that every event must have.
+ * Events are used as a mechanism to communicate and signal occurrences throughout the system.
+ */
 public abstract class Event {
 
     private final String eventName;

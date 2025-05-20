@@ -6,6 +6,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * Represents the details of a user including information such as IP address, ID, role,
+ * username, email, phone number, and account status.
+ *
+ * This class provides getter and setter methods for each field, along with a builder class
+ * for constructing instances of UserDetails. It also overrides the equals and hashCode
+ * methods for object comparison and hashing.
+ *
+ * The class is declared as final to prevent inheritance and ensure immutability except for
+ * the provided setter methods.
+ */
 public final class UserDetails {
 
     private String userIP;

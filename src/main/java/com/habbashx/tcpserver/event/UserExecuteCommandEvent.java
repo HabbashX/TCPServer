@@ -3,6 +3,14 @@ package com.habbashx.tcpserver.event;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.handler.UserHandler;
 
+/**
+ * Represents an event triggered when a user executes a command.
+ * This event is used in the system to handle and process user command actions.
+ * It provides information about the user executing the command, the command executor associated with it,
+ * and the username of the user performing the action.
+ * <br>
+ * The event can be cancelled to prevent the command from being fully executed.
+ */
 public class UserExecuteCommandEvent extends Event {
 
     private final String username;

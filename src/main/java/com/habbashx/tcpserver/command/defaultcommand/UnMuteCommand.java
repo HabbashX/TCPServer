@@ -19,6 +19,29 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.UN_MUTE_PERMISSION;
 
+/**
+ * Represents the command "unmute", allowing a previously muted user to be unblocked in chat.
+ * This command can also be referred to using the alias "uncurse".
+ *
+ * The command performs the following:
+ * - Expects a username as an argument to identify the user to unmute.
+ * - If the username is not specified or the user is not found, appropriate messages are sent to the command sender.
+ * - If the user is found, the mute is removed using the MuteCommandManager.
+ *
+ * Features of the command include:
+ * - Runs asynchronously.
+ * - Logs the execution for better tracking.
+ * - Enforces a cooldown of 10 seconds between executions to prevent spam.
+ *
+ * Permissions:
+ * - Requires a specific permission to execute, as defined by the constant UN_MUTE_PERMISSION.
+ *
+ * Concurrency:
+ * - Uses a ReentrantLock to ensure command execution and user state modifications are thread-safe.
+ *
+ * Configuration:
+ * - Provides usage message feedback for invalid or missing arguments.
+ */
 @Command(
         name = "unmute",
         aliases = "uncurse",

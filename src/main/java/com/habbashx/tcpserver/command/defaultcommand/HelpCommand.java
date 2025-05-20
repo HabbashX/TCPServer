@@ -11,6 +11,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
 
+/**
+ * Represents a command that displays the help board content to the command sender.
+ *
+ * The HelpCommand reads from a predefined file and sends the content to the command
+ * executor, either as a message for a user or prints directly to the console if executed
+ * by non-user entities.
+ *
+ * It ensures the help file exists and, if missing, creates a new empty help board file
+ * during execution.
+ */
 @Command(name = "help")
 public final class HelpCommand extends CommandExecutor {
 

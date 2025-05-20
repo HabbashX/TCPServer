@@ -18,6 +18,30 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.GRAY;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 
+/**
+ * The PrivateMessageCommand class is responsible for implementing the private messaging
+ * feature within the server. It extends the CommandExecutor base class and enables
+ * users to send private messages to other online users.
+ *
+ * This command, invoked with the "msg" alias, is configured to enforce a cooldown
+ * of 5 seconds between invocations by a given user. The configuration for this command
+ * can be managed via the `commands-configuration/privateMessageCommand-configuration.json` file.
+ *
+ * Features:
+ * - Validates that the sender provides both a target username and a message.
+ * - Sends messages to a valid, online user identified by the provided username.
+ * - Prevents users from messaging themselves.
+ * - Informs the sender if the specified target user is not found.
+ * - Customizes the private message style based on configuration settings.
+ *
+ * Key Components:
+ * - {@link JsonConfiguration} is used to load the configuration for private messaging styles.
+ * - {@link CooldownManager} inherited from the base class is utilized to control command usage frequency.
+ *
+ * Notes:
+ * - Requires the sender to be a valid user for execution.
+ * - Any errors, such as missing arguments or invalid usernames, will be relayed back to the sender via messages.
+ */
 @Command(
         name = "msg",
         cooldownTimeUnit = TimeUnit.SECONDS,

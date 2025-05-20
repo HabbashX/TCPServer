@@ -11,6 +11,34 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
+/**
+ * The AuthenticationEventHandler is responsible for handling {@link AuthenticationEvent} instances.
+ * This final class implements the {@link Listener} interface and provides behavior associated with
+ * user authentication events, including registration and login actions.
+ *
+ * Key Responsibilities:
+ * - Processes user authentication events triggered during login or registration operations.
+ * - Sends appropriate feedback messages to users based on the authentication outcomes.
+ * - Triggers a {@link UserJoinEvent} upon successful user authentication, enabling further
+ *   event processing within the system.
+ *
+ * Behavior Details:
+ * - During a registration operation:
+ *   - If authentication succeeds, a positive confirmation message is sent to the user, and a
+ *     {@link UserJoinEvent} is triggered.
+ *   - If authentication fails (e.g., duplicate username), an error message is sent, and the user's
+ *     connection is terminated.
+ * - During a login operation:
+ *   - If authentication succeeds, a success message is sent, and a {@link UserJoinEvent} is triggered.
+ *   - If authentication fails, an error message is sent, and the user's connection is terminated.
+ *
+ * This class ensures proper handling of system events by validating authentication states and dispatching
+ * secondary events as necessary.
+ *
+ * Thread Safety:
+ * - This event handler assumes that it will be executed in the appropriate thread context managed by the
+ *   event system and does not manage its own synchronization.
+ */
 @EventHandler
 public final class AuthenticationEventHandler implements Listener<AuthenticationEvent> {
 

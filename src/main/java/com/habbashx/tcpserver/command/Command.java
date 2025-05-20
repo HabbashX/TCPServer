@@ -8,6 +8,12 @@ import java.lang.annotation.RetentionPolicy;
 
 import static com.habbashx.tcpserver.security.Permission.NO_PERMISSION_REQUIRED;
 
+/**
+ * Annotation to define and configure metadata for a specific command. This annotation
+ * can be applied to classes representing commands to specify their name, permissions,
+ * aliases, description, and various execution-related configurations like cooldowns or
+ * logging.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Command {
     String name();
