@@ -58,12 +58,11 @@ public class RolePermissionUtils {
             Set<Map<String, Set<Integer>>> roles = mapper.readValue(file, new TypeReference<>() {
             });
 
-            for (Map<String, Set<Integer>> r : roles) {
-                if (r.containsKey(role)) {
-                    return r.get(role);
-                }
-            }
-            return null;
+            return roles.stream()
+                    .filter(r -> r.containsKey(role))
+                    .findFirst()
+                    .map(r -> r.get(role))
+                    .orElse(null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
