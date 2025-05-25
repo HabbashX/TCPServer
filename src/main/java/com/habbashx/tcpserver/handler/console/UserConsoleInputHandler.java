@@ -18,7 +18,7 @@ import java.io.InputStreamReader;
  * Implements the {@link Runnable} interface to allow execution in a separate thread and the
  * {@link Closeable} interface to support safe resource cleanup.
  */
-public final class UserConsoleInputHandler implements Runnable , Closeable {
+public final class UserConsoleInputHandler implements Runnable {
 
     private final User user;
     private final BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
@@ -80,20 +80,5 @@ public final class UserConsoleInputHandler implements Runnable , Closeable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Closes resources associated with this instance, including the console input and the user connection.
-     *
-     * This method ensures that both the console reader (`input`) and the associated `user` resources are
-     * properly closed. Closing these resources is necessary to release I/O streams and ensure no active
-     * connections remain. If an error occurs while closing the resources, an IOException will be thrown.
-     *
-     * @throws IOException if an I/O error occurs when closing the resources
-     */
-    @Override
-    public void close() throws IOException {
-        input.close();
-        user.close();
     }
 }
