@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.PossibleEmpty;
+import com.habbashx.tcpserver.annotation.MayBeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
@@ -55,7 +55,7 @@ public class NicknameCommand extends CommandExecutor {
     @Override
     public void execute(@NotNull CommandContext commandContext) {
 
-        if (commandContext.getSender() instanceof UserHandler userHandler) {
+        if (commandContext.getSender() instanceof final UserHandler userHandler) {
 
             final ReentrantLock reentrantLock = userHandler.getReentrantLock();
 
@@ -67,7 +67,7 @@ public class NicknameCommand extends CommandExecutor {
                     return;
                 }
 
-                @PossibleEmpty final String nickname = commandContext.getArgs().get(0);
+                @MayBeEmpty final String nickname = commandContext.getArgs().get(0);
 
                 if (!UserUtil.isValidUsername(nickname)) {
                     userHandler.getUserDetails().setUsername(nickname);

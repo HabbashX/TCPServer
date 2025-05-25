@@ -1,10 +1,11 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.PossibleEmpty;
+import com.habbashx.tcpserver.annotation.MayBeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.command.configuration.JsonConfiguration;
+import com.habbashx.tcpserver.configuration.Configuration;
+import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.handler.UserHandler;
@@ -53,7 +54,7 @@ public final class PrivateMessageCommand extends CommandExecutor {
     private static final String COMMAND_USAGE_MESSAGE = "usage: /msg <username> <message>";
     private final Server server;
 
-    private final JsonConfiguration config;
+    private final Configuration config;
 
     public PrivateMessageCommand(Server server) {
         this.server = server;
@@ -69,7 +70,7 @@ public final class PrivateMessageCommand extends CommandExecutor {
                 return;
             }
 
-            @PossibleEmpty
+            @MayBeEmpty
             String targetUsername = context.getArgs().get(0);
             String message = String.join(" ", context.getArgs().subList(1, context.getArgs().size()));
 

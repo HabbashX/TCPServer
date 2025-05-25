@@ -136,12 +136,7 @@ public final class MuteCommandManager {
      */
     public boolean isUserMuted(String username) {
 
-        for (final String user : getMutedUsers()) {
-            if (user.equals(username)) {
-                return true;
-            }
-        }
-        return false;
+        return getMutedUsers().stream().anyMatch(user -> user.equals(username));
     }
 
 
