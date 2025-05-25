@@ -20,6 +20,11 @@ you can just use TCP server for your own purposes.
 ---
 - **Console Text Color**
 
+## New Features
+- **ServerMemoryUsage**: show usage of server memory
+- **Connection Handler Interface**
+- **Event Handler Configuration**
+
 ## Additional additions
 - **Default Commands**: ChangeRoleCommand , BanCommand , HelpCommand ,UserDetailsCommand , OnlineUsersCommand , MuteCommand , NicknameCommand , PrivateMessageCommand.
 ---
