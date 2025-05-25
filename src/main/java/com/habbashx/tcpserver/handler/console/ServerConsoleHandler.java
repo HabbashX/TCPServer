@@ -5,7 +5,6 @@ import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.socket.Server;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -22,7 +21,7 @@ import java.io.InputStreamReader;
  * its parent class. Additionally, it implements both the {@code Runnable} and {@code Closeable}
  * interfaces, allowing it to run as a separate thread and be safely closed when the server shuts down.
  */
-public final class ServerConsoleHandler extends CommandSender implements Runnable , Closeable {
+public final class ServerConsoleHandler extends CommandSender implements Runnable {
 
     private final Server server;
 
@@ -53,11 +52,10 @@ public final class ServerConsoleHandler extends CommandSender implements Runnabl
     @Override
     public void run() {
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
 
             String message;
             while ((message = reader.readLine()) != null) {
-
                 if (message.startsWith("/")) {
                     server.getCommandManager().executeCommand("Server",message,this);
                 } else {
@@ -74,8 +72,4 @@ public final class ServerConsoleHandler extends CommandSender implements Runnabl
         return true;
     }
 
-    @Override
-    public void close() throws IOException {
-        server.close();
-    }
 }
