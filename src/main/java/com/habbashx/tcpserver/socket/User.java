@@ -39,14 +39,8 @@ import static com.habbashx.tcpserver.util.ServerUtils.SERVER_SETTINGS_PATH;
  * Threading:
  * - The class runs its operations in a separate thread by implementing {@link Runnable}.
  * - Console input is processed asynchronously using {@link UserConsoleInputHandler}.
- *
- * Resource Management:
- * - Resources such as sockets, readers, and writers are properly closed during shutdown or when
- *   the {@link #close()} method is invoked.
- * - Ensures graceful handling of connection errors or resource cleanup failures by wrapping exceptions
- *   in {@link RuntimeException}.
  */
-public final class User implements Runnable , Closeable {
+public final class User implements Runnable{
 
     private final int port;
     /**
@@ -254,34 +248,6 @@ public final class User implements Runnable , Closeable {
     }
 
     /**
-     * Closes all resources associated with this User instance, ensuring proper cleanup.
-     *
-     * This method performs the following actions:
-     * - Sets the `running` flag to false, signaling that the instance is no longer active.
-     * - Closes the `userSocket` if it is not already closed, releasing the associated network resources.
-     * - Closes the `input` and `output` streams to terminate communication channels.
-     * - Invokes the `userConsoleInputHandler.closeUserInput()` method to handle any remaining user input cleanup.
-     *
-     * This method is essential for releasing system resources, terminating active connections,
-     * and ensuring a clean application shutdown. If any operation fails during resource closure,
-     * an `IOException` is thrown.
-     *
-     * @throws IOException if an I/O error occurs while closing the resources
-     */
-    @Override
-    public void close() throws IOException {
-        running = false;
-
-        if (!userSocket.isClosed()) {
-            userSocket.close();
-        }
-        input.close();
-        output.close();;
-        userConsoleInputHandler.closeUserInput();
-
-    }
-
-    /**
      * Injects server settings from an external configuration file into the current User instance.
      *
      * This method utilizes the `PropertyInjector` utility to read and inject properties
@@ -313,10 +279,8 @@ public final class User implements Runnable , Closeable {
     }
     public static void main(String[] args) {
 
-        try (User user = new User(8080)) {
-            user.run();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        User user = new User(8080);
+
+        user.run();
     }
 }
