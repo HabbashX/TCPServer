@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.command.configuration;
+package com.habbashx.tcpserver.configuration;
 
 /**
  * An abstract class that represents a configuration management system. This class provides
