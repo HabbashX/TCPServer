@@ -1,6 +1,11 @@
 package com.habbashx.tcpserver.listener;
 
+import com.habbashx.tcpserver.configuration.Configuration;
+import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.event.Event;
+import com.habbashx.tcpserver.event.handler.EventHandler;
+import com.habbashx.tcpserver.socket.Server;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a generic listener interface for handling events of a specific type.
@@ -42,5 +47,17 @@ import com.habbashx.tcpserver.event.Event;
  * - DefaultUserExecuteCommandHandler
  */
 public interface Listener<E extends Event> {
+
     void onEvent(E event);
+
+    default Configuration loadConfiguration(Server server) {
+        final String configFile = getConfigFile();
+        assert configFile != null;
+        return new JsonConfiguration(configFile ,server);
+    }
+
+    default @Nullable String getConfigFile() {
+        return this.getClass().getAnnotation(EventHandler.class).configFile();
+    }
+
 }

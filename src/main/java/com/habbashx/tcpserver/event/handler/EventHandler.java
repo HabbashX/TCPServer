@@ -31,8 +31,36 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventHandler {
 
+    /**
+     * Specifies the priority level for the event listener annotated with {@code @EventHandler}.
+     * The priority determines the order in which listeners will be executed. Listeners with
+     * higher priority levels are executed earlier than those with lower levels.
+     *
+     * @return the priority level for the annotated listener. Defaults to {@code Priority.LOW}.
+     */
     Priority priority() default Priority.LOW;
 
+    /**
+     * Determines whether the annotated event handler should execute asynchronously.
+     *
+     * Event handlers marked as asynchronous will be executed in a separate thread,
+     * allowing non-blocking behavior and improved performance for operations
+     * that may take a significant amount of time. If set to {@code false},
+     * the event handler will execute synchronously, in the same thread in which
+     * the event was triggered.
+     *
+     * By default, this property is set to {@code false}.
+     *
+     * @return {@code true} if the event handler should execute asynchronously,
+     *         {@code false} otherwise
+     */
     boolean isAsync() default false;
+
+    /**
+     * Specifies the path to the configuration file.
+     *
+     * @return the path to the configuration file as a string. Returns an empty string by default.
+     */
+    String configFile() default "";
 
 }

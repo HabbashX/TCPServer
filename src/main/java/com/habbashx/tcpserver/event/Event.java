@@ -14,7 +14,6 @@ public abstract class Event {
         this.eventName=eventName;
     }
 
-
     public void setCancelled(boolean cancelled) {
         isCancelled = cancelled;
     }
