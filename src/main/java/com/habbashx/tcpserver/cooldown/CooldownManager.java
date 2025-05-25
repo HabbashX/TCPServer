@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - Implementing rate limiting for users in a multi-threaded system.
  * - Managing user-specific operational delays.
  */
-public class CooldownManager {
+public final class CooldownManager {
 
     /**
      * A thread-safe map that stores cooldown data for users.
@@ -56,22 +56,51 @@ public class CooldownManager {
         this.cooldownTime = cooldownTime * 1000;
     }
 
+    /**
+     * Checks if a specified user is currently on cooldown.
+     *
+     * @param user the unique identifier of the user whose cooldown status needs to be checked; cannot be null.
+     * @return {@code true} if the user is on cooldown, otherwise {@code false}.
+     */
     public boolean isOnCooldown(String user) {
         return cooldowns.containsKey(user) && System.currentTimeMillis() < cooldowns.get(user);
     }
 
+    /**
+     * Retrieves the remaining cooldown time for a specific user.
+     * If the user is not on cooldown, the method returns 0.
+     *
+     * @param user The username for which the remaining cooldown time is being checked.
+     * @return The remaining cooldown time in seconds, or 0 if the user is not on cooldown.
+     */
     public long getRemainingTime(String user) {
         return isOnCooldown(user) ? (cooldowns.get(user) - System.currentTimeMillis()) / 1000 : 0;
     }
 
+    /**
+     * Sets a cooldown for the specified user. The cooldown duration is determined
+     * based on the predefined cooldown time and the current system time.
+     *
+     * @param user the unique identifier of the user for whom the cooldown is being set; cannot be null.
+     */
     public void setCooldown(String user) {
         cooldowns.put(user, System.currentTimeMillis() + cooldownTime);
     }
 
+    /**
+     * Removes the cooldown for a specified user, allowing them to take actions immediately.
+     *
+     * @param user the unique identifier of the user whose cooldown should be removed; cannot be null.
+     */
     public void removeCooldown(String user) {
         cooldowns.remove(user);
     }
 
+    /**
+     * Sets the cooldown time for all users. The provided time is converted from seconds to milliseconds.
+     *
+     * @param cooldownTime The cooldown time in seconds to be set. Must be a positive value.
+     */
     public void setCooldownTime(long cooldownTime) {
         this.cooldownTime = cooldownTime * 1000;
     }
