@@ -25,8 +25,27 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DelayEventHandler {
 
+    /**
+     * Defines the priority for a delay event handler. This priority determines
+     * the order in which event handlers are executed, with higher priority handlers
+     * being executed earlier than those with lower priority.
+     *
+     * @return the priority level of the event handler. Defaults to {@code Priority.LOW}.
+     */
     Priority priority() default Priority.LOW;
 
+    /**
+     * Specifies the delay in milliseconds before an event handler is triggered.
+     *
+     * This method is part of the {@code @DelayEventHandler} annotation and is intended
+     * to configure the delay timing for events processed by the annotated handler.
+     * The delay ensures that the event is not executed immediately but rather
+     * after the specified time has elapsed.
+     *
+     * @return the delay duration in milliseconds as a {@code long} value. The value
+     *         must be explicitly defined when applying the {@code @DelayEventHandler}
+     *         annotation to an event handler.
+     */
     long delayMilliSeconds();
 
 }
