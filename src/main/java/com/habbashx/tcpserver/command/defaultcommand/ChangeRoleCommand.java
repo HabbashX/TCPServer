@@ -2,7 +2,7 @@ package com.habbashx.tcpserver.command.defaultcommand;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.tcpserver.annotation.PossibleEmpty;
+import com.habbashx.tcpserver.annotation.MayBeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
@@ -141,9 +141,9 @@ public final class ChangeRoleCommand extends CommandExecutor {
             return;
         }
 
-        @PossibleEmpty
+        @MayBeEmpty
         String targetUsername = commandContext.getArgs().get(0);
-        @PossibleEmpty
+        @MayBeEmpty
         String specifiedRole = commandContext.getArgs().get(1).toUpperCase();
 
         if (isRoleExists(specifiedRole)) {
@@ -285,11 +285,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
             List<Map<String, Object>> users = mapper.readValue(usersDataFile, new TypeReference<>() {
             });
 
-            for (Map<String,Object> user : users) {
-                if (user.get("username").equals(username)) {
-                    user.replace("userRole",role.toString());
-                }
-            }
+            users.stream().filter(user -> user.get("username").equals(username)).forEach(user -> user.replace("userRole", role.toString()));
             mapper.writerWithDefaultPrettyPrinter().writeValue(usersDataFile, users);
         } catch (IOException e) {
             server.getServerLogger().error(e.getMessage());

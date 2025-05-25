@@ -13,13 +13,10 @@ import com.habbashx.tcpserver.socket.Server;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
@@ -158,7 +155,6 @@ public final class CommandManager {
                 commandExecutor.getCooldownManager().setCooldownTime(cooldownTime);
                 if (commandSender instanceof UserHandler userHandler) {
 
-
                     if (permissionValue == 0X00 || userHandler.hasPermission(permissionValue) || userHandler.hasPermission(0X0EFA)) {
 
                         if (!commandExecutor.getCooldownManager().isOnCooldown(senderName)) {
@@ -207,6 +203,7 @@ public final class CommandManager {
             commandExecutor.execute(commandContext);
         }
     }
+
     private void sendMessage(CommandSender commandSender, String message){
 
         if (commandSender instanceof UserHandler userHandler) {
@@ -258,11 +255,8 @@ public final class CommandManager {
         if (executor != null){
             final Command commandInformation = executor.getClass().getAnnotation(Command.class);
 
-            if (0 < commandInformation.aliases().length) {
-                for (String alias : commandInformation.aliases()) {
-                    executors.remove(alias);
-                }
-            }
+            if (0 < commandInformation.aliases().length) Arrays.stream(commandInformation.aliases())
+                    .forEach(executors::remove);
             executors.remove(command);
             return true;
         } else {
@@ -288,12 +282,7 @@ public final class CommandManager {
      * @return a list of command names that have been registered with the system.
      */
     public @NotNull List<String> getAllCommands() {
-
-        final List<String> command = new ArrayList<>();
-        for (final Map.Entry<String,CommandExecutor> commandExecutorEntry :executors.entrySet()) {
-            command.add(commandExecutorEntry.getKey());
-        }
-        return command;
+        return new ArrayList<>(executors.keySet());
     }
 
     /**
@@ -303,11 +292,7 @@ public final class CommandManager {
      */
     public @NotNull List<String> getAllExecutors() {
 
-        final List<String> executorList = new ArrayList<>();
-        for (final Map.Entry<String, CommandExecutor> commandExecutorEntry : executors.entrySet()) {
-            executorList.add(commandExecutorEntry.getKey());
-        }
-        return executorList;
+        return new ArrayList<>(executors.keySet());
     }
 
 }

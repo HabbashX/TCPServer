@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
@@ -104,7 +106,7 @@ public final class BanCommandManager {
             for (String user : bannedUsers) {
                 if (user.equals(username)) {
                     bannedUsers.remove(username);
-                    sendMessage(commandSender, LIME_GREEN+"user un banned successfully."+RESET);
+                    sendMessage(commandSender, LIME_GREEN + "user un banned successfully." + RESET);
                     for (String u : bannedUsers) {
                         if (u != null) {
                             if (!u.equals(username)) {
@@ -136,14 +138,7 @@ public final class BanCommandManager {
      */
     public boolean isUserBanned(String username) {
 
-        for (String user : getBannedUsers()) {
-            if (user != null) {
-                if (username.equals(user)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return getBannedUsers().stream().filter(Objects::nonNull).anyMatch(username::equals);
     }
 
     /**

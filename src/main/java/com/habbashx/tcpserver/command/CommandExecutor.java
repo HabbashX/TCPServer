@@ -1,8 +1,10 @@
 package com.habbashx.tcpserver.command;
 
-import com.habbashx.tcpserver.command.configuration.JsonConfiguration;
+import com.habbashx.tcpserver.configuration.Configuration;
+import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.socket.Server;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an abstract base class for executing commands in the system.
@@ -33,22 +35,32 @@ public abstract class CommandExecutor {
      */
     private final CooldownManager cooldownManager = new CooldownManager();
 
-    public JsonConfiguration loadConfiguration(Server server) {
+    /**
+     * Loads the configuration file associated with the command and initializes
+     * a JSON-based configuration object. The configuration file path is derived
+     * from the {@link Command} annotation of the class.
+     *
+     * @param server the server instance used to provide context or logging during
+     *               the configuration loading process.
+     * @return a {@link JsonConfiguration} object representing the loaded configuration,
+     *         which enables interaction with configuration data stored in a JSON file.
+     */
+    public Configuration loadConfiguration(Server server) {
 
-        String configFile = getConfigFile();
-
+        final String configFile = getConfigFile();
+        assert configFile != null;
         return new JsonConfiguration(configFile,server);
     }
 
     /**
      * Retrieves the configuration file path specified in the {@link Command} annotation
-     * applied to the class. The configuration file path is used to load command-specific
-     * settings.
+     * applied to the current class. This method accesses the annotation's `configFile`
+     * property and returns its value.
      *
-     * @return the configuration file path defined in the {@link Command#configFile()} attribute
-     * of the annotation applied to the current class.
+     * @return the configuration file path as a {@link String}, or {@code null} if the
+     *         `configFile` property is not specified or the annotation is not present.
      */
-    private String getConfigFile() {
+    private @Nullable String getConfigFile() {
         return this.getClass().getAnnotation(Command.class).configFile();
     }
 
