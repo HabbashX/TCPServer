@@ -4,18 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.annotation.InjectPrefix;
 import com.habbashx.injector.PropertyInjector;
-import com.habbashx.tcpserver.command.defaultcommand.BanCommand;
-import com.habbashx.tcpserver.command.defaultcommand.ChangeRoleCommand;
-import com.habbashx.tcpserver.command.defaultcommand.HelpCommand;
-import com.habbashx.tcpserver.command.defaultcommand.InfoCommand;
-import com.habbashx.tcpserver.command.defaultcommand.ListUserCommand;
-import com.habbashx.tcpserver.command.defaultcommand.MuteCommand;
-import com.habbashx.tcpserver.command.defaultcommand.NicknameCommand;
-import com.habbashx.tcpserver.command.defaultcommand.PrivateMessageCommand;
+import com.habbashx.tcpserver.command.defaultcommand.*;
 
-import com.habbashx.tcpserver.command.defaultcommand.UnBanCommand;
-import com.habbashx.tcpserver.command.defaultcommand.UnMuteCommand;
-import com.habbashx.tcpserver.command.defaultcommand.UserDetailsCommand;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.command.manager.CommandManager;
 
@@ -27,6 +17,7 @@ import com.habbashx.tcpserver.event.manager.EventManager;
 
 import com.habbashx.tcpserver.handler.UserHandler;
 
+import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.handler.console.ServerConsoleHandler;
 
 import com.habbashx.tcpserver.listener.handler.AuthenticationEventHandler;
@@ -60,7 +51,6 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -71,10 +61,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -98,7 +85,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Implements {@code Runnable} for running the server inside a thread and
  * {@code Closeable} for ensuring proper resource cleanup.
  */
-public final class Server implements Runnable, Closeable {
+public final class Server implements Runnable {
 
     /**
      * Represents an SSL server socket for securely accepting client connections.
@@ -122,12 +109,12 @@ public final class Server implements Runnable, Closeable {
      */
     private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     /**
-     * A thread-safe list of UserHandler objects representing active connections.
+     * A thread-safe list of ConnectionHandler objects representing active connections.
      * The list is synchronized to ensure safe concurrent access and modifications
      * from multiple threads. Each entry in the list corresponds to an individual
      * user or client connection managed by the application.
      */
-    private final List<UserHandler> connections = Collections.synchronizedList(new ArrayList<>());
+    private final List<ConnectionHandler> connections = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * The eventManager is responsible for managing and dispatching events
@@ -251,6 +238,8 @@ public final class Server implements Runnable, Closeable {
      */
     private Authentication authentication = new DefaultAuthentication(this);
 
+    private final ServerMemoryMonitor serverMemoryMonitor = new ServerMemoryMonitor();
+
     /**
      * Indicates whether the server is currently running.
      * This flag is used to control the server's operational state.
@@ -326,12 +315,14 @@ public final class Server implements Runnable, Closeable {
             ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
             threadPool.execute(serverConsoleHandler);
             VersionChecker.checkProjectVersion(this);
-            while (running) {
-                SSLSocket user = (SSLSocket) serverSocket.accept();
-                user.setReuseAddress(serverSocket.getReuseAddress());
-                UserHandler userHandler = new UserHandler(user,this);
-                threadPool.execute(userHandler);
-                connections.add(userHandler);
+            if (running) {
+                do {
+                    SSLSocket user = (SSLSocket) serverSocket.accept();
+                    user.setReuseAddress(serverSocket.getReuseAddress());
+                    UserHandler userHandler = new UserHandler(user, this);
+                    threadPool.execute(userHandler);
+                    connections.add(userHandler);
+                } while (running);
             }
         } catch (IOException e) {
             serverLogger.error(e.getMessage());
@@ -440,6 +431,7 @@ public final class Server implements Runnable, Closeable {
         commandManager.registerCommand(new UserDetailsCommand(this));
         commandManager.registerCommand(new InfoCommand());
         commandManager.registerCommand(new NicknameCommand());
+        commandManager.registerCommand(new ServerMemoryUsageCommand(this));
 
     }
 
@@ -453,16 +445,17 @@ public final class Server implements Runnable, Closeable {
      * @param message the message to broadcast to all connected users
      */
     public void broadcast(String message) {
-        for (final UserHandler user : getConnections()) {
-            ReentrantLock reentrantLock = user.getReentrantLock();
-            reentrantLock.lock();
-
-            try {
-                user.sendMessage(message);
-            } finally {
-                reentrantLock.unlock();
-            }
-        }
+        getConnections().stream()
+                .filter(connectionHandler -> connectionHandler instanceof UserHandler)
+                .map(connectionHandler -> (UserHandler) connectionHandler).forEach(user -> {
+                    ReentrantLock reentrantLock = user.getReentrantLock();
+                    reentrantLock.lock();
+                    try {
+                        user.sendMessage(message);
+                    } finally {
+                        reentrantLock.unlock();
+                    }
+        });
     }
 
     public void setAuthentication(Authentication authentication) {
@@ -473,7 +466,7 @@ public final class Server implements Runnable, Closeable {
         return serverSocket;
     }
 
-    public List<UserHandler> getConnections() {
+    public List<ConnectionHandler> getConnections() {
         return connections;
     }
 
@@ -517,6 +510,10 @@ public final class Server implements Runnable, Closeable {
         return authentication;
     }
 
+    public ServerMemoryMonitor getServerMemoryMonitor() {
+        return serverMemoryMonitor;
+    }
+
     /**
      * Gracefully shuts down the server, ensuring all running resources are properly closed.
      *
@@ -538,10 +535,6 @@ public final class Server implements Runnable, Closeable {
      * Preconditions:
      * - This method is typically invoked when the server needs to shut down either intentionally
      *   (e.g., via a shutdown signal) or due to an unexpected exception.
-     *
-     * Postconditions:
-     * - All server resources, including sockets, thread pools, and user connections, are released.
-     * - The server no longer accepts or processes client connections.
      */
     public void shutdown() {
         try {
@@ -560,15 +553,14 @@ public final class Server implements Runnable, Closeable {
             if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
                 threadPool.shutdownNow();
             }
-            connections.forEach(UserHandler::shutdown);
+
+            connections.stream().filter(connection -> connection instanceof UserHandler).map(connection -> (UserHandler) connection).forEach(UserHandler::shutdown);
 
             serverLogger.warning("server shutdown");
         } catch (IOException  | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-
-
 
     /**
      * Initializes a shutdown hook for the server.
@@ -637,46 +629,10 @@ public final class Server implements Runnable, Closeable {
         }
     }
 
-    /**
-     * Closes the server and releases all associated resources. This method ensures that
-     * the server socket is properly closed, the thread pool is shut down, and all active
-     * user connections are terminated. It also logs a message indicating that the server
-     * has been shut down.
-     *
-     * @throws IOException if an I/O error occurs when closing the server socket.
-     */
-    @Override
-    public void close() throws IOException {
-
-        running = false;
-        if (serverSocket != null) {
-            if (!serverSocket.isClosed()) {
-                serverSocket.close();
-            }
-        }
-
-        if (!threadPool.isShutdown()) {
-            threadPool.shutdown();
-        }
-
-        try {
-            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        connections.forEach(UserHandler::shutdown);
-        serverLogger.warning("server is shutdown");
-    }
-
     public static void main(String[] args) {
-        try (Server server = new Server()) {
-            server.run();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Server server = new Server();
+
+        server.run();
     }
 
 
@@ -729,7 +685,7 @@ public final class Server implements Runnable, Closeable {
         public ServerDataManager(@NotNull Server server) {
             server.injectServerSettings();
             this.server = server;
-            String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
+            final String authType = ServerUtils.getAuthStorageType(server).toUpperCase();
             authStorageType = AuthStorageType.valueOf(authType);
             userDao = new UserDao(server);
         }
@@ -744,18 +700,13 @@ public final class Server implements Runnable, Closeable {
          *         or null if no such user is currently online.
          */
         public @Nullable UserHandler getOnlineUserByUsername(String username) {
+
             return server.getConnections()
                     .stream()
-                    .filter(e -> {
-                        if (e.getUserDetails().getUsername() != null) {
-                            return e.getUserDetails().getUsername().equals(username);
-                        } else {
-                            return false;
-                        }
-
-                    })
-                    .findFirst()
-                    .orElse(null);
+                    .filter(connectionHandler -> connectionHandler instanceof UserHandler)
+                    .map(connectionHandler -> (UserHandler) connectionHandler)
+                    .filter(userHandler -> userHandler.getUserDetails().getUsername()
+                            .equals(username)).findFirst().orElse(null);
         }
 
         /**
@@ -772,7 +723,9 @@ public final class Server implements Runnable, Closeable {
         public @Nullable UserHandler getOnlineUserById(String id) {
             return server.getConnections()
                     .stream()
-                    .filter(e -> e.getUserDetails().getUserID().equals(id))
+                    .filter(connectionHandler -> connectionHandler instanceof UserHandler)
+                    .map(connectionHandler -> (UserHandler) connectionHandler)
+                    .filter(userHandler -> userHandler.getUserDetails().getUserID().equals(id))
                     .findFirst()
                     .orElse(null);
         }
@@ -883,23 +836,18 @@ public final class Server implements Runnable, Closeable {
                 List<Map<String,Object>> users = mapper.readValue(new File("data/users.json"), new TypeReference<>() {});
 
                 if (users != null) {
-                    for (Map<String, Object> user : users) {
-
-                        if (user != null) {
-                            if (user.get(element).equals(specific)) {
-
-                                return new UserDetails().builder()
-                                        .userIP((String) user.get("userIP"))
-                                        .userID((String) user.get("userID"))
-                                        .userRole(Role.valueOf((String) user.get("userRole")))
-                                        .userEmail((String) user.get("userEmail"))
-                                        .username((String) user.get(("username")))
-                                        .phoneNumber((String) user.get("phoneNumber"))
-                                        .activeAccount((boolean) user.get("isActiveAccount"))
-                                        .build();
-                            }
-                        }
-                    }
+                    return users.stream()
+                            .filter(Objects::nonNull)
+                            .filter(user -> user.get(element).equals(specific)).findFirst()
+                            .map(user -> new UserDetails().builder()
+                            .userIP((String) user.get("userIP"))
+                            .userID((String) user.get("userID"))
+                            .userRole(Role.valueOf((String) user.get("userRole")))
+                            .userEmail((String) user.get("userEmail"))
+                            .username((String) user.get(("username")))
+                            .phoneNumber((String) user.get("phoneNumber"))
+                            .activeAccount((boolean) user.get("isActiveAccount"))
+                            .build()).orElse(null);
                 }
                 return null;
             } catch (IOException e) {
@@ -1089,6 +1037,74 @@ public final class Server implements Runnable, Closeable {
             }
             return null;
         }
+    }
+
+    /**
+     * The {@code ServerMemoryMonitor} class is a utility class designed to monitor the memory usage
+     * of the server. It provides methods to retrieve information about the current memory status
+     * including total memory, free memory, and maximum memory available to the Java Virtual Machine (JVM).
+     *
+     * This class accesses the {@link Runtime} instance of the JVM to obtain memory-related data.
+     */
+    public static final class ServerMemoryMonitor {
+
+        /**
+         * Holds a reference to the {@link Runtime} instance associated with the current Java Virtual Machine (JVM).
+         * This instance is used to retrieve memory-related information, such as total memory, free memory,
+         * and maximum memory, allowing for efficient monitoring of the server's resource usage.
+         */
+        private final Runtime runtime = Runtime.getRuntime();
+
+        /**
+         * Retrieves the total memory currently allocated to the Java Virtual Machine (JVM).
+         *
+         * @return The total memory in bytes allocated to the JVM.
+         */
+        public long getMemoryUsage() {
+            return runtime.totalMemory();
+        }
+
+        /**
+         * Retrieves the amount of free memory available in the Java Virtual Machine (JVM).
+         *
+         * This method accesses the {@link Runtime} instance of the JVM to determine
+         * the amount of memory that is currently available for new object allocation.
+         *
+         * @return The amount of free memory in bytes available to the JVM.
+         */
+        public long getFreeMemory() {
+            return runtime.freeMemory();
+        }
+
+        /**
+         * Retrieves the maximum amount of memory that the Java Virtual Machine (JVM) will attempt to use.
+         *
+         * This method accesses the {@link Runtime} instance to fetch the maximum memory limit configured
+         * for the JVM. The value returned serves as an upper bound for the memory that the JVM can allocate
+         * but is not guaranteed to be fully available depending on the system's resource constraints.
+         *
+         * @return The maximum memory in bytes the JVM will attempt to use.
+         */
+        public long getMaxMemory() {
+            return runtime.maxMemory();
+        }
+
+        /**
+         * Formats a given number of bytes into a human-readable string using appropriate units
+         * such as KB, MB, GB, etc.
+         *
+         * @param bytes The size in bytes to be formatted.
+         * @return A formatted string representing the size in a human-readable format with two decimal
+         *         precision, including unit suffix (e.g., "1.23 KB").
+         */
+        public @NotNull String formatBytes(long bytes) {
+            int unit = 1024;
+            if (bytes < unit) return bytes + " B";
+            int exp = (int) (Math.log(bytes) / Math.log(unit));
+            char pre = "KMGTPE".charAt(exp - 1);
+            return String.format("%.2f %sB", bytes / Math.pow(unit, exp), pre);
+        }
+
     }
 }
 
