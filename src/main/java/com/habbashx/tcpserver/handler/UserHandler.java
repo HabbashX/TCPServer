@@ -4,6 +4,7 @@ import com.habbashx.tcpserver.command.CommandSender;
 
 import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
+import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.security.Authentication;
 import com.habbashx.tcpserver.socket.Server;
 import com.habbashx.tcpserver.user.UserDetails;
@@ -47,7 +48,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  * Thread-safety is managed internally via the use of locking in the parent class
  * and proper resource cleanup upon shutting down the connection.
  */
-public final class UserHandler extends CommandSender implements Runnable {
+public final class UserHandler extends CommandSender implements Runnable , ConnectionHandler {
 
     private final Server server;
 
@@ -186,24 +187,24 @@ public final class UserHandler extends CommandSender implements Runnable {
 
         try {
             sendMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE,BLACK,RESET,BG_BRIGHT_BLUE,BLACK,RESET));
-            String choice = input.readLine();
+            final String choice = input.readLine();
             switch(choice) {
                 case "register" -> {
                     sendMessage("enter username");
-                    String username = input.readLine();
+                    final String username = input.readLine();
                     sendMessage("enter password");
-                    String password = input.readLine();
+                    final String password = input.readLine();
                     sendMessage("enter email");
-                    String email = input.readLine();
+                    final String email = input.readLine();
                     sendMessage("enter phone number");
-                    String phoneNumber = input.readLine();
+                    final String phoneNumber = input.readLine();
                     authentication.register(username,password,email,phoneNumber,this);
                 }
                 case "login" -> {
                     sendMessage("enter username");
-                    String username = input.readLine();
+                    final String username = input.readLine();
                     sendMessage("enter password");
-                    String password = input.readLine();
+                    final String password = input.readLine();
                     authentication.login(username,password,this);
                 }
                 default -> {
@@ -292,7 +293,7 @@ public final class UserHandler extends CommandSender implements Runnable {
             assert userSocket != null;
 
             server.getConnections().remove(this);
-            String username = userDetails.getUsername();
+            final String username = userDetails.getUsername();
 
             if (username != null) {
                 server.getEventManager().triggerEvent(new UserLeaveEvent(username,this));
@@ -330,5 +331,10 @@ public final class UserHandler extends CommandSender implements Runnable {
     @Override
     public int hashCode() {
         return Objects.hashCode(userDetails);
+    }
+
+    @Override
+    public String getHandlerType() {
+        return "UserHandler";
     }
 }
