@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
  * This class is immutable and thread-safe since it contains no modifiable state.
  *
  * Responsibilities:
- * - Implements the primary logic of broadcasting messages by overriding the {@link DelayListener#onEvent(Object)} method.
+ * - Implements the primary logic of broadcasting messages by overriding the onEvent method.
  * - Coordinates with the {@link BroadcastEvent}, extracting necessary details to perform the broadcasting action.
  * - Works in conjunction with the delay event management system for scheduled processing of events.
  */

@@ -72,12 +72,12 @@ public final class DefaultChatHandler implements Listener<UserChatEvent> {
 
     private void sendMessage(@NotNull UserChatEvent userChatEvent) {
 
-            String prefix = userChatEvent.getUser().getUserDetails().getUserRole().getPrefix();
-            String username = userChatEvent.getUsername();
+        final String prefix = userChatEvent.getUser().getUserDetails().getUserRole().getPrefix();
+        final String username = userChatEvent.getUsername();
 
-            server.broadcast(prefix +username + RESET+": "+userChatEvent.getMessage());
-            System.out.println(prefix +username + RESET+": "+userChatEvent.getMessage());
-            userChatEvent.applyCooldown();
+        server.broadcast(prefix +username + RESET+": "+userChatEvent.getMessage());
+        System.out.println(prefix +username + RESET+": "+userChatEvent.getMessage());
+        userChatEvent.applyCooldown();
 
     }
 }

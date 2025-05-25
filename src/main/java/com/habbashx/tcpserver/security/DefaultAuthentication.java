@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.tcpserver.event.AuthenticationEvent;
 import com.habbashx.tcpserver.handler.UserHandler;
 
+import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.socket.Server;
 
 import com.habbashx.tcpserver.user.UserDetails;
@@ -27,6 +28,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
@@ -141,8 +143,8 @@ public final class DefaultAuthentication extends Authentication {
 
     public DefaultAuthentication(Server server) {
         this.server = server;
-        String authType = this.server.getServerSettings().getAuthStorageType().toUpperCase();
-        String fileType= authType.toLowerCase();
+        final String authType = this.server.getServerSettings().getAuthStorageType().toUpperCase();
+        final String fileType= authType.toLowerCase();
         authStorageType = AuthStorageType.valueOf(authType);
         file = new File("data/users.%s".formatted(fileType));
     }
@@ -162,7 +164,7 @@ public final class DefaultAuthentication extends Authentication {
     @Override
     public void register(@NotNull String username ,@NotNull String password ,String email, String phoneNumber ,@NotNull UserHandler userHandler) {
 
-        ReentrantLock reentrantLock = userHandler.getReentrantLock();
+        final ReentrantLock reentrantLock = userHandler.getReentrantLock();
         reentrantLock.lock();
 
         try {
@@ -217,7 +219,7 @@ public final class DefaultAuthentication extends Authentication {
     @Override
     public void login(@NotNull String username, @NotNull String password ,@NotNull UserHandler userHandler) {
 
-        ReentrantLock reentrantLock = userHandler.getReentrantLock();
+        final ReentrantLock reentrantLock = userHandler.getReentrantLock();
 
         reentrantLock.lock();
         try {
@@ -393,9 +395,9 @@ public final class DefaultAuthentication extends Authentication {
 
         if (!isUserConnected(username)) {
             try (final Reader reader = new FileReader("data/users.csv")) {
-                Iterable<CSVRecord> users = CSVFormat.DEFAULT.parse(reader);
+                final Iterable<CSVRecord> users = CSVFormat.DEFAULT.parse(reader);
 
-                for (CSVRecord record : users) {
+                for (final CSVRecord record : users) {
                     if (record.get("username").equals(username)) {
                         if (BCrypt.checkpw(password, record.get("password"))) {
                             server.getEventManager().triggerEvent(new AuthenticationEvent(userHandler, true, false));
@@ -475,7 +477,7 @@ public final class DefaultAuthentication extends Authentication {
                 final List<Map<String, Object>> users = mapper.readValue(file, new TypeReference<>() {
                 });
 
-                for (Map<String, Object> user : users) {
+                for (final Map<String, Object> user : users) {
 
                     if (user.get("username").equals(username)) {
                         if (BCrypt.checkpw(password, (String) user.get("password"))) {
@@ -527,15 +529,12 @@ public final class DefaultAuthentication extends Authentication {
      */
     private boolean isUserConnected(String username) {
 
-        for (final UserHandler user : server.getConnections()) {
-            final String name = user.getUserDetails().getUsername();
-            if (name != null) {
-                if (name.equals(username)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return server.getConnections().stream()
+                .filter(connectionHandler -> connectionHandler instanceof UserHandler)
+                .map(connectionHandler -> (UserHandler) connectionHandler)
+                .map(user -> user.getUserDetails().getUsername())
+                .filter(Objects::nonNull)
+                .anyMatch(name -> name.equals(username));
     }
 
     public Server getServer() {

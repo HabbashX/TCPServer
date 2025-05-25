@@ -52,7 +52,7 @@ public final class DefaultServerConsoleChatHandler implements Listener<ServerCon
 
     @Override
     public void onEvent(@NotNull ServerConsoleChatEvent event) {
-        String message = event.getMessage();
+        final String message = event.getMessage();
         System.out.printf("%s[Server]%s: %s%s\n", BRIGHT_RED, GRAY, RESET, message);
         server.broadcast("%s[Server]%s: %s%s".formatted(BRIGHT_RED, GRAY, RESET, message));
     }
