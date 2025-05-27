@@ -1,63 +1,40 @@
 package com.habbashx.tcpserver.listener;
 
-import com.habbashx.tcpserver.configuration.Configuration;
-import com.habbashx.tcpserver.configuration.JsonConfiguration;
+import com.habbashx.tcpserver.delayevent.DelayEvent;
 import com.habbashx.tcpserver.event.Event;
-import com.habbashx.tcpserver.event.handler.EventHandler;
-import com.habbashx.tcpserver.socket.Server;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a generic listener interface for handling events of a specific type.
- * Classes implementing this interface are responsible for performing actions in
- * response to the occurrence of events.
+ * The Listener interface represents a generic contract for handling events of a specific type.
+ * It serves as a base abstraction for all event listeners, allowing the implementation of custom
+ * event-handling logic for any event subtype.
  *
- * This is a parameterized interface where the type parameter {@code E} extends
- * the {@link Event} class, ensuring type safety for the events handled by the listener.
+ * @param <E> the type of event that this listener handles; must extend from the base {@link Event} class
  *
  * Responsibilities:
- * - Provide a method for processing events of the specified type.
- * - Serve as the foundation for creating specific event-handling implementations.
+ * - Defines the behavior for responding to an event via the {@code onEvent(E event)} method.
+ * - Allows implementations to specialize event handling for various types of events.
  *
- * Design Notes:
- * - The {@code Listener} interface enables a decoupled architecture by allowing
- *   event producers and consumers to interact via this common interface without
- *   being tightly coupled.
+ * Key Method:
+ * - {@code onEvent(E event)}:
+ *   - This method is invoked when an event of type {@code E} occurs.
+ *   - Implementing classes should override this method to provide the specific event-handling logic.
  *
- * Type Parameter:
- * - {@code E}: The type of event that this listener can handle. It must be a subclass of {@link Event}.
- *
- * Method Summary:
- * - {@code void onEvent(E event)}:
- *   Defines the action to be performed when an event of type {@code E} occurs.
- *
- * Contract:
- * - Implementing classes are expected to define the behavior of event handling in
- *   the {@code onEvent} method depending on the specific event type.
+ * Design Details:
+ * - The Listener interface is parameterized with a generic type, ensuring type safety when handling events.
+ * - This interface extends {@link EventListenerConfiguration}, which may provide additional configuration
+ *   options or behaviors for event listeners.
  *
  * Usage:
- * - This interface is commonly used within event-driven systems where specialized
- *   handlers respond to various system events.
+ * - Implementing classes must specify the type of event they handle by defining the generic parameter {@code E}.
+ * - The implementation of the {@code onEvent(E event)} method contains the custom logic for processing the specified event type.
  *
- * Example Implementations:
- * - AuthenticationEventHandler
- * - DefaultUserJoinHandler
- * - DefaultMutedUserHandler
- * - DefaultUserLeaveHandler
- * - DefaultUserExecuteCommandHandler
+ * Thread-Safety:
+ * - The thread-safety of the implementation depends on the specific use case and event system.
+ * - Implementers should consider synchronization or concurrency mechanisms if required.
  */
-public interface Listener<E extends Event> {
+public interface Listener<E extends Event> extends EventListenerConfiguration {
 
     void onEvent(E event);
 
-    default Configuration loadConfiguration(Server server) {
-        final String configFile = getConfigFile();
-        assert configFile != null;
-        return new JsonConfiguration(configFile ,server);
-    }
-
-    default @Nullable String getConfigFile() {
-        return this.getClass().getAnnotation(EventHandler.class).configFile();
-    }
-
+    void onEvent(DelayEvent event);
 }
