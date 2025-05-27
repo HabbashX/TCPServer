@@ -33,4 +33,13 @@ public interface ConnectionHandler {
      * @return a string representation of the handler type.
      */
     String getHandlerType();
+
+    /**
+     * Retrieves a description of the handler. The description typically provides
+     * meaningful information about the purpose or functionality of the handler.
+     *
+     * @return a string containing the description of the handler.
+     */
+    String getHandlerDescription();
+
 }
