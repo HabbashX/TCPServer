@@ -1,5 +1,6 @@
 package com.habbashx.tcpserver.command;
 
+import com.habbashx.tcpserver.configuration.CommandConfiguration;
 import com.habbashx.tcpserver.configuration.Configuration;
 import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
@@ -36,33 +37,18 @@ public abstract class CommandExecutor {
     private final CooldownManager cooldownManager = new CooldownManager();
 
     /**
-     * Loads the configuration file associated with the command and initializes
-     * a JSON-based configuration object. The configuration file path is derived
-     * from the {@link Command} annotation of the class.
+     * Stores the configuration settings specific to the command being executed. This configuration
+     * is loaded based on the command's metadata, such as the file path defined in the {@link Command}
+     * annotation of the implementing command class.
      *
-     * @param server the server instance used to provide context or logging during
-     *               the configuration loading process.
-     * @return a {@link JsonConfiguration} object representing the loaded configuration,
-     *         which enables interaction with configuration data stored in a JSON file.
-     */
-    public Configuration loadConfiguration(Server server) {
-
-        final String configFile = getConfigFile();
-        assert configFile != null;
-        return new JsonConfiguration(configFile,server);
-    }
-
-    /**
-     * Retrieves the configuration file path specified in the {@link Command} annotation
-     * applied to the current class. This method accesses the annotation's `configFile`
-     * property and returns its value.
+     * The configuration includes details and parameters necessary for the command's execution,
+     * such as cooldowns, permissions, and other customizable behaviors. This instance ensures
+     * that all commands derive their configurations consistently from a central system.
      *
-     * @return the configuration file path as a {@link String}, or {@code null} if the
-     *         `configFile` property is not specified or the annotation is not present.
+     * Declared as final to ensure immutability and consistency throughout the lifecycle of
+     * the command executor.
      */
-    private @Nullable String getConfigFile() {
-        return this.getClass().getAnnotation(Command.class).configFile();
-    }
+    private final CommandConfiguration commandConfiguration = new CommandConfiguration();
 
    /**
     * Executes the command logic using the provided {@link CommandContext}.
@@ -77,4 +63,17 @@ public abstract class CommandExecutor {
     public CooldownManager getCooldownManager() {
         return cooldownManager;
     }
+
+    /**
+     * Retrieves the {@link CommandConfiguration} instance associated with this command executor.
+     * This configuration object provides access to command-specific settings, including properties
+     * defined in external configuration files as specified by the {@link Command} annotation.
+     *
+     * @return the {@link CommandConfiguration} instance used to manage and access the
+     *         configuration settings for this command executor.
+     */
+    public CommandConfiguration getCommandConfiguration() {
+        return commandConfiguration;
+    }
+
 }
