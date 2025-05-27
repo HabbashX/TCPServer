@@ -6,8 +6,10 @@ import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
 import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.security.Authentication;
+import com.habbashx.tcpserver.security.Permissible;
 import com.habbashx.tcpserver.socket.Server;
 import com.habbashx.tcpserver.user.UserDetails;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLSocket;
@@ -48,7 +50,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  * Thread-safety is managed internally via the use of locking in the parent class
  * and proper resource cleanup upon shutting down the connection.
  */
-public final class UserHandler extends CommandSender implements Runnable , ConnectionHandler {
+public final class UserHandler extends CommandSender implements Runnable , ConnectionHandler , Permissible {
 
     private final Server server;
 
@@ -73,7 +75,6 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
      * and permissions.
      */
     private UserDetails userDetails;
-
 
     /**
      * A {@link BufferedReader} instance used for reading input from the user's socket connection.
@@ -227,19 +228,15 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
                 }
             }
         } catch (IOException e) {
-            if (!userSocket.isClosed()) {
-                shutdown();
-            }
-
-            try {
-                input.close();
-                output.close();
-            } catch (IOException ignore){
-
-            }
+            shutdown();
         }
     }
 
+    /**
+     * Sends a message to the output stream associated with this handler.
+     *
+     * @param message the message to be sent; must not be null
+     */
     public void sendMessage(String message) {
         output.println(message);
     }
@@ -268,6 +265,7 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
         return server;
     }
 
+    @Override
     public boolean hasPermission(int permission) {
         return userDetails.getUserRole().getPermissions().contains(permission);
     }
@@ -317,11 +315,6 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
     }
 
     @Override
-    public boolean isConsole() {
-        return false;
-    }
-
-    @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof UserHandler that)) return false;
@@ -333,8 +326,15 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
         return Objects.hashCode(userDetails);
     }
 
+    @Contract(pure = true)
     @Override
-    public String getHandlerType() {
+    public @NotNull String getHandlerType() {
         return "UserHandler";
+    }
+
+    @Contract(pure = true)
+    @Override
+    public @NotNull String getHandlerDescription() {
+        return "";
     }
 }

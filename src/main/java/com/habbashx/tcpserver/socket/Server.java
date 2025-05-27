@@ -315,6 +315,7 @@ public final class Server implements Runnable {
             ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
             threadPool.execute(serverConsoleHandler);
             VersionChecker.checkProjectVersion(this);
+
             if (running) {
                 do {
                     SSLSocket user = (SSLSocket) serverSocket.accept();
