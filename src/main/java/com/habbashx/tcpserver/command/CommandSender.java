@@ -25,14 +25,6 @@ public sealed abstract class CommandSender permits UserHandler, ServerConsoleHan
     private final ReentrantLock reentrantLock = new ReentrantLock();
 
     /**
-     * Determines if the current command sender instance represents a console.
-     * This method is used to identify whether the command source is console-based or user-based.
-     *
-     * @return {@code true} if the command sender is the console, {@code false} otherwise.
-     */
-    public abstract boolean isConsole();
-
-    /**
      * Prints a message to the appropriate output destination depending on the type of CommandSender.
      * If the current instance is of type UserHandler, the message will be sent to the user's client.
      * If the current instance is of type ServerConsoleHandler, the message will be printed to the server console.
