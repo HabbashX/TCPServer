@@ -1,22 +1,20 @@
 package com.habbashx.tcpserver.handler.console;
 
+import com.habbashx.tcpserver.scheduler.TaskRunnable;
 import com.habbashx.tcpserver.socket.User;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 /**
- * Handles user console input by continuously reading input from the console and forwarding it
- * to the associated user's output stream.
+ * Handles user input from the console and forwards it to the associated output stream.
  *
- * This class is designed to facilitate real-time interaction from the console with a given user,
- * forwarding messages in a separate thread to ensure asynchronous behavior. It also provides
- * methods to safely close resources when input handling is no longer needed.
+ * This class implements the `Runnable` interface and is designed to manage interaction with the user via
+ * the system's standard input. It captures messages entered by the user from the console in real-time and
+ * directs them to the appropriate output stream defined in the associated `User` object.
  *
- * Implements the {@link Runnable} interface to allow execution in a separate thread and the
- * {@link Closeable} interface to support safe resource cleanup.
+ * The class is intended to run in a separate thread to allow non-blocking, asynchronous operations.
  */
 public final class UserConsoleInputHandler implements Runnable {
 
@@ -26,7 +24,6 @@ public final class UserConsoleInputHandler implements Runnable {
     public UserConsoleInputHandler(User user) {
         super();
         this.user = user;
-
     }
 
     /**
@@ -48,7 +45,6 @@ public final class UserConsoleInputHandler implements Runnable {
     @Override
     public void run() {
         try {
-
             String message;
             while ((message = input.readLine()) != null) {
                 user.getOutput().println(message);
@@ -75,6 +71,7 @@ public final class UserConsoleInputHandler implements Runnable {
     public void closeUserInput() {
 
         try {
+            user.shutdown();
             input.close();
             System.exit(0);
         } catch (IOException e) {
