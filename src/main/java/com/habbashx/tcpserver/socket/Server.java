@@ -61,7 +61,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -86,6 +90,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code Closeable} for ensuring proper resource cleanup.
  */
 public final class Server implements Runnable {
+
+    /**
+     * A singleton instance of the Server class, ensuring only one instance is created
+     * and providing thread-safe access across multiple threads.
+     *
+     * The volatile keyword ensures that changes to the instance variable
+     * are visible to all threads immediately and prevents instruction reordering
+     * by the compiler or runtime.
+     */
+    private static volatile Server instance;
 
     /**
      * Represents an SSL server socket for securely accepting client connections.
@@ -448,7 +462,8 @@ public final class Server implements Runnable {
     public void broadcast(String message) {
         getConnections().stream()
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
-                .map(connectionHandler -> (UserHandler) connectionHandler).forEach(user -> {
+                .map(connectionHandler -> (UserHandler) connectionHandler)
+                .forEach(user -> {
                     ReentrantLock reentrantLock = user.getReentrantLock();
                     reentrantLock.lock();
                     try {
@@ -628,6 +643,24 @@ public final class Server implements Runnable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Provides access to the singleton instance of the Server class.
+     * Ensures that only one instance is created and provides thread-safe access.
+     *
+     * @return the singleton instance of the Server class
+     */
+    public static Server getInstance() {
+
+        if (instance == null) {
+            synchronized (Server.class) {
+                if (instance == null) {
+                    instance = new Server();
+                }
+            }
+        }
+        return instance;
     }
 
     public static void main(String[] args) {
@@ -1067,7 +1100,7 @@ public final class Server implements Runnable {
 
         /**
          * Retrieves the amount of free memory available in the Java Virtual Machine (JVM).
-         *
+         * <p>
          * This method accesses the {@link Runtime} instance of the JVM to determine
          * the amount of memory that is currently available for new object allocation.
          *
@@ -1079,7 +1112,7 @@ public final class Server implements Runnable {
 
         /**
          * Retrieves the maximum amount of memory that the Java Virtual Machine (JVM) will attempt to use.
-         *
+         * <p>
          * This method accesses the {@link Runtime} instance to fetch the maximum memory limit configured
          * for the JVM. The value returned serves as an upper bound for the memory that the JVM can allocate
          * but is not guaranteed to be fully available depending on the system's resource constraints.
@@ -1096,7 +1129,7 @@ public final class Server implements Runnable {
          *
          * @param bytes The size in bytes to be formatted.
          * @return A formatted string representing the size in a human-readable format with two decimal
-         *         precision, including unit suffix (e.g., "1.23 KB").
+         * precision, including unit suffix (e.g., "1.23 KB").
          */
         public @NotNull String formatBytes(long bytes) {
             int unit = 1024;
@@ -1108,5 +1141,3 @@ public final class Server implements Runnable {
 
     }
 }
-
-
