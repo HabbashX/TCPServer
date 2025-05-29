@@ -58,7 +58,7 @@ public final class PrivateMessageCommand extends CommandExecutor {
 
     public PrivateMessageCommand(Server server) {
         this.server = server;
-        this.config = getCommandConfiguration().loadConfiguration(server);
+        this.config = getCommandConfiguration().loadConfiguration(server,this);
     }
 
     @Override
