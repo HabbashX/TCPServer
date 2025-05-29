@@ -1,6 +1,5 @@
 package com.habbashx.tcpserver.listener;
 
-import com.habbashx.tcpserver.delayevent.DelayEvent;
 import com.habbashx.tcpserver.event.Event;
 
 /**
@@ -35,6 +34,4 @@ import com.habbashx.tcpserver.event.Event;
 public interface Listener<E extends Event> extends EventListenerConfiguration {
 
     void onEvent(E event);
-
-    void onEvent(DelayEvent event);
 }
