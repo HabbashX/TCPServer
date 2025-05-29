@@ -1,7 +1,9 @@
 package com.habbashx.tcpserver.configuration;
 
 import com.habbashx.tcpserver.command.Command;
+import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.socket.Server;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -23,9 +25,9 @@ public class CommandConfiguration {
      * @return a {@link JsonConfiguration} object representing the loaded configuration,
      *         which enables interaction with configuration data stored in a JSON file.
      */
-    public Configuration loadConfiguration(Server server) {
+    public Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor) {
 
-        final @Nullable String configFile = this.getClass().getAnnotation(Command.class).configFile();
+        final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
         assert configFile != null;
         return new JsonConfiguration(configFile,server);
     }
