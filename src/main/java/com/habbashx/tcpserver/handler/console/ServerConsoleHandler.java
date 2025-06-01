@@ -2,7 +2,6 @@ package com.habbashx.tcpserver.handler.console;
 
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
 import com.habbashx.tcpserver.command.CommandSender;
-import com.habbashx.tcpserver.security.Permissible;
 import com.habbashx.tcpserver.socket.Server;
 
 import java.io.BufferedReader;
@@ -22,7 +21,7 @@ import java.io.InputStreamReader;
  * its parent class. Additionally, it implements both the {@code Runnable} and {@code Closeable}
  * interfaces, allowing it to run as a separate thread and be safely closed when the server shuts down.
  */
-public final class ServerConsoleHandler extends CommandSender implements Runnable , Permissible {
+public final class ServerConsoleHandler extends CommandSender implements Runnable {
 
     private final Server server;
 
@@ -66,10 +65,5 @@ public final class ServerConsoleHandler extends CommandSender implements Runnabl
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public boolean hasPermission(int permission) {
-        return true;
     }
 }
