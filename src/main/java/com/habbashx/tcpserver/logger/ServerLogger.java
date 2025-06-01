@@ -1,5 +1,6 @@
 package com.habbashx.tcpserver.logger;
 
+import com.habbashx.tcpserver.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.SimpleDateFormat;
@@ -57,8 +58,8 @@ public class ServerLogger {
         log(message,Level.WARNING);
     }
 
-    public void error(String message) {
-        log(message,Level.ERROR);
+    public void error(Exception e) {
+        log(ExceptionUtils.getStackTrace(e),Level.ERROR);
     }
 
     public void monitor(String message) {
