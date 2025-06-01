@@ -186,7 +186,6 @@ public final class User implements Runnable{
             while (running) {
                 userConsoleInputHandler = new UserConsoleInputHandler(this);
                 new Thread(userConsoleInputHandler).start();
-
                 String inMessage;
                 while ((inMessage = input.readLine()) != null) {
                     System.out.println(inMessage);
