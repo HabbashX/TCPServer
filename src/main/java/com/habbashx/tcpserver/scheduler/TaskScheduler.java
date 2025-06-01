@@ -99,20 +99,18 @@ public class TaskScheduler {
     private int schedule(ScheduledExecutorService pool, Runnable task, long delayInTicks, long periodInTicks) {
         if (!running) throw new IllegalStateException("Task scheduler is not running.");
 
-        int taskId = taskIdGenerator.incrementAndGet(); // Generate unique task ID
-        long delayMs = ticksToMs(delayInTicks);         // Convert ticks to milliseconds
+        int taskId = taskIdGenerator.incrementAndGet();
+        long delayMs = ticksToMs(delayInTicks);
         long periodMs = periodInTicks > 0 ? ticksToMs(periodInTicks) : 0;
 
         ScheduledFuture<?> future;
         if (periodMs > 0) {
-            // Repeating task
             future = pool.scheduleAtFixedRate(task, delayMs, periodMs, TimeUnit.MILLISECONDS);
         } else {
-            // Delayed one-time task
             future = pool.schedule(task, delayMs, TimeUnit.MILLISECONDS);
         }
 
-        taskMap.put(taskId, future); // Store task in map
+        taskMap.put(taskId, future);
         return taskId;
     }
 
