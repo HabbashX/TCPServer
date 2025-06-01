@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.tcpserver.event.AuthenticationEvent;
 import com.habbashx.tcpserver.handler.UserHandler;
 
-import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.socket.Server;
 
 import com.habbashx.tcpserver.user.UserDetails;
