@@ -71,7 +71,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-
 /**
  * Represents a secure server that handles client connections, supports SSL/TLS protocols,
  * and manages events, commands, and user connections. The server is designed to be highly
@@ -87,7 +86,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * - Allowing a clean shutdown process to properly release all resources.
  *
  * Implements {@code Runnable} for running the server inside a thread and
- * {@code Closeable} for ensuring proper resource cleanup.
  */
 public final class Server implements Runnable {
 
@@ -340,7 +338,7 @@ public final class Server implements Runnable {
                 } while (running);
             }
         } catch (IOException e) {
-            serverLogger.error(e.getMessage());
+            serverLogger.error(e);
             shutdown();
         }
 
@@ -571,10 +569,9 @@ public final class Server implements Runnable {
             }
 
             connections.stream().filter(connection -> connection instanceof UserHandler).map(connection -> (UserHandler) connection).forEach(UserHandler::shutdown);
-
-            serverLogger.warning("server shutdown");
+            getServerDataManager().getUserDao().closeConnection();
         } catch (IOException  | InterruptedException e) {
-            throw new RuntimeException(e);
+            serverLogger.error(e);
         }
     }
 
@@ -641,7 +638,7 @@ public final class Server implements Runnable {
         try {
             new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH)).inject(this);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            serverLogger.error(e);
         }
     }
 
@@ -816,7 +813,8 @@ public final class Server implements Runnable {
                     case SQL -> getUserDetailsFromDatabase(element, specific);
                 };
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                server.getServerLogger().error(e);
+                return null;
             }
         }
 
@@ -1070,6 +1068,16 @@ public final class Server implements Runnable {
                 }
             }
             return null;
+        }
+
+        public void closeConnection() {
+            try {
+                if (!connection.isClosed()) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                server.getServerLogger().error(e);
+            }
         }
     }
 
