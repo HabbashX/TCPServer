@@ -6,7 +6,7 @@ import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
 import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.security.Authentication;
-import com.habbashx.tcpserver.security.Permissible;
+import com.habbashx.tcpserver.security.NonVolatilePermissionContainer;
 import com.habbashx.tcpserver.socket.Server;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.Contract;
@@ -18,13 +18,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.BG_BRIGHT_BLUE;
-import static com.habbashx.tcpserver.logger.ConsoleColor.BG_ORANGE;
-import static com.habbashx.tcpserver.logger.ConsoleColor.BLACK;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 
 /**
  * Handles user interactions and communication with the server.
@@ -50,7 +49,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  * Thread-safety is managed internally via the use of locking in the parent class
  * and proper resource cleanup upon shutting down the connection.
  */
-public final class UserHandler extends CommandSender implements Runnable , ConnectionHandler , Permissible {
+public final class UserHandler extends CommandSender implements Runnable , ConnectionHandler {
 
     private final Server server;
 
@@ -121,6 +120,8 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
      */
     private final Authentication authentication;
 
+    private final List<Integer> permissions = new ArrayList<>();
+
     /**
      * A boolean variable that indicates whether the {@link UserHandler} instance
      * is actively running its operations.
@@ -187,32 +188,9 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
     public void run() {
 
         try {
-            sendMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE,BLACK,RESET,BG_BRIGHT_BLUE,BLACK,RESET));
-            final String choice = input.readLine();
-            switch(choice) {
-                case "register" -> {
-                    sendMessage("enter username");
-                    final String username = input.readLine();
-                    sendMessage("enter password");
-                    final String password = input.readLine();
-                    sendMessage("enter email");
-                    final String email = input.readLine();
-                    sendMessage("enter phone number");
-                    final String phoneNumber = input.readLine();
-                    authentication.register(username,password,email,phoneNumber,this);
-                }
-                case "login" -> {
-                    sendMessage("enter username");
-                    final String username = input.readLine();
-                    sendMessage("enter password");
-                    final String password = input.readLine();
-                    authentication.login(username,password,this);
-                }
-                default -> {
-                    sendMessage("please register or login");
-                    shutdown();
-                }
-            }
+
+            authenticationRequest();
+
             final int cooldownSecond = Integer.parseInt(server.getServerSettings().getUserChatCooldown());
             final UserChatEvent userChatEvent = new UserChatEvent(userDetails.getUsername(),this,cooldownSecond);
 
@@ -230,6 +208,38 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
         } catch (IOException e) {
             shutdown();
         }
+    }
+
+    private void authenticationRequest() throws IOException {
+        sendMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE,BLACK,RESET,BG_BRIGHT_BLUE,BLACK,RESET));
+        final String choice = input.readLine();
+        switch(choice) {
+            case "register" -> sendRegisterRequest();
+            case "login" -> sendLoginRequest();
+            default -> {
+                sendMessage(RED+"please register or login"+RESET);
+                authenticationRequest();
+            }
+        }
+    }
+    private void sendRegisterRequest() throws IOException{
+        sendMessage("enter username");
+        final String username = input.readLine();
+        sendMessage("enter password");
+        final String password = input.readLine();
+        sendMessage("enter email");
+        final String email = input.readLine();
+        sendMessage("enter phone number");
+        final String phoneNumber = input.readLine();
+        authentication.register(username,password,email,phoneNumber,this);
+    }
+
+    private void sendLoginRequest() throws IOException {
+        sendMessage("enter username");
+        final String username = input.readLine();
+        sendMessage("enter password");
+        final String password = input.readLine();
+        authentication.login(username,password,this);
     }
 
     /**
@@ -268,6 +278,42 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
     @Override
     public boolean hasPermission(int permission) {
         return userDetails.getUserRole().getPermissions().contains(permission);
+    }
+
+    @Override
+    public boolean hasVolatilePermission(int permission) {
+        return permissions.contains(0);
+    }
+
+    @Override
+    public void addPermission(int permission) {
+        permissions.add(permission);
+    }
+
+    @Override
+    public void removePermission(int permission) {
+        permissions.remove(permission);
+    }
+
+    @Override
+    public void addPermissions(List<Integer> permissions) {
+        this.permissions.addAll(permissions);
+    }
+
+    @Override
+    public void removePermissions(List<Integer> permissions) {
+        this.permissions.removeAll(permissions);
+    }
+
+
+    @Override
+    public List<Integer> getHandlerPermissions() {
+        return permissions;
+    }
+
+    @Override
+    public NonVolatilePermissionContainer getNonVolatilePermissionContainer() {
+        return ConnectionHandler.super.getNonVolatilePermissionContainer();
     }
 
     /**
@@ -335,6 +381,6 @@ public final class UserHandler extends CommandSender implements Runnable , Conne
     @Contract(pure = true)
     @Override
     public @NotNull String getHandlerDescription() {
-        return "";
+        return "idk :D";
     }
 }
