@@ -70,7 +70,7 @@ public class DelayEventManager {
             registeredListeners.add(listener);
             sortListeners();
         } else {
-            server.getServerLogger().error("""
+            server.getServerLogger().warning("""
                     the listener %s is missing the annotation @DelayEventHandler
                     Please ensure that listener is annotated with @DelayEventHandler
                     the listener %s will not be listening for specific events until properly annotated.

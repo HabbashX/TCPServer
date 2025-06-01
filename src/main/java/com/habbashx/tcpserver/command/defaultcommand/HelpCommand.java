@@ -54,7 +54,7 @@ public final class HelpCommand extends CommandExecutor {
                 HELP_BOARD_PATH.createNewFile();
             }
         } catch (IOException e) {
-            server.getServerLogger().error(e.getMessage());
+            server.getServerLogger().error(e);
         }
     }
 }

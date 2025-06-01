@@ -16,13 +16,13 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.socket.Server.getInstance;
 
 /**
  * Manages the banning and unbanning of users using a file-based storage system.
@@ -79,7 +79,7 @@ public final class BanCommandManager {
             printer.close();
 
         } catch (IOException e) {
-            throw new RuntimeException();
+            getInstance().getServerLogger().error(e);
         }
 
     }
@@ -119,7 +119,7 @@ public final class BanCommandManager {
             printer.close(true);
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            getInstance().getServerLogger().error(e);
         }
     }
 
@@ -167,7 +167,7 @@ public final class BanCommandManager {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            getInstance().getServerLogger().error(e);
         }
         return bannedUsers;
     }

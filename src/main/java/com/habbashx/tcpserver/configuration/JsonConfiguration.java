@@ -39,7 +39,7 @@ public final class JsonConfiguration extends Configuration {
             ObjectMapper mapper = new ObjectMapper();
             configData = mapper.readValue(this.configurationFile,Map.class);
         } catch (IOException e) {
-            server.getServerLogger().error(e.getMessage());
+            server.getServerLogger().error(e);
             throw new RuntimeException(e);
         }
     }

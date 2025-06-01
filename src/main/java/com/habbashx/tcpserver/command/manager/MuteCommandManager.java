@@ -20,6 +20,7 @@ import java.util.Set;
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.socket.Server.getInstance;
 
 /**
  * The MuteCommandManager is responsible for managing and executing operations
@@ -81,7 +82,7 @@ public final class MuteCommandManager {
             }
             csvPrinter.close(true);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            getInstance().getServerLogger().error(e);
         }
     }
 
@@ -112,7 +113,7 @@ public final class MuteCommandManager {
                 csvPrinter.close(true);
                 sendMessage(commandSender,USER_UNMUTED_SUCCESSFULLY_MESSAGE);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                getInstance().getServerLogger().error(e);
             }
             
         } else {
@@ -169,7 +170,7 @@ public final class MuteCommandManager {
                 mutedUsers.add(record.get("username"));
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            getInstance().getServerLogger().error(e);
         }
         return mutedUsers;
     }

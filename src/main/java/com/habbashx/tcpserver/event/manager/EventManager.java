@@ -62,7 +62,7 @@ public class EventManager {
             registeredListeners.add(listener);
             sortListeners();
         } else {
-            server.getServerLogger().error("""
+            server.getServerLogger().warning("""
                     this listener %s is missing the @EventHandler annotation
                     listener %s will not be listening for specific event until properly annotated with @EventHandler
                     """);

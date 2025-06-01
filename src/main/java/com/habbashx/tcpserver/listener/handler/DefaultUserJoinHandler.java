@@ -35,14 +35,14 @@ public final class DefaultUserJoinHandler implements Listener<UserJoinEvent> {
         if (!server.getBanCommandManager().isUserBanned(userJoinEvent.getUsername())) {
             server.broadcast(userJoinEvent.getUsername() +" join the chat");
             server.getServerLogger().info(userJoinEvent.getUsername() + " connected to server");
-        } else {
-            userJoinEvent.setCancelled(true);
-            userJoinEvent.getUser().sendMessage(RED+"you are banned from server"+RESET);
-            userJoinEvent.getUser().getUserDetails().setUsername(null);
-            server.getServerLogger().monitor("the user: "+userJoinEvent.getUsername() + " trying to join to server");
-            userJoinEvent.getUser().shutdown();
-
+            return;
         }
+
+        userJoinEvent.setCancelled(true);
+        userJoinEvent.getUser().sendMessage(RED+"you are banned from server"+RESET);
+        userJoinEvent.getUser().getUserDetails().setUsername(null);
+        server.getServerLogger().monitor("the user: "+userJoinEvent.getUsername() + " trying to join to server");
+        userJoinEvent.getUser().shutdown();
 
     }
 }

@@ -213,7 +213,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
                 userList.add(map);
             }
         } catch (IOException e) {
-            server.getServerLogger().error(e.getMessage());
+            server.getServerLogger().error(e);
         }
         return userList;
     }
@@ -248,7 +248,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
             }
             printer.close(true);
         } catch (IOException e) {
-            server.getServerLogger().error(e.getMessage());
+            server.getServerLogger().error(e);
         }
     }
     /**
@@ -288,7 +288,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
             users.stream().filter(user -> user.get("username").equals(username)).forEach(user -> user.replace("userRole", role.toString()));
             mapper.writerWithDefaultPrettyPrinter().writeValue(usersDataFile, users);
         } catch (IOException e) {
-            server.getServerLogger().error(e.getMessage());
+            server.getServerLogger().error(e);
         }
 
 
