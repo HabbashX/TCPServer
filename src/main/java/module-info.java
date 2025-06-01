@@ -10,6 +10,7 @@ module TCPServer {
     requires mysql.connector.j;
     requires property.parser;
 
+
     exports com.habbashx.tcpserver.security;
     exports com.habbashx.tcpserver.socket;
     exports com.habbashx.tcpserver.command;
@@ -30,9 +31,10 @@ module TCPServer {
     exports com.habbashx.tcpserver.handler;
     exports com.habbashx.tcpserver.handler.console;
     exports com.habbashx.tcpserver.cooldown;
-    exports com.habbashx.tcpserver.command.configuration;
+    exports com.habbashx.tcpserver.configuration;
     exports com.habbashx.tcpserver.annotation;
 
     opens com.habbashx.tcpserver.socket;
     opens com.habbashx.tcpserver.settings;
+    exports com.habbashx.tcpserver.handler.connection;
 }
