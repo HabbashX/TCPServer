@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.habbashx</groupId>
-    <artifactId>TCPServer</artifactId>
+    <artifactId>tcp-server</artifactId>
     <version>1.1</version>
 
     <properties>
