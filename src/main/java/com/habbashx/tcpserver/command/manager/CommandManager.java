@@ -8,15 +8,18 @@ import com.habbashx.tcpserver.event.UserExecuteCommandEvent;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.handler.UserHandler;
 
-import com.habbashx.tcpserver.security.RequiredPermission;
+import com.habbashx.tcpserver.security.NonVolatilePermissionContainer;
 import com.habbashx.tcpserver.socket.Server;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.Collections;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
@@ -113,7 +116,7 @@ public final class CommandManager {
             }
         } else {
             final String command = commandExecutorClass.getName();
-            server.getServerLogger().error("""
+            server.getServerLogger().warning("""
                 %s is missing the @Command annotation.
                 Please ensure that the command class is annotated with @Command and includes the 'name' and optional 'aliases' attributes.
                 The command %s will not be executed until properly annotated.
@@ -131,10 +134,6 @@ public final class CommandManager {
      */
     @SuppressWarnings("deprecation")
     public void executeCommand(@NotNull String senderName , @NotNull String message , @NotNull CommandSender commandSender) {
-        // Warning do not modify any line of code in this method,
-        // as only if you understand what`s going on right here ok ?,
-        // if you want to add anything do you want additional features optimizing code feel free to modify it :D .
-        // see LICENCE arguments.
 
         if (!message.startsWith("/")) return;
 
@@ -149,13 +148,14 @@ public final class CommandManager {
 
             if (commandExecutorClass.isAnnotationPresent(Command.class)) {
 
-                final int permissionValue = commandExecutorClass.isAnnotationPresent(Command.class) ? commandExecutorClass.getAnnotation(Command.class).permission() : commandExecutorClass.getAnnotation(RequiredPermission.class).value();
+                final int permissionValue = commandExecutorClass.getAnnotation(Command.class).permission();
                 final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
                 long cooldownTime = getCooldownTimeUnit(commandInformation.cooldownTime(),commandInformation.cooldownTimeUnit());
                 commandExecutor.getCooldownManager().setCooldownTime(cooldownTime);
                 if (commandSender instanceof UserHandler userHandler) {
+                    final NonVolatilePermissionContainer container = userHandler.getNonVolatilePermissionContainer();
 
-                    if (permissionValue == 0X00 || userHandler.hasPermission(permissionValue) || userHandler.hasPermission(0X0EFA)) {
+                    if (hasPermission(permissionValue,userHandler)) {
 
                         if (!commandExecutor.getCooldownManager().isOnCooldown(senderName)) {
                             CommandContext commandContext = new CommandContext(senderName, args, userHandler);
@@ -228,7 +228,7 @@ public final class CommandManager {
         } else if (timeUnit == TimeUnit.SECONDS) {
             return cooldown;
         } else {
-            server.getServerLogger().error("invalid time unit: "+timeUnit);
+            server.getServerLogger().warning("invalid time unit: "+timeUnit);
             return cooldown;
         }
     }
@@ -293,6 +293,22 @@ public final class CommandManager {
     public @NotNull List<String> getAllExecutors() {
 
         return new ArrayList<>(executors.keySet());
+    }
+
+    /**
+     * Checks if a user has the specified permission.
+     *
+     * @param permissionValue the value of the permission to check
+     * @param userHandler the user handler responsible for managing user permissions
+     * @return {@code true} if the user has the specified permission or meets at least one of the required conditions;
+     *         {@code false} otherwise
+     */
+    private boolean hasPermission(int permissionValue , UserHandler userHandler) {
+        return permissionValue == 0X00 ||
+                userHandler.hasPermission(permissionValue) ||
+                userHandler.hasPermission(0X0EFA) ||
+                userHandler.getNonVolatilePermissionContainer().hasPermission(permissionValue) ||
+                userHandler.hasVolatilePermission(permissionValue);
     }
 
 }
