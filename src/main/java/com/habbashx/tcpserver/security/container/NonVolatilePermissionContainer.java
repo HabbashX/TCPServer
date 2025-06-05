@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.tcpserver.handler.UserHandler;
 import com.habbashx.tcpserver.security.container.annotation.Container;
+import com.habbashx.tcpserver.security.container.manager.ContainerManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -17,17 +18,17 @@ import static com.habbashx.tcpserver.socket.Server.getInstance;
  * storage file specified by the {@link Container} annotation. It provides functionality
  * to add, remove, and retrieve user permissions, ensuring consistent updates to the
  * storage file and maintaining runtime synchronization.
- *
+ * <p>
  * The permissions are associated with a specific user identified by the UserHandler instance.
  * The class relies on the Jackson library for parsing and persisting the permissions data
  * in a formatted JSON file.
- *
+ * <p>
  * The file path for storing the permissions is retrieved from the {@link Container} annotation
  * applied to the class.
  */
 @SuppressWarnings("unchecked")
 @Container(file = "containers/permissions/usersPermissions.json")
-public class NonVolatilePermissionContainer {
+public class NonVolatilePermissionContainer extends ContainerManager {
 
     private final UserHandler userHandler;
 
@@ -35,10 +36,10 @@ public class NonVolatilePermissionContainer {
      * A list of integer values representing permissions for the associated user.
      * This list is initialized and managed through the `NonVolatilePermissionContainer` class,
      * loading data from a non-volatile file defined by the {@code @Container} annotation.
-     *
+     * <p>
      * The permissions list may be modified through methods such as {@code addPermission}
      * and {@code removePermission}.
-     *
+     * <p>
      * Note that updates to this list persist changes to the non-volatile file.
      */
     private List<Integer> permissions = new ArrayList<>();
@@ -51,7 +52,7 @@ public class NonVolatilePermissionContainer {
      * This file is utilized to read, modify, and save user permissions in a structured format,
      * ensuring that data changes are preserved across application restarts.
      */
-    private final File nonVolatilePermissionFile;
+    private final File nonVolatilePermissionFile = getContainerFile();
 
     /**
      * Constructor for the NonVolatilePermissionContainer class.
@@ -62,8 +63,6 @@ public class NonVolatilePermissionContainer {
      */
     public NonVolatilePermissionContainer(UserHandler userHandler) {
         this.userHandler = userHandler;
-        final String usersPermissionsFile = getClass().getAnnotation(Container.class).file();
-        nonVolatilePermissionFile = new File(usersPermissionsFile);
         initPermissions();
     }
 
@@ -76,7 +75,7 @@ public class NonVolatilePermissionContainer {
      */
     public boolean addPermission(int permission) {
         permissions.add(permission);
-        return rewritePermission(permission,true);
+        return rewritePermission(permission, true);
     }
 
     /**
@@ -84,11 +83,11 @@ public class NonVolatilePermissionContainer {
      *
      * @param permission The permission ID to be removed.
      * @return {@code true} if the permission was successfully removed and updated,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     public boolean removePermission(int permission) {
         permissions.remove(permission);
-        return rewritePermission(permission,false);
+        return rewritePermission(permission, false);
     }
 
     /**
@@ -115,14 +114,15 @@ public class NonVolatilePermissionContainer {
      * and writes the updated permission list to the non-volatile storage file.
      *
      * @param permission the permission to add or remove from the user's permission list
-     * @param add a boolean flag indicating the operation (true to add the permission, false to remove it)
+     * @param add        a boolean flag indicating the operation (true to add the permission, false to remove it)
      * @return true if the permission was successfully updated and stored, false if an error occurs or the user ID is not found
      */
-    private boolean rewritePermission(int permission,boolean add) {
+    private boolean rewritePermission(int permission, boolean add) {
         try {
             List<Map<String, Object>> per = mapper.readValue(
                     nonVolatilePermissionFile,
-                    new TypeReference<List<Map<String, Object>>>() {}
+                    new TypeReference<List<Map<String, Object>>>() {
+                    }
             );
 
             boolean userUpdated = false;
@@ -177,10 +177,10 @@ public class NonVolatilePermissionContainer {
      * This method reads the permissions data from a file, filters the data
      * to locate permissions for a specific user ID, and assigns the permissions
      * to the corresponding instance field.
-     *
+     * <p>
      * The method handles possible I/O exceptions and logs any errors using
      * the server's logger.
-     *
+     * <p>
      * Workflow:
      * 1. Reads the permissions file and deserializes it into a list of maps.
      * 2. Filters the list to find the permissions associated with the targeted user ID.
@@ -190,17 +190,17 @@ public class NonVolatilePermissionContainer {
     private void initPermissions() {
         try {
 
-            List<Map<String,Object>> per = mapper.readValue(nonVolatilePermissionFile, new TypeReference<List<Map<String, Object>>>() {
+            List<Map<String, Object>> per = mapper.readValue(nonVolatilePermissionFile, new TypeReference<List<Map<String, Object>>>() {
             });
 
-                permissions = per.stream()
-                        .filter(map -> map.get("userID").equals(userHandler.getUserDetails().getUserID()))
-                        .map(map -> (List<Integer>) map.get("permissions"))
-                        .findFirst().orElse(null);
+            permissions = per.stream()
+                    .filter(map -> map.get("userID").equals(userHandler.getUserDetails().getUserID()))
+                    .map(map -> (List<Integer>) map.get("permissions"))
+                    .findFirst().orElse(null);
 
-                if (permissions == null) {
-                    permissions = new ArrayList<>();
-                }
+            if (permissions == null) {
+                permissions = new ArrayList<>();
+            }
 
         } catch (IOException e) {
             getInstance().getServerLogger().error(e);
