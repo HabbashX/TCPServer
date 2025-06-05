@@ -14,17 +14,20 @@ import java.util.Set;
  * Provides methods to retrieve predefined sets of permissions
  * associated with specific user roles within the application.
  */
-public class RolePermissionUtils {
+public final class RolePermissionUtils {
 
     public static Set<Integer> getDefaultRolePermissions() {
         return getRolePermissions("default");
     }
+
     public static Set<Integer> getModeratorRolePermissions() {
         return getRolePermissions("moderator");
     }
+
     public static Set<Integer> getOperatorRolePermissions() {
         return getRolePermissions("operator");
     }
+
     public static Set<Integer> getAdministratorRolePermissions() {
         return getRolePermissions("administrator");
     }
@@ -32,7 +35,7 @@ public class RolePermissionUtils {
 
     /**
      * Retrieves the permissions associated with the "super-administrator" role.
-     *
+     * <p>
      * This method provides the set of permission IDs assigned specifically
      * to the "super-administrator" role in the application.
      *
@@ -44,12 +47,13 @@ public class RolePermissionUtils {
 
     /**
      * Retrieves the permissions associated with a given role.
-     *
+     * <p>
      * The method reads from a JSON file containing role-to-permissions mappings
      * and returns the set of permission IDs assigned to the specified role.
      *
      * @param role the name of the role for which permissions should be retrieved
-     * @return a set of permission IDs*/
+     * @return a set of permission IDs
+     */
     private static @Nullable Set<Integer> getRolePermissions(String role) {
 
         final File file = new File("data/role-permissions.json");

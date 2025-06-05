@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.security.annotation;
+package com.habbashx.tcpserver.security.container.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

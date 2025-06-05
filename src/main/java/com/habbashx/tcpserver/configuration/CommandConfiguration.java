@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * assumes that the configuration files are in JSON format and delegates the file parsing and
  * management to the {@link JsonConfiguration} class.
  */
-public class CommandConfiguration {
+public final class CommandConfiguration {
 
     /**
      * Loads the configuration file associated with the command and initializes
@@ -23,13 +23,13 @@ public class CommandConfiguration {
      * @param server the server instance used to provide context or logging during
      *               the configuration loading process.
      * @return a {@link JsonConfiguration} object representing the loaded configuration,
-     *         which enables interaction with configuration data stored in a JSON file.
+     * which enables interaction with configuration data stored in a JSON file.
      */
     public Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor) {
 
         final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
         assert configFile != null;
-        return new JsonConfiguration(configFile,server);
+        return new JsonConfiguration(configFile, server);
     }
 
 }

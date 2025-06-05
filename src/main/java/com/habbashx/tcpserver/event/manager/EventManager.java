@@ -1,9 +1,8 @@
 package com.habbashx.tcpserver.event.manager;
 
-import com.habbashx.tcpserver.event.handler.EventHandler;
 import com.habbashx.tcpserver.event.Event;
 import com.habbashx.tcpserver.event.Priority;
-
+import com.habbashx.tcpserver.event.handler.EventHandler;
 import com.habbashx.tcpserver.listener.Listener;
 import com.habbashx.tcpserver.socket.Server;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +14,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 /**
  * The EventManager class is responsible for managing event listeners and triggering events in the system.
@@ -29,10 +31,10 @@ public class EventManager {
      * A list that holds all the listeners registered to the EventManager.
      * Each listener in this list implements the {@link Listener} interface
      * and reacts to specific types of events defined by the generic type parameter.
-     *
+     * <p>
      * The {@code registeredListeners} collection is used internally to manage
      * event callbacks and to dispatch events to the appropriate listeners.
-     *
+     * <p>
      * This field is immutable and initialized as an {@code ArrayList}. Elements
      * can be added or removed through methods provided by the EventManager class.
      */
@@ -60,6 +62,7 @@ public class EventManager {
 
         if (listener.getClass().isAnnotationPresent(EventHandler.class)) {
             registeredListeners.add(listener);
+            server.getServerLogger().info("Registering event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET);
             sortListeners();
         } else {
             server.getServerLogger().warning("""
@@ -123,13 +126,13 @@ public class EventManager {
 
     /**
      * Sorts the list of registered listeners based on their priority in descending order.
-     *
+     * <p>
      * The priority of each listener is determined using the {@code getPriority} method,
      * which retrieves the priority level from the {@code @EventHandler} annotation associated
      * with the listener. If no priority is specified within the annotation, a default priority
      * level is used. This method ensures that listeners with higher priority values are
      * positioned earlier in the list.
-     *
+     * <p>
      * This method is invoked internally after adding or removing listeners from the list
      * to maintain the correct execution order of listeners when events are triggered.
      */

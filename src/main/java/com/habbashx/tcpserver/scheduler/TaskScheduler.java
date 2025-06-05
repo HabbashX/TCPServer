@@ -9,22 +9,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A utility class for scheduling and managing synchronous and asynchronous tasks
  * with both delayed and repeating behaviors. Tasks are identified by unique IDs
  * which can be used to cancel them individually.
- *
+ * <p>
  * This class operates on two separate thread pools:
  * 1. A single-threaded pool for synchronous tasks.
  * 2. A multi-threaded pool (up to 4 threads) for asynchronous tasks.
- *
  **/
-public class TaskScheduler {
+public final class TaskScheduler {
 
     /**
      * A thread-safe, single-threaded scheduled executor service used for executing synchronous tasks.
      * This executor ensures that tasks are executed in a sequential manner, maintaining synchronization.
      * It supports delayed and repeating task scheduling in the context of the task scheduler logic.
-     *
+     * <p>
      * The `syncTaskPool` is used internally by the scheduling mechanism to handle synchronous task execution,
      * ensuring consistent execution order and thread safety for tasks designated as synchronous.
-     *
+     * <p>
      * Tasks submitted to this pool are typically managed by the main thread of the scheduler, preventing
      * concurrency issues when interacting with shared resources.
      */
@@ -33,10 +32,10 @@ public class TaskScheduler {
      * A scheduled thread pool used to manage asynchronous tasks.
      * This executor service allows scheduling and execution of delayed
      * or repeating tasks in a non-blocking manner, independent of the main thread.
-     *
+     * <p>
      * Commonly used for handling asynchronous operations within the
      * task scheduler, enabling efficient support for concurrent task execution.
-     *
+     * <p>
      * The pool size is set to 4 threads, providing a balance between
      * performance and resource usage.
      */
@@ -60,7 +59,7 @@ public class TaskScheduler {
     /**
      * Schedules a synchronous task to be executed after a specified delay in ticks.
      *
-     * @param task The task to be executed. It must implement the Runnable interface.
+     * @param task         The task to be executed. It must implement the Runnable interface.
      * @param delayInTicks The delay before the task is executed, specified in ticks (1 tick = 50 milliseconds).
      * @return A unique integer ID representing the scheduled task. This ID can be used to manage the task, such as canceling it.
      */
@@ -71,7 +70,7 @@ public class TaskScheduler {
     /**
      * Schedules an asynchronous task to be executed after a specified delay in ticks.
      *
-     * @param task The task to be executed. It must implement the Runnable interface.
+     * @param task         The task to be executed. It must implement the Runnable interface.
      * @param delayInTicks The delay before the task is executed, specified in ticks (1 tick = 50 milliseconds).
      * @return A unique integer ID representing the scheduled task. This ID can be used to manage the task, such as canceling it.
      */

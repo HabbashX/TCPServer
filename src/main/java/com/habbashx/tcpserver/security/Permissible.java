@@ -1,6 +1,7 @@
 package com.habbashx.tcpserver.security;
 
 import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
 import com.habbashx.tcpserver.socket.Server;
 
 import java.util.List;
@@ -65,8 +66,6 @@ public interface Permissible {
      * Retrieves an instance of {@code NonVolatilePermissionContainer} associated with the specified {@code UserHandler}.
      * This container provides functionality to manage and persist user permissions in a non-volatile storage.
      *
-     * @param userHandler an instance of {@code UserHandler} that represents the user for whom the
-     *                    {@code NonVolatilePermissionContainer} is being created.
      * @return an instance of {@code NonVolatilePermissionContainer} for managing non-volatile permissions
      *         associated with the provided {@code UserHandler}.
      */

@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.security;
+package com.habbashx.tcpserver.security.auth;
 
 import com.habbashx.tcpserver.handler.UserHandler;
 import org.jetbrains.annotations.NotNull;

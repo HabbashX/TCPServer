@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A utility class that provides helper methods related to exception handling.
  */
-public class ExceptionUtils {
+public final class ExceptionUtils {
 
     /**
      * Converts the stack trace of the specified exception into a string representation.

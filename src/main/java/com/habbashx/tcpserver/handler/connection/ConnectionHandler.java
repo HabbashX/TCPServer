@@ -1,15 +1,20 @@
 package com.habbashx.tcpserver.handler.connection;
 
 import com.habbashx.tcpserver.security.Permissible;
+import com.habbashx.tcpserver.socket.Server;
 
-/**
- * Represents a handler responsible for managing a specific type of connection.
- * Implementing classes are intended to provide functionality for connection
- * lifecycle management, user interaction, and communication handling.
- * The `ConnectionHandler` interface extends the `Permissible` interface,
- * enabling permission-based checks for operations.
- */
-public interface ConnectionHandler extends Permissible {
+import javax.net.ssl.SSLSocket;
+
+
+public abstract class ConnectionHandler implements Permissible, Runnable {
+
+    private final Server server;
+    private final SSLSocket socket;
+
+    public ConnectionHandler(SSLSocket sslSocket, Server server) {
+        this.server = server;
+        this.socket = sslSocket;
+    }
 
     /**
      * Retrieves the type of the handler represented by the implementing class.
@@ -18,7 +23,7 @@ public interface ConnectionHandler extends Permissible {
      *
      * @return a string representation of the handler type.
      */
-    String getHandlerType();
+    public abstract String getHandlerType();
 
     /**
      * Retrieves a description of the handler. The description typically provides
@@ -26,6 +31,13 @@ public interface ConnectionHandler extends Permissible {
      *
      * @return a string containing the description of the handler.
      */
-    String getHandlerDescription();
+    public abstract String getHandlerDescription();
 
+    public Server getServer() {
+        return server;
+    }
+
+    public SSLSocket getUserSocket() {
+        return socket;
+    }
 }

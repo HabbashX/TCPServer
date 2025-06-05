@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.security;
+package com.habbashx.tcpserver.security.auth.storage;
 
 /**
  * Represents the different types of storage mechanisms that can be used

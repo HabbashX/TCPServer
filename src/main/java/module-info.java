@@ -33,8 +33,12 @@ module TCPServer {
     exports com.habbashx.tcpserver.cooldown;
     exports com.habbashx.tcpserver.configuration;
     exports com.habbashx.tcpserver.annotation;
+    exports com.habbashx.tcpserver.io;
 
     opens com.habbashx.tcpserver.socket;
     opens com.habbashx.tcpserver.settings;
     exports com.habbashx.tcpserver.handler.connection;
+    exports com.habbashx.tcpserver.security.container;
+    exports com.habbashx.tcpserver.security.auth;
+    exports com.habbashx.tcpserver.security.auth.storage;
 }

@@ -13,7 +13,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  * This class supports different levels of logging such as INFO, WARNING, ERROR, and MONITOR,
  * each with its own color-coded output for better visibility in console logs.
  */
-public class ServerLogger {
+public final class ServerLogger {
 
     private final SimpleDateFormat simpleDateFormat;
 
@@ -21,7 +21,7 @@ public class ServerLogger {
         this.simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
     }
 
-    private @NotNull String formatMessage(String message , @NotNull Level level) {
+    private @NotNull String formatMessage(String message, @NotNull Level level) {
         String formatedDate = simpleDateFormat.format(new Date());
         String color = null;
         switch (level) {
@@ -41,28 +41,28 @@ public class ServerLogger {
         assert color != null;
         assert messageColor != null;
         return String.format("%s[%s%s%s] %s[%s%s%s]%s: %s%s",
-                RESET, ConsoleColor.BRIGHT_PURPLE,formatedDate, RESET,
-                RESET,color,level, RESET,messageColor,message,RESET
+                RESET, ConsoleColor.BRIGHT_PURPLE, formatedDate, RESET,
+                RESET, color, level, RESET, messageColor, message, RESET
         );
     }
 
-    private void log(String message ,Level level) {
-        System.out.println(formatMessage(message,level));;
+    private void log(String message, Level level) {
+        System.out.println(formatMessage(message, level));
     }
 
     public void info(String message) {
-        log(message,Level.INFO);
+        log(message, Level.INFO);
     }
 
     public void warning(String message) {
-        log(message,Level.WARNING);
+        log(message, Level.WARNING);
     }
 
     public void error(Exception e) {
-        log(ExceptionUtils.getStackTrace(e),Level.ERROR);
+        log(ExceptionUtils.getStackTrace(e), Level.ERROR);
     }
 
     public void monitor(String message) {
-        log(message,Level.MONITOR);
+        log(message, Level.MONITOR);
     }
 }

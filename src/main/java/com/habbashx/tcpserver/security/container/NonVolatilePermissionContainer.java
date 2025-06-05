@@ -1,17 +1,14 @@
-package com.habbashx.tcpserver.security;
+package com.habbashx.tcpserver.security.container;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.tcpserver.handler.UserHandler;
-import com.habbashx.tcpserver.security.annotation.Container;
+import com.habbashx.tcpserver.security.container.annotation.Container;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-
+import java.util.*;
 
 import static com.habbashx.tcpserver.socket.Server.getInstance;
 
@@ -66,7 +63,6 @@ public class NonVolatilePermissionContainer {
     public NonVolatilePermissionContainer(UserHandler userHandler) {
         this.userHandler = userHandler;
         final String usersPermissionsFile = getClass().getAnnotation(Container.class).file();
-        System.out.println(usersPermissionsFile);
         nonVolatilePermissionFile = new File(usersPermissionsFile);
         initPermissions();
     }
@@ -81,7 +77,6 @@ public class NonVolatilePermissionContainer {
     public boolean addPermission(int permission) {
         permissions.add(permission);
         return rewritePermission(permission,true);
-
     }
 
     /**
@@ -93,7 +88,7 @@ public class NonVolatilePermissionContainer {
      */
     public boolean removePermission(int permission) {
         permissions.remove(permission);
-       return rewritePermission(permission,false);
+        return rewritePermission(permission,false);
     }
 
     /**
@@ -130,32 +125,47 @@ public class NonVolatilePermissionContainer {
                     new TypeReference<List<Map<String, Object>>>() {}
             );
 
-            for (Map<String, Object> map : per) {
+            boolean userUpdated = false;
 
+
+            for (Map<String, Object> map : per) {
                 if (map.get("userID").equals(userHandler.getUserDetails().getUserID())) {
+
                     List<Integer> userPermissions = (List<Integer>) map.get("permissions");
 
                     if (add) {
-
                         if (!userPermissions.contains(permission)) {
                             userPermissions.add(permission);
+                        } else {
+                            return false;
                         }
                     } else {
-                        userPermissions.remove((Integer) permission);
+                        if (userPermissions.contains(permission)) {
+                            userPermissions.remove((Integer) permission);
+                        } else {
+                            return false;
+                        }
                     }
 
-                    map.put("permissions", userPermissions);
 
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(nonVolatilePermissionFile, per);
-
-                    initPermissions();
-
-                    return true;
+                    map.replace("permissions", userPermissions);
+                    userUpdated = true;
+                    break;
                 }
             }
 
-            return false;
+            if (!userUpdated) {
+                Map<String, Object> newMap = new HashMap<>();
+                newMap.put("userID", userHandler.getUserDetails().getUserID());
+                newMap.put("permissions", Collections.singletonList(permission));
+                per.add(newMap);
+            }
 
+            mapper.writerWithDefaultPrettyPrinter().writeValue(nonVolatilePermissionFile, per);
+
+            initPermissions();
+
+            return true;
         } catch (IOException e) {
             getInstance().getServerLogger().error(e);
             return false;
@@ -182,10 +192,15 @@ public class NonVolatilePermissionContainer {
 
             List<Map<String,Object>> per = mapper.readValue(nonVolatilePermissionFile, new TypeReference<List<Map<String, Object>>>() {
             });
-            permissions = per.stream()
-                    .filter(map -> map.get("userID").equals("2025344212"))
-                    .map(map -> (List<Integer>) map.get("permissions"))
-                    .findFirst().orElse(null);
+
+                permissions = per.stream()
+                        .filter(map -> map.get("userID").equals(userHandler.getUserDetails().getUserID()))
+                        .map(map -> (List<Integer>) map.get("permissions"))
+                        .findFirst().orElse(null);
+
+                if (permissions == null) {
+                    permissions = new ArrayList<>();
+                }
 
         } catch (IOException e) {
             getInstance().getServerLogger().error(e);

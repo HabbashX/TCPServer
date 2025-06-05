@@ -108,7 +108,7 @@ public final class User implements Runnable{
      * configuration keys for this instance are prefixed as `server.setting` in the external
      * property file.
      */
-    @InjectPrefix("server.setting")
+    @InjectPrefix("server.settings")
     private final ServerSettings serverSettings = new ServerSettings();
 
     /**

@@ -1,4 +1,7 @@
 [ {
   "userID" : "2025344212",
-  "permissions" : [ 1, 2, 4, 5, 6 ]
+  "permissions" : [ 1, 2, 4, 5, 6, 9 ]
+}, {
+  "permissions" : [ 1 ],
+  "userID" : "2025442867"
 } ]

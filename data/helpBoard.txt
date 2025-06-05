@@ -10,3 +10,6 @@
 9. /find <username|id> get a user information details
 10. /info get an info about your account
 11. /setrole <username> <role> change user role
+12. /addpermission <username> <permission> <isVolatile> (only for administrators)
+13. /removepermission <username> <permission> <isVolatile> (only for administrators)
+14. /checkpermissions <username> <permission> <isVolatile> (only for administrators)
