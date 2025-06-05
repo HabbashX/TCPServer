@@ -60,7 +60,8 @@ public final class CheckPermissionCommand extends CommandExecutor {
     @Override
     public void execute(@NotNull CommandContext commandContext) {
 
-        if (commandContext.getArgs().size() < 2) {
+        if (commandContext.getArgs().size() < 3) {
+            commandContext.getSender().printMessage(COMMAND_USAGE);
             return;
         }
 
