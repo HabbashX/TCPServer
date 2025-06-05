@@ -302,8 +302,8 @@ public final class CommandManager {
      */
     private boolean hasPermission(int permissionValue, UserHandler userHandler) {
         return permissionValue == 0X00 ||
-                userHandler.hasPermission(permissionValue) ||
-                userHandler.hasPermission(0X0EFA) ||
+                userHandler.isRoleHasPermission(permissionValue) ||
+                userHandler.isRoleHasPermission(0X0EFA) ||
                 userHandler.getNonVolatilePermissionContainer().hasPermission(permissionValue) ||
                 userHandler.hasVolatilePermission(permissionValue);
     }

@@ -363,7 +363,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     }
 
     @Override
-    public boolean hasPermission(int permission) {
+    public boolean isRoleHasPermission(int permission) {
         return userDetails.getUserRole().getPermissions().contains(permission);
     }
 
