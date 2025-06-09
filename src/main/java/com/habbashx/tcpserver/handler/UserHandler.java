@@ -7,7 +7,7 @@ import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.io.CountingOutputStream;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -158,6 +158,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
             countingOutputStream = new CountingOutputStream(user.getOutputStream());
             input = new BufferedReader(new InputStreamReader(user.getInputStream()));
             output = new PrintWriter(countingOutputStream, true);
+            setupSettings();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -205,16 +206,18 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
             final int cooldownSecond = Integer.parseInt(getServer().getServerSettings().getUserChatCooldown());
             final UserChatEvent userChatEvent = new UserChatEvent(userDetails.getUsername(), this, cooldownSecond);
 
-            while (running) {
-                String message;
-                while (((message = input.readLine())) != null) {
-                    if (message.startsWith("/")) {
-                        getServer().getCommandManager().executeCommand(userDetails.getUsername(), message, this);
-                    } else {
-                        userChatEvent.setMessage(message);
-                        getServer().getEventManager().triggerEvent(userChatEvent);
+            if (running) {
+                do {
+                    String message;
+                    while (((message = input.readLine())) != null) {
+                        if (message.startsWith("/")) {
+                            getServer().getCommandManager().executeCommand(userDetails.getUsername(), message, this);
+                        } else {
+                            userChatEvent.setMessage(message);
+                            getServer().getEventManager().triggerEvent(userChatEvent);
+                        }
                     }
-                }
+                } while (running);
             }
         } catch (IOException e) {
             shutdown();
@@ -362,7 +365,12 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         return super.getServer();
     }
 
-    @Override
+    /**
+     * Checks if the role associated with the user has a specific permission.
+     *
+     * @param permission the permission value to check
+     * @return {@code true} if the user's role has the specified permission; {@code false} otherwise
+     */
     public boolean isRoleHasPermission(int permission) {
         return userDetails.getUserRole().getPermissions().contains(permission);
     }
@@ -434,12 +442,17 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
 
             input.close();
             output.close();
-            getUserSocket().getOutputStream().close();
-            getUserSocket().getInputStream().close();
+            if (!getUserSocket().isInputShutdown() && !getUserSocket().isOutputShutdown()) {
+                getUserSocket().shutdownInput();
+                getUserSocket().shutdownOutput();
+                getUserSocket().getInputStream().close();
+                getUserSocket().getOutputStream().close();
+            }
 
             if (!getUserSocket().isClosed()) {
                 getUserSocket().close();
             }
+
 
         } catch (IOException ignored) {
         }
