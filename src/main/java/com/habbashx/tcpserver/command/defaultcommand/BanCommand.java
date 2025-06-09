@@ -9,7 +9,7 @@ import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.handler.UserHandler;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
