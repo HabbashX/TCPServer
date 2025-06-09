@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.socket;
+package com.habbashx.tcpserver.socket.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +20,7 @@ import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.auth.DefaultAuthentication;
 import com.habbashx.tcpserver.security.auth.storage.AuthStorageType;
-import com.habbashx.tcpserver.settings.ServerSettings;
+import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 import com.habbashx.tcpserver.user.UserDetails;
 import com.habbashx.tcpserver.util.ServerUtils;
 import com.habbashx.tcpserver.version.VersionChecker;
@@ -159,7 +159,7 @@ public final class Server implements Runnable {
      * within the multi-threaded server environment.
      */
     @InjectPrefix("server.settings")
-    private final ServerSettings serverSettings = new ServerSettings();
+    private ServerSettings serverSettings = new ServerSettings();
 
     /**
      * Manages data-related operations within the server. Responsible for user retrieval
@@ -174,7 +174,7 @@ public final class Server implements Runnable {
      * It is a final field that is initialized with a reference to the enclosing {@code Server}
      * instance.
      */
-    private final ServerDataManager serverDataManager = new ServerDataManager(this);
+    private final ServerDataManager serverDataManager;
 
     /**
      * The {@code muteCommandManager} is an instance of {@link MuteCommandManager} used to
@@ -243,7 +243,6 @@ public final class Server implements Runnable {
      */
     private final List<ConnectionHandler> connectionHandlers = Collections.synchronizedList(new ArrayList<>());
 
-
     /**
      * A flag indicating whether dumb commands are enabled or not.
      * When set to {@code true}, the system may execute commands
@@ -270,7 +269,8 @@ public final class Server implements Runnable {
     private boolean running = true;
 
     public Server() {
-        injectServerSettings();
+        authentication = new DefaultAuthentication(this);
+        serverDataManager = new ServerDataManager(this);
         registerDefaultEvents();
         registerDefaultDelayEvents();
         registerDefaultCommands();
@@ -340,7 +340,6 @@ public final class Server implements Runnable {
             if (running) {
                 do {
                     SSLSocket user = (SSLSocket) serverSocket.accept();
-                    user.setReuseAddress(serverSocket.getReuseAddress());
                     ConnectionHandler userHandler = new UserHandler(user, this);
                     connectionHandlers.add(userHandler);
                     connectionHandlers.forEach(threadPool::execute);
@@ -689,9 +688,10 @@ public final class Server implements Runnable {
      * This method is typically invoked during the initialization of the server or related
      * components requiring the server's configuration values.
      */
-    private void injectServerSettings() {
+    public void injectServerSettings() {
         try {
-            new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH)).inject(this);
+            final PropertyInjector propertyInjector = new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH));
+            propertyInjector.inject(this);
         } catch (Exception e) {
             serverLogger.error(e);
         }
@@ -777,9 +777,8 @@ public final class Server implements Runnable {
         private final UserDao userDao;
 
         public ServerDataManager(@NotNull Server server) {
-            server.injectServerSettings();
             this.server = server;
-            final String authType = ServerUtils.getAuthStorageType(server).toUpperCase();
+            final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
             authStorageType = AuthStorageType.valueOf(authType);
             userDao = new UserDao(server);
         }
@@ -997,7 +996,6 @@ public final class Server implements Runnable {
 
         @Contract(pure = true)
         public UserDao(@NotNull Server server) {
-            server.injectServerSettings();
             this.server = server;
             try {
                 connection = getConnection();
