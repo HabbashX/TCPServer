@@ -1,7 +1,5 @@
 package com.habbashx.tcpserver.util;
 
-import com.habbashx.tcpserver.socket.Server;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Utility class for server-related constants and methods.
@@ -18,7 +16,4 @@ public final class ServerUtils {
      */
     public static final String SERVER_SETTINGS_PATH = "settings/settings.properties";
 
-    public static String getAuthStorageType(@NotNull Server server) {
-        return server.getServerSettings().getAuthStorageType();
-    }
 }
