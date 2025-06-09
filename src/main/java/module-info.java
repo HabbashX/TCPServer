@@ -10,9 +10,9 @@ module TCPServer {
     requires mysql.connector.j;
     requires property.parser;
 
-
     exports com.habbashx.tcpserver.security;
-    exports com.habbashx.tcpserver.socket;
+    exports com.habbashx.tcpserver.socket.server;
+    exports com.habbashx.tcpserver.socket.client;
     exports com.habbashx.tcpserver.command;
     exports com.habbashx.tcpserver.command.defaultcommand;
     exports com.habbashx.tcpserver.command.manager;
@@ -20,7 +20,7 @@ module TCPServer {
     exports com.habbashx.tcpserver.event.handler;
     exports com.habbashx.tcpserver.event.manager;
     exports com.habbashx.tcpserver.user;
-    exports com.habbashx.tcpserver.settings;
+    exports com.habbashx.tcpserver.socket.server.settings;
     exports com.habbashx.tcpserver.listener;
     exports com.habbashx.tcpserver.listener.handler;
     exports com.habbashx.tcpserver.util;
@@ -34,11 +34,19 @@ module TCPServer {
     exports com.habbashx.tcpserver.configuration;
     exports com.habbashx.tcpserver.annotation;
     exports com.habbashx.tcpserver.io;
-
-    opens com.habbashx.tcpserver.socket;
-    opens com.habbashx.tcpserver.settings;
     exports com.habbashx.tcpserver.handler.connection;
     exports com.habbashx.tcpserver.security.container;
     exports com.habbashx.tcpserver.security.auth;
     exports com.habbashx.tcpserver.security.auth.storage;
+
+    opens com.habbashx.tcpserver.socket;
+    opens com.habbashx.tcpserver.socket.server.settings;
+    opens com.habbashx.tcpserver.handler.connection.configuration;
+    opens com.habbashx.tcpserver.handler;
+    exports com.habbashx.tcpserver.socket.server;
+    opens com.habbashx.tcpserver.socket.server;
+    exports com.habbashx.tcpserver.socket.client;
+    opens com.habbashx.tcpserver.socket.client;
+
+
 }
