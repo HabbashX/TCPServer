@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.version;
 
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

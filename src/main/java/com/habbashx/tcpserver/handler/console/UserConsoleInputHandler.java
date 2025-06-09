@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.handler.console;
 
-import com.habbashx.tcpserver.socket.User;
+import com.habbashx.tcpserver.socket.client.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;

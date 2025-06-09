@@ -4,7 +4,7 @@ import com.habbashx.tcpserver.delayevent.DelayEvent;
 import com.habbashx.tcpserver.delayevent.handler.DelayEventHandler;
 
 import com.habbashx.tcpserver.listener.DelayListener;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;

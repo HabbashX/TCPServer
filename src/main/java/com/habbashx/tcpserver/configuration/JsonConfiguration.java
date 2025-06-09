@@ -1,8 +1,7 @@
 package com.habbashx.tcpserver.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,8 +19,7 @@ import java.util.Map;
 public final class JsonConfiguration extends Configuration {
 
     private final File configurationFile;
-    private final Map<String,Object> configData;
-
+    private final Map<String, Object> configData;
 
     /**
      * Constructs a new JsonConfiguration, initializing it by loading and parsing the specified
@@ -33,11 +31,11 @@ public final class JsonConfiguration extends Configuration {
      * @param server            An instance of the Server class used for logging errors that might
      *                          occur during file reading or parsing.
      */
-    public JsonConfiguration(@NotNull String configurationFile , Server server) {
+    public JsonConfiguration(@NotNull String configurationFile, Server server) {
         this.configurationFile = new File(configurationFile);
         try {
             ObjectMapper mapper = new ObjectMapper();
-            configData = mapper.readValue(this.configurationFile,Map.class);
+            configData = mapper.readValue(this.configurationFile, Map.class);
         } catch (IOException e) {
             server.getServerLogger().error(e);
             throw new RuntimeException(e);
@@ -58,8 +56,7 @@ public final class JsonConfiguration extends Configuration {
     public @Nullable Object returnValue(@NotNull String node) {
 
         @NotNull
-        @Language("RegExp")
-        final String[] pathParts = node.split("\\.");
+        @Language("RegExp") final String[] pathParts = node.split("\\.");
 
         Map<String, Object> currentNode = configData;
 
@@ -78,15 +75,14 @@ public final class JsonConfiguration extends Configuration {
     /**
      * Modifies the configuration data by setting the specified node to the given value.
      *
-     * @param node the path to the configuration node in dot notation (e.g., "parent.child.key").
-     *             Must not be null.
+     * @param node     the path to the configuration node in dot notation (e.g., "parent.child.key").
+     *                 Must not be null.
      * @param newValue the new value to assign to the specified configuration node. Must not be null.
      */
     @Override
     public void modify(@NotNull String node, @NotNull String newValue) {
 
-        @Language("RegExp")
-        final String[] pathParts = node.split("\\.");
+        @Language("RegExp") final String[] pathParts = node.split("\\.");
 
         Map<String, Object> currentNode = configData;
 
@@ -102,7 +98,7 @@ public final class JsonConfiguration extends Configuration {
             currentNode = (Map<String, Object>) child;
         }
 
-        currentNode.put(pathParts[pathParts.length - 1],newValue);
+        currentNode.put(pathParts[pathParts.length - 1], newValue);
     }
 
     public File getConfigurationFile() {

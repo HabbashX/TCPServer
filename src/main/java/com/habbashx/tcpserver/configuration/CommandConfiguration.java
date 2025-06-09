@@ -2,7 +2,7 @@ package com.habbashx.tcpserver.configuration;
 
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.delayevent;
 
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 
 /**
  * The BroadcastEvent class represents an event to broadcast a message to a server.

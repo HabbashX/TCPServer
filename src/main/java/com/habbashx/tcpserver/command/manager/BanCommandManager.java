@@ -22,7 +22,7 @@ import java.util.Set;
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-import static com.habbashx.tcpserver.socket.Server.getInstance;
+import static com.habbashx.tcpserver.socket.server.Server.getInstance;
 
 /**
  * Manages the banning and unbanning of users using a file-based storage system.

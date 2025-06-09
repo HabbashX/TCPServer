@@ -4,7 +4,7 @@ import com.habbashx.tcpserver.event.handler.EventHandler;
 import com.habbashx.tcpserver.event.UserExecuteCommandEvent;
 
 import com.habbashx.tcpserver.listener.Listener;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 
 /**

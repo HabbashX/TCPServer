@@ -12,7 +12,7 @@ import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.handler.UserHandler;
 import com.habbashx.tcpserver.security.auth.storage.AuthStorageType;
 import com.habbashx.tcpserver.security.Role;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;

@@ -20,7 +20,7 @@ import java.util.Set;
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-import static com.habbashx.tcpserver.socket.Server.getInstance;
+import static com.habbashx.tcpserver.socket.server.Server.getInstance;
 
 /**
  * The MuteCommandManager is responsible for managing and executing operations

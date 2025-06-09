@@ -5,7 +5,7 @@ import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.security.Permission;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -65,40 +65,44 @@ public final class CheckPermissionCommand extends CommandExecutor {
             return;
         }
 
-        final var username = commandContext.getArgs().get(0);
-        final var permission = commandContext.getArgs().get(1);
-        final var isVolatile = Boolean.parseBoolean(commandContext.getArgs().get(2));
+        try {
+            final var username = commandContext.getArgs().get(0);
+            final var permission = commandContext.getArgs().get(1);
+            final var isVolatile = Boolean.parseBoolean(commandContext.getArgs().get(2));
 
-        final var userHandler = server.getServerDataManager().getOnlineUserByUsername(username);
+            final var userHandler = server.getServerDataManager().getOnlineUserByUsername(username);
 
-        if (userHandler != null) {
+            if (userHandler != null) {
 
-            if (permission.equals("0")) {
+                if (permission.equals("0")) {
 
-                if (!isVolatile) {
+                    if (!isVolatile) {
 
-                    List<Integer> permissions = userHandler.getNonVolatilePermissionContainer().getPermissions();
-                    if (permissions != null) {
-                        commandContext.getSender().printMessage(userHandler.getNonVolatilePermissionContainer().getPermissions().toString());
+                        List<Integer> permissions = userHandler.getNonVolatilePermissionContainer().getPermissions();
+                        if (permissions != null) {
+                            commandContext.getSender().printMessage(userHandler.getNonVolatilePermissionContainer().getPermissions().toString());
+                        }
+                        return;
                     }
-                    return;
-                }
 
-                commandContext.getSender().printMessage(userHandler.getHandlerPermissions().toString());
-            } else {
-                if (!isVolatile) {
-                    boolean hasPermission = userHandler.getNonVolatilePermissionContainer()
-                            .hasPermission(Integer.parseInt(permission));
+                    commandContext.getSender().printMessage(userHandler.getHandlerPermissions().toString());
+                } else {
+                    if (!isVolatile) {
+                        boolean hasPermission = userHandler.getNonVolatilePermissionContainer()
+                                .hasPermission(Integer.parseInt(permission));
 
+                        commandContext.getSender().printMessage("has permission: " + hasPermission);
+                        return;
+                    }
+                    boolean hasPermission = userHandler.hasVolatilePermission(Integer.parseInt(permission));
                     commandContext.getSender().printMessage("has permission: " + hasPermission);
-                    return;
                 }
-                boolean hasPermission = userHandler.hasVolatilePermission(Integer.parseInt(permission));
-                commandContext.getSender().printMessage("has permission: " + hasPermission);
+                return;
             }
-            return;
-        }
-        commandContext.getSender().printMessage(USER_NOT_FOUND);
+            commandContext.getSender().printMessage(USER_NOT_FOUND);
 
+        } catch (NumberFormatException e) {
+            commandContext.getSender().printMessage(RED + "Invalid permission ID: " + RESET);
+        }
     }
 }
