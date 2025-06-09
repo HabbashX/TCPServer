@@ -6,7 +6,7 @@
 
     <groupId>com.habbashx</groupId>
     <artifactId>tcp-server</artifactId>
-    <version>1.1</version>
+    <version>1.1.2</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -50,12 +50,12 @@
             <version>8.0.33</version>
         </dependency>
 
+
         <dependency>
             <groupId>com.habbashx</groupId>
             <artifactId>property-parser</artifactId>
             <version>1.0</version>
         </dependency>
-
 
     </dependencies>
 
