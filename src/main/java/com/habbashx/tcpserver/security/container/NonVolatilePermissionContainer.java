@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static com.habbashx.tcpserver.socket.Server.getInstance;
+import static com.habbashx.tcpserver.socket.server.Server.getInstance;
 
 /**
  * This class manages non-volatile permission data for users, leveraging a JSON-based
@@ -30,6 +30,19 @@ import static com.habbashx.tcpserver.socket.Server.getInstance;
 @Container(file = "containers/permissions/usersPermissions.json")
 public class NonVolatilePermissionContainer extends ContainerManager {
 
+    /**
+     * A reference to an instance of the UserHandler class, responsible for managing
+     * user-related operations such as retrieval, updates, or other manipulations
+     * specific to user entities.
+     * <p>
+     * This field is designed to provide user-specific functionality within the
+     * permission container, enabling the NonVolatilePermissionContainer to interact
+     * seamlessly with user data and maintain permission consistency.
+     * <p>
+     * It is a final field to ensure that the UserHandler instance remains constant
+     * throughout the lifecycle of the enclosing NonVolatilePermissionContainer
+     * object. The instance is typically injected via the constructor.
+     */
     private final UserHandler userHandler;
 
     /**

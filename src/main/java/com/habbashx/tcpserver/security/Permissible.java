@@ -2,22 +2,17 @@ package com.habbashx.tcpserver.security;
 
 import com.habbashx.tcpserver.handler.UserHandler;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 
 import java.util.List;
 
 /**
- * Represents an entity that can be evaluated for permissions.
+ * The {@code Permissible} interface defines a contract for managing permissions
+ * for entities. It allows checking, adding, removing, and managing both volatile
+ * and non-volatile permissions. Implementing classes should provide the specific
+ * behavior for handling permissions.
  */
 public interface Permissible {
-
-    /**
-     * Determines whether the role associated with the current entity possesses a specific permission.
-     *
-     * @param permission the integer value representing the permission to be checked
-     * @return true if the role has the specified permission, false otherwise
-     */
-    boolean isRoleHasPermission(int permission);
 
     /**
      * Determines whether the entity has the specified volatile permission.
