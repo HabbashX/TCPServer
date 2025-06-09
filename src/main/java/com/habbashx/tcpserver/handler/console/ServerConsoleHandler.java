@@ -2,7 +2,7 @@ package com.habbashx.tcpserver.handler.console;
 
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
