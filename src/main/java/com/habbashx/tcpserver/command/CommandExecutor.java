@@ -1,11 +1,7 @@
 package com.habbashx.tcpserver.command;
 
 import com.habbashx.tcpserver.configuration.CommandConfiguration;
-import com.habbashx.tcpserver.configuration.Configuration;
-import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
-import com.habbashx.tcpserver.socket.Server;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an abstract base class for executing commands in the system.

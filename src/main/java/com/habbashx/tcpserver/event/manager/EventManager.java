@@ -4,7 +4,7 @@ import com.habbashx.tcpserver.event.Event;
 import com.habbashx.tcpserver.event.Priority;
 import com.habbashx.tcpserver.event.handler.EventHandler;
 import com.habbashx.tcpserver.listener.Listener;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;

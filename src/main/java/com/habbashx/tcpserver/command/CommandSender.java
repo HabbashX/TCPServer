@@ -33,6 +33,9 @@ public interface CommandSender {
         }
     }
 
+    /**
+     *
+     */
     default ReentrantLock getReentrantLock() {
         return new ReentrantLock();
     }

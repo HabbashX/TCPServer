@@ -16,18 +16,49 @@ import java.util.Set;
  */
 public final class RolePermissionUtils {
 
+    /**
+     * Retrieves the permissions associated with the "default" role.
+     *
+     * This method provides the set of permission IDs assigned specifically
+     * to the "default" role in the application.
+     *
+     * @return a set of integer permission IDs for the "default" role
+     */
     public static Set<Integer> getDefaultRolePermissions() {
         return getRolePermissions("default");
     }
 
+    /**
+     * Retrieves the permissions associated with the "moderator" role.
+     *
+     * @return a set of integer permission IDs for the "moderator" role
+     */
     public static Set<Integer> getModeratorRolePermissions() {
         return getRolePermissions("moderator");
     }
 
+    /**
+     * Retrieves the permissions associated with the "operator" role.
+     *
+     * This method provides a set of permission IDs assigned to users
+     * with the "operator" role in the application. It uses the underlying
+     * role-to-permissions mapping mechanism to fetch the associated permissions.
+     *
+     * @return a set of integer permission IDs for the "operator" role
+     */
     public static Set<Integer> getOperatorRolePermissions() {
         return getRolePermissions("operator");
     }
 
+    /**
+     * Retrieves the permissions associated with the "administrator" role.
+     *
+     * This method provides the set of permission IDs assigned specifically
+     * to the "administrator" role in the application by utilizing
+     * the internal role-to-permissions mapping.
+     *
+     * @return a set of integer permission IDs for the "administrator" role
+     */
     public static Set<Integer> getAdministratorRolePermissions() {
         return getRolePermissions("administrator");
     }

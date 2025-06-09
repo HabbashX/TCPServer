@@ -3,7 +3,7 @@ package com.habbashx.tcpserver.listener;
 import com.habbashx.tcpserver.configuration.Configuration;
 import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.event.handler.EventHandler;
-import com.habbashx.tcpserver.socket.Server;
+import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.Nullable;
 
 /**
