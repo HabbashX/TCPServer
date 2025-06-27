@@ -10,38 +10,40 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a command to list the number of online users currently connected to the server.
  * This command can be executed by a user or logged to the console.
- *
+ * <p>
  * The command retrieves the current number of active connections from the server
  * and sends this information to the sender of the command. If the command is executed
  * by a user, the message is sent directly to that user. Otherwise, the count is printed
  * to the console.
- *
+ * <p>
  * This command is annotated with {@code @Command} to define its name and execution log settings.
- *
+ * <p>
  * Dependencies:
  * - A {@code Server} instance is required for retrieving the active connections.
- *
+ * <p>
  * Behavior:
  * - Displays the number of online users.
  * - Supports a sender that may be a user or a console command executor.
  */
-@Command(name = "online" , executionLog = true)
+@Command(name = "online", executionLog = true)
 public final class ListUserCommand extends CommandExecutor {
 
     private final Server server;
 
     public ListUserCommand(Server server) {
-        this.server =server;
+        this.server = server;
     }
 
     @Override
     public void execute(@NotNull CommandContext commandContext) {
-        int onlineUsers = server.getConnections().size();
+        int onlineUsers = server.getConnectionHandlers().stream().filter(
+                connectionHandler -> connectionHandler instanceof UserHandler
+        ).toList().size();
 
         if (commandContext.getSender() instanceof UserHandler user) {
-            user.sendMessage("online users: "+onlineUsers);
+            user.sendMessage("online users: " + onlineUsers);
         } else {
-            System.out.println("online users: "+onlineUsers);
+            System.out.println("online users: " + onlineUsers);
         }
     }
 }
