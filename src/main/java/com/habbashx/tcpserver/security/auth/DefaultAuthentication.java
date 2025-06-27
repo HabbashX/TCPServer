@@ -15,12 +15,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.Reader;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileWriter;
-import java.io.BufferedWriter;
-import java.io.FileReader;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -145,8 +140,7 @@ public final class DefaultAuthentication extends Authentication {
 
     public DefaultAuthentication(@NotNull Server server) {
         this.server = server;
-        server.injectServerSettings();
-        final String authType = this.server.getServerSettings().getAuthStorageType().toUpperCase();
+        final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
         final String fileType = authType.toLowerCase();
         authStorageType = AuthStorageType.valueOf(authType);
         authenticationFileStorage = new File("data/users.%s".formatted(fileType));
@@ -532,9 +526,9 @@ public final class DefaultAuthentication extends Authentication {
      * @param username The username of the user to check. Must not be null.
      * @return true if the user is connected; false otherwise.
      */
-    private boolean isUserConnected(String username) {
+    public boolean isUserConnected(String username) {
 
-        return server.getConnections().stream()
+        return server.getConnectionHandlers().stream()
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                 .map(connectionHandler -> (UserHandler) connectionHandler)
                 .map(user -> user.getUserDetails().getUsername())
