@@ -140,7 +140,6 @@ public class NonVolatilePermissionContainer extends ContainerManager {
 
             boolean userUpdated = false;
 
-
             for (Map<String, Object> map : per) {
                 if (map.get("userID").equals(userHandler.getUserDetails().getUserID())) {
 
