@@ -23,12 +23,15 @@ import com.habbashx.annotation.InjectProperty;
  */
 public final class ServerSettings {
 
+    @InjectProperty("server.settings.host")
+    private String host;
+
     /**
      * The port number on which the server will listen for incoming connections.
      * This property is injected using the @InjectProperty annotation and must be
      * configured properly to ensure the availability of server services.
      */
-    @InjectProperty("port")
+    @InjectProperty("server.settings.port")
     private int port;
 
     /**
@@ -36,7 +39,7 @@ public final class ServerSettings {
      * This property is typically used to configure the server socket binding behavior.
      * Injected from the configuration property named "reusableAddress".
      */
-    @InjectProperty("reusableAddress")
+    @InjectProperty("server.settings.reusableAddress")
     private boolean isReusableAddress;
 
     /**
@@ -45,7 +48,7 @@ public final class ServerSettings {
      * This variable is injected with the property value associated with
      * the key "security.keystore.path" from the application's configuration.
      */
-    @InjectProperty("security.keystore.path")
+    @InjectProperty("server.settings.security.keystore.path")
     private String keyStorePath;
 
     /**
@@ -54,7 +57,7 @@ public final class ServerSettings {
      * using the key "security.keystore.password".
      * It is used to unlock the keystore for accessing cryptographic keys.
      */
-    @InjectProperty("security.keystore.password")
+    @InjectProperty("server.settings.security.keystore.password")
     private String keyStorePassword;
 
     /**
@@ -62,7 +65,7 @@ public final class ServerSettings {
      * This property is injected with the value mapped to the configuration key
      * "security.truststore.path".
      */
-    @InjectProperty("security.truststore.path")
+    @InjectProperty("server.settings.security.truststore.path")
     private String trustStorePath;
 
     /**
@@ -70,7 +73,7 @@ public final class ServerSettings {
      * This property is injected from the configuration using the key "security.truststore.password".
      * The truststore is typically used to store certificates for establishing secure communications.
      */
-    @InjectProperty("security.truststore.password")
+    @InjectProperty("server.settings.security.truststore.password")
     private String trustStorePassword;
 
     /**
@@ -80,21 +83,21 @@ public final class ServerSettings {
      * <p>
      * The value is injected from a configuration property "chat.cooldown.second".
      */
-    @InjectProperty("chat.cooldown.second")
+    @InjectProperty("server.settings.chat.cooldown.second")
     private String userChatCooldown;
 
     /**
      * Specifies the type of storage used for authentication data.
      * The value is injected from the configuration property "security.authentication.datastorage.type".
      */
-    @InjectProperty("security.authentication.datastorage.type")
+    @InjectProperty("server.settings.security.authentication.datastore.type")
     private String authStorageType;
 
     /**
      * Represents the URL of the database used for establishing a connection to the database.
      * The value is injected through the configuration property "database.url".
      */
-    @InjectProperty("database.url")
+    @InjectProperty("server.settings.database.url")
     private String databaseURL;
 
     /**
@@ -102,15 +105,84 @@ public final class ServerSettings {
      * This field is configured through the "database.username" property.
      * It is typically injected from an external configuration.
      */
-    @InjectProperty("database.username")
+    @InjectProperty("server.settings.database.username")
     private String databaseUsername;
 
     /**
      * The password used to authenticate the connection to the database.
      * This value is injected from the configuration property "database.password".
      */
-    @InjectProperty("database.password")
+    @InjectProperty("server.settings.database.password")
     private String databasePassword;
+
+    public ServerSettings() {
+    }
+
+    public ServerSettings(int port, boolean isReusableAddress, String keyStorePassword, String keyStorePath, String trustStorePath, String trustStorePassword, String authStorageType, String userChatCooldown, String databaseURL, String databasePassword, String databaseUsername) {
+        this.port = port;
+        this.isReusableAddress = isReusableAddress;
+        this.keyStorePassword = keyStorePassword;
+        this.keyStorePath = keyStorePath;
+        this.trustStorePath = trustStorePath;
+        this.trustStorePassword = trustStorePassword;
+        this.authStorageType = authStorageType;
+        this.userChatCooldown = userChatCooldown;
+        this.databaseURL = databaseURL;
+        this.databasePassword = databasePassword;
+        this.databaseUsername = databaseUsername;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public void setReusableAddress(boolean reusableAddress) {
+        isReusableAddress = reusableAddress;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    public void setTrustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+    }
+
+    public void setKeyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    public void setAuthStorageType(String authStorageType) {
+        this.authStorageType = authStorageType;
+    }
+
+    public void setUserChatCooldown(String userChatCooldown) {
+        this.userChatCooldown = userChatCooldown;
+    }
+
+    public void setDatabaseURL(String databaseURL) {
+        this.databaseURL = databaseURL;
+    }
+
+    public void setDatabaseUsername(String databaseUsername) {
+        this.databaseUsername = databaseUsername;
+    }
+
+    public void setDatabasePassword(String databasePassword) {
+        this.databasePassword = databasePassword;
+    }
+
+    public String getHost() {
+        return host;
+    }
 
     public int getPort() {
         return port;
@@ -155,4 +227,6 @@ public final class ServerSettings {
     public String getDatabasePassword() {
         return databasePassword;
     }
+
+
 }
