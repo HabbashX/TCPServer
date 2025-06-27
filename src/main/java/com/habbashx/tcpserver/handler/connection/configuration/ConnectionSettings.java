@@ -49,7 +49,7 @@ public final class ConnectionSettings {
      * improve performance by batch processing data. If set to {@code false},
      * data is handled without buffering, potentially reducing latency but
      * possibly impacting throughput.
-     *
+     * <p>
      * The value is dynamically injected from an external configuration
      * source using the {@code @InjectProperty} annotation with the key
      * {@code "bufferingEnabled"}.
@@ -71,7 +71,7 @@ public final class ConnectionSettings {
      * by sending packets immediately without buffering them. By default, Nagle's
      * algorithm is used to optimize TCP/IP performance by reducing the number of
      * packets sent, which may introduce a slight delay.
-     *
+     * <p>
      * This setting can be configured via an external property with the key "tcpNoDelay".
      */
     @InjectProperty("tcpNoDelay")
@@ -79,12 +79,12 @@ public final class ConnectionSettings {
 
     /**
      * Represents whether the connection should stay alive or not.
-     *
+     * <p>
      * The value of this variable determines whether the connection remains
      * persistent and prevents it from being closed after a single transaction.
      * This is often used to improve network performance by reusing existing
      * connections.
-     *
+     * <p>
      * The value is injected through the property "keepAlive".
      */
     @InjectProperty("keepAlive")
@@ -95,7 +95,7 @@ public final class ConnectionSettings {
      * when binding. This is useful in scenarios where servers need to
      * be restarted and need to bind to the same port immediately without
      * waiting for the port to be released by the operating system.
-     *
+     * <p>
      * The value of this variable is injected using the "reuseAddress"
      * property from the configuration or dependency injection framework.
      */
