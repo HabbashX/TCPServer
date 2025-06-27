@@ -4,7 +4,7 @@ import com.habbashx.tcpserver.event.Event;
 import com.habbashx.tcpserver.event.Priority;
 import com.habbashx.tcpserver.event.handler.EventHandler;
 import com.habbashx.tcpserver.listener.Listener;
-import com.habbashx.tcpserver.socket.server.Server;
+import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;
@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-
 /**
  * The EventManager class is responsible for managing event listeners and triggering events in the system.
  * It handles the registration, unregistration, sorting, and execution of listeners for various event types.
@@ -25,7 +22,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  */
 public class EventManager {
 
-    private final Server server;
+    private final ServerFoundation serverFoundation;
 
     /**
      * A list that holds all the listeners registered to the EventManager.
@@ -49,8 +46,8 @@ public class EventManager {
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
 
-    public EventManager(Server server) {
-        this.server = server;
+    public EventManager(ServerFoundation serverFoundation) {
+        this.serverFoundation = serverFoundation;
     }
 
     /**
@@ -62,10 +59,9 @@ public class EventManager {
 
         if (listener.getClass().isAnnotationPresent(EventHandler.class)) {
             registeredListeners.add(listener);
-            server.getServerLogger().info("Registering event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET);
             sortListeners();
         } else {
-            server.getServerLogger().warning("""
+            serverFoundation.getServerLogger().warning("""
                     this listener %s is missing the @EventHandler annotation
                     listener %s will not be listening for specific event until properly annotated with @EventHandler
                     """);
