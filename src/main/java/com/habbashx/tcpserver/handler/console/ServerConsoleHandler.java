@@ -4,9 +4,7 @@ import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
 import com.habbashx.tcpserver.socket.server.Server;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 
 /**
@@ -18,10 +16,10 @@ import java.io.InputStreamReader;
  * <p>
  * It extends the {@code CommandSender} abstract class, enabling it to handle commands and
  * route messages appropriately while guaranteeing thread-safe operations provided by
- * its parent class. Additionally, it implements both the {@code Runnable} and {@code Closeable}
+ * its parent class. Additionally, it implements both the {@code Runnable}
  * interfaces, allowing it to run as a separate thread and be safely closed when the server shuts down.
  */
-public final class ServerConsoleHandler implements Runnable, CommandSender {
+public final class ServerConsoleHandler extends ConsoleHandler implements CommandSender {
 
     private final Server server;
 
@@ -52,10 +50,9 @@ public final class ServerConsoleHandler implements Runnable, CommandSender {
     @Override
     public void run() {
 
-        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-
+        try (this) {
             String message;
-            while ((message = reader.readLine()) != null) {
+            while ((message = getInput().readLine()) != null) {
                 if (message.startsWith("/")) {
                     server.getCommandManager().executeCommand("Server", message, this);
                 } else {
