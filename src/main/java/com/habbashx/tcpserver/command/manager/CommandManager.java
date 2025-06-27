@@ -16,7 +16,8 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.*;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 /**
  * The CommandManager class is responsible for managing the registration, execution,
@@ -103,12 +104,11 @@ public final class CommandManager {
             final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
             final String commandName = commandInformation.name();
             registerCommand(commandName, commandExecutor);
-            server.getServerLogger().info("Registering command: " + commandExecutor + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET);
+
 
             if (0 < commandInformation.aliases().length) {
                 for (final String alias : commandInformation.aliases()) {
                     registerCommand(alias, commandExecutor);
-                    server.getServerLogger().info("Registering command: " + commandExecutor + " with alias " + alias + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET);
                 }
             }
         } else {
