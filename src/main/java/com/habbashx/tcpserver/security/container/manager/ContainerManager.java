@@ -31,7 +31,6 @@ public abstract class ContainerManager {
     private final boolean isAnnotated;
 
     public ContainerManager() {
-
         this.isAnnotated = this.getClass().isAnnotationPresent(Container.class);
     }
 
@@ -44,7 +43,6 @@ public abstract class ContainerManager {
      * or {@code null} if the annotation is not present.
      */
     public @Nullable String getContainerFileName() {
-
         return isAnnotated ? this.getClass().getAnnotation(Container.class).file() : null;
     }
 
@@ -60,7 +58,7 @@ public abstract class ContainerManager {
      * annotated with {@code @Container}, or {@code null} if no annotation is present.
      */
     public @Nullable File getContainerFile() {
-
+        assert getContainerFileName() != null;
         return isAnnotated ? new File(getContainerFileName()) : null;
     }
 }
