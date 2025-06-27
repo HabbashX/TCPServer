@@ -2,10 +2,11 @@ package com.habbashx.tcpserver.handler.connection;
 
 import com.habbashx.annotation.InjectPrefix;
 import com.habbashx.injector.PropertyInjector;
+import com.habbashx.tcpserver.Shutdownable;
 import com.habbashx.tcpserver.handler.connection.configuration.ConnectionSettings;
 import com.habbashx.tcpserver.handler.connection.util.ConnectionUtils;
 import com.habbashx.tcpserver.security.Permissible;
-import com.habbashx.tcpserver.socket.server.Server;
+import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 
 import javax.net.ssl.SSLSocket;
 import java.io.File;
@@ -23,9 +24,19 @@ import java.net.SocketException;
  * allowing it to handle permission-based logic and be executed as a
  * concurrent task, respectively.
  */
-public abstract class ConnectionHandler implements Permissible, Runnable {
+public abstract class ConnectionHandler implements Permissible, Runnable, Shutdownable {
 
-    private final Server server;
+    /**
+     * The ServerFoundation instance that provides the context and resources
+     * for the connection handler, such as logging and server management.
+     */
+    private final ServerFoundation server;
+
+    /**
+     * The SSLSocket instance that represents the secure socket connection
+     * established for communication. This socket is used to send and receive
+     * data securely over the network.
+     */
     private final SSLSocket socket;
 
     /**
@@ -49,7 +60,16 @@ public abstract class ConnectionHandler implements Permissible, Runnable {
     @InjectPrefix("connection")
     private final ConnectionSettings connectionSettings = new ConnectionSettings();
 
-    public ConnectionHandler(SSLSocket sslSocket, Server server) {
+    /**
+     * Constructs a new ConnectionHandler with the specified SSLSocket and ServerFoundation.
+     * This constructor initializes the connection settings by invoking the
+     * {@code injectConnectionSettings} method to ensure that the handler is configured
+     * with the necessary properties for managing secure connections.
+     *
+     * @param sslSocket the SSLSocket representing the secure connection.
+     * @param server    the ServerFoundation instance providing server context and resources.
+     */
+    public ConnectionHandler(SSLSocket sslSocket, ServerFoundation server) {
         this.server = server;
         this.socket = sslSocket;
         injectConnectionSettings();
@@ -72,7 +92,7 @@ public abstract class ConnectionHandler implements Permissible, Runnable {
      */
     public abstract String getHandlerDescription();
 
-    public Server getServer() {
+    public ServerFoundation getServer() {
         return server;
     }
 
