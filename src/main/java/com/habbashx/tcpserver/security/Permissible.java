@@ -70,10 +70,17 @@ public interface Permissible {
      * associated with the provided {@code UserHandler}.
      */
     default NonVolatilePermissionContainer getNonVolatilePermissionContainer() {
+        /*
+        NOTE: NonVolatilePermissionContainer is only support UserHandler
+        if you want to make another Handlers support this feature
+        just provide your logic code and make it
+        feel free :D
+         */
+
         if (this instanceof UserHandler userHandler) {
             return new NonVolatilePermissionContainer(userHandler);
         } else {
-            Server.getInstance().getServerLogger().warning("un supported handler: " + this);
+            Server.getInstance().getServerLogger().error("unsupported handler: " + this);
             return null;
         }
 
