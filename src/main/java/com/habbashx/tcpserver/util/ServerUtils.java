@@ -14,6 +14,6 @@ public final class ServerUtils {
      * This constant points to a file named "settings.properties"
      * located in the "settings" directory.
      */
-    public static final String SERVER_SETTINGS_PATH = "settings/settings.properties";
+    public static final String SERVER_SETTINGS_PATH = "server/settings/settings.properties";
 
 }
