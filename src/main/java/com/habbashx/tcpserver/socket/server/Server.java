@@ -2,8 +2,6 @@ package com.habbashx.tcpserver.socket.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.annotation.InjectPrefix;
-import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.command.defaultcommand.*;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.command.manager.CommandManager;
@@ -15,35 +13,32 @@ import com.habbashx.tcpserver.handler.UserHandler;
 import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
 import com.habbashx.tcpserver.handler.console.ServerConsoleHandler;
 import com.habbashx.tcpserver.listener.handler.*;
-import com.habbashx.tcpserver.logger.ServerLogger;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.auth.DefaultAuthentication;
 import com.habbashx.tcpserver.security.auth.storage.AuthStorageType;
-import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
+import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 import com.habbashx.tcpserver.user.UserDetails;
-import com.habbashx.tcpserver.util.ServerUtils;
-import com.habbashx.tcpserver.version.VersionChecker;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 /**
  * Represents a secure server that handles client connections, supports SSL/TLS protocols,
@@ -59,9 +54,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * - Managing server resources including logging, configurations, user data, and authentication.
  * - Allowing a clean shutdown process to properly release all resources.
  * <p>
- * Implements {@code Runnable} for running the server inside a thread and
+ * Implements {@code Runnable} for running the server inside a thread
  */
-public final class Server implements Runnable {
+public final class Server extends ServerFoundation implements Runnable {
 
     /**
      * A singleton instance of the Server class, ensuring only one instance is created
@@ -74,93 +69,11 @@ public final class Server implements Runnable {
     private static volatile Server instance;
 
     /**
-     * Represents an SSL server socket for securely accepting client connections.
-     * The serverSocket is used to listen for incoming secure connections using the SSL/TLS protocol.
-     * It is a core component of the server's networking functionality.
-     * <p>
-     * This socket is initialized to handle encrypted communication, ensuring that
-     * client-server interactions are protected against unauthorized access or data interception.
-     * <p>
-     * The socket must be configured with specific keystores and protocols to enable secure communication.
-     */
-    private SSLServerSocket serverSocket;
-    /**
-     * A thread pool executor service used to manage and execute server tasks concurrently.
-     * The thread pool is initialized with a fixed number of threads based on twice the number
-     * of available processor cores. This configuration helps balance computational load while
-     * supporting concurrent task execution.
-     * <p>
-     * This thread pool is utilized for handling various server operations, enhancing performance
-     * and scalability by distributing workload across multiple threads.
-     */
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-    /**
-     * A thread-safe list of ConnectionHandler objects representing active connections.
-     * The list is synchronized to ensure safe concurrent access and modifications
-     * from multiple threads. Each entry in the list corresponds to an individual
-     * user or client connection managed by the application.
-     */
-    private final List<ConnectionHandler> connections = Collections.synchronizedList(new ArrayList<>());
-
-    /**
-     * The eventManager is responsible for managing and dispatching events
-     * within the application. It acts as a centralized handler for
-     * registering, deregistering, and notifying event listeners.
-     * <p>
-     * This variable ensures that different parts of the application can
-     * communicate asynchronously by subscribing to or publishing specific
-     * events through the EventManager instance.
-     * <p>
-     * It is declared as a final field to ensure that the reference to the
-     * EventManager remains constant throughout the lifetime of the
-     * containing class.
-     */
-    private final EventManager eventManager = new EventManager(this);
-    /**
-     * Manages and coordinates delayed execution of events within the system.
-     * This variable is responsible for handling operations related to event scheduling,
-     * ensuring that events are executed after their specified delay intervals.
-     * <p>
-     * It is a final instance to maintain a single, consistent event manager associated
-     * with the current object. Internally, it leverages mechanisms to manage the precise
-     * timing of delayed tasks and processes.
-     */
-    private final DelayEventManager delayEventManager = new DelayEventManager(this);
-    /**
      * Manages the registration, organization, and execution of commands within the server.
      * Acts as the central component for handling command-related operations,
      * enabling modularity and extensibility for command functionalities.
      */
     private final CommandManager commandManager = new CommandManager(this);
-
-    /**
-     * A logging utility instance for the server, providing functionality for formatted,
-     * colored logs at various levels such as INFO, WARNING, ERROR, and MONITOR.
-     * This field is final, ensuring that the same logging instance is used throughout
-     * the server lifecycle.
-     * <p>
-     * The `serverLogger` facilitates tracking server operations, events, and issues
-     * in a structured and visually distinct manner through the console output.
-     */
-    private final ServerLogger serverLogger = new ServerLogger();
-
-    /**
-     * The {@code serverSettings} field represents the configuration settings for the server.
-     * <p>
-     * This field is an instance of the {@link ServerSettings} class and is annotated with
-     * {@code @InjectPrefix("server.setting")}, enabling automatic injection of configuration
-     * properties prefixed with "server.setting".
-     * <p>
-     * It encapsulates essential configurations such as network settings, security parameters,
-     * user interaction limits, and database connectivity details. These settings are used
-     * throughout the server to maintain configuration consistency and facilitate runtime adjustments.
-     * <p>
-     * Being immutable and final, {@code serverSettings} ensures thread-safe access and reliability
-     * within the multi-threaded server environment.
-     */
-    @InjectPrefix("server.settings")
-    private ServerSettings serverSettings = new ServerSettings();
-
     /**
      * Manages data-related operations within the server. Responsible for user retrieval
      * and storage operations based on the configured authentication storage type, such as
@@ -178,20 +91,18 @@ public final class Server implements Runnable {
 
     /**
      * The {@code muteCommandManager} is an instance of {@link MuteCommandManager} used to
-     * handle commands and operations related to muting and unmutCommandingManager users} on used the to server manage.
+     * handle commands and operations related to muting and unmuteCommandingManager users} on used to the server manage.
      * <p>
-     * * This mut objecting manages-related the operations lifecycle on of the mute server commands., This including includes maintaining handling a commands persistent for
-     * mut *ing data un storemut ofing muted users users,,
-     * validating * operations maintaining to the avoid list duplication of or currently inconsist mutedencies users,
-     * , * and and ensuring orchestr consistencyating across notifications related to command command operations send.
+     * * This mut objecting manages-related the operations lifecycle on of the mute server commands., This including maintaining handling a commands persistent for
+     * mut *ing data un storei offing muted users,
+     * validating * operations maintaining to the avoid list duplication of or currently inconsistent multipotencies users,     * , * and ensuring orchestra consternating across notifications related to command operations send.
      * ers *
-     * about * the It results is of responsible their for actions:
+     * about * It results is of responsible their for actions:
      * .
      * *
-     * - * St Itoring is a a persistent central record component of within muted the users {@. code * Server -} Providing class functionality to to enforce mute and manage or user un
-     * mute specific * communication users restrictions.
-     * , * ensuring - smooth Sending operation appropriate by feedback interacting messages with to the command underlying initi
-     * ators * based server on infrastructure the.
+     * - * St Storing is a persistent central record component of within muted the users {@. code * Server -} Providing class functionality to enforce mute and manage or user un     * mute specific * communication users restrictions.
+     * * ensuring - smooth Sending operation appropriate by feedback interacting messages with to the command underlying init
+     * actors * based server on infrastructure the.
      * success
      */
     private final MuteCommandManager muteCommandManager = new MuteCommandManager();
@@ -222,7 +133,7 @@ public final class Server implements Runnable {
      * This field is critical for ensuring that only authorized users can interact with
      * server functionalities and for preserving the security and integrity of the system.
      */
-    private Authentication authentication = new DefaultAuthentication(this);
+    private Authentication authentication;
 
     /**
      * An instance of the ServerMemoryMonitor class that monitors the memory usage
@@ -234,14 +145,6 @@ public final class Server implements Runnable {
      * be reassigned, maintaining the integrity of the monitoring process.
      */
     private final ServerMemoryMonitor serverMemoryMonitor = new ServerMemoryMonitor();
-
-    /**
-     * A thread-safe list that holds instances of ConnectionHandler.
-     * This list is used to manage and store active connection handlers
-     * for managing network or data communication sessions. Ensures
-     * synchronized access when modifying the list.
-     */
-    private final List<ConnectionHandler> connectionHandlers = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * A flag indicating whether dumb commands are enabled or not.
@@ -260,6 +163,14 @@ public final class Server implements Runnable {
      */
     private boolean dumbEvents = false;
 
+    private boolean dumbDelayEvent = false;
+
+    private boolean commandRegisterationLoggingIsEnabled = true;
+
+    private boolean eventRegisterationLoggingIsEnabled = true;
+
+    private boolean delayEventRegisterationLoggingIsEnabled = true;
+
     /**
      * Indicates whether the server is currently running.
      * This flag is used to control the server's operational state.
@@ -269,6 +180,11 @@ public final class Server implements Runnable {
     private boolean running = true;
 
     public Server() {
+        super();
+        disableDefaultFeatures();
+        disableCommandRegisterationLogging();
+        disableEventRegisterationLogging();
+        disableDelayEventRegisterationLogging();
         authentication = new DefaultAuthentication(this);
         serverDataManager = new ServerDataManager(this);
         registerDefaultEvents();
@@ -286,8 +202,8 @@ public final class Server implements Runnable {
      * SSL-based secure communication in the server.
      */
     public void registerKeystore() {
-        System.setProperty("javax.net.ssl.keyStore", serverSettings.getKeystorePath());
-        System.setProperty("javax.net.ssl.keyStorePassword", serverSettings.getKeystorePassword());
+        System.setProperty("javax.net.ssl.keyStore", getServerSettings().getKeystorePath());
+        System.setProperty("javax.net.ssl.keyStorePassword", getServerSettings().getKeystorePassword());
     }
 
     /**
@@ -318,36 +234,30 @@ public final class Server implements Runnable {
      * Preconditions:
      * - Properly configured server settings, including SSL keystore setup.
      * <p>
-     * Postconditions:
+     * Post conditions:
      * - Logs all interactions and errors related to client connections and command inputs.
      * - On error or server shutdown, cleans up resources and stops the server.
      */
     @Override
     public void run() {
-
+        super.run();
         try {
-            serverLogger.info("Server started at port: " + serverSettings.getPort());
-            serverLogger.info("Server is secured with ssl protocol");
-            serverLogger.info("waiting for user connections....");
+            getServerLogger().info("Server started at port: " + getServerSettings().getPort());
+            getServerLogger().info("Server is secured with ssl protocol");
+            getServerLogger().info("waiting for user connections....");
 
-            SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            serverSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(serverSettings.getPort());
-
-            ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
-            threadPool.execute(serverConsoleHandler);
-            VersionChecker.checkProjectVersion(this);
+            final ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
+            getThreadPool().execute(serverConsoleHandler);
 
             if (running) {
                 do {
-                    SSLSocket user = (SSLSocket) serverSocket.accept();
-                    ConnectionHandler userHandler = new UserHandler(user, this);
-                    connectionHandlers.add(userHandler);
-                    connectionHandlers.forEach(threadPool::execute);
-                    connections.add(userHandler);
+                    SSLSocket user = (SSLSocket) getServerSocket().accept();
+                    ConnectionHandler userHandler = connect(new UserHandler(user, this));
+                    getThreadPool().execute(userHandler);
                 } while (running);
             }
         } catch (IOException e) {
-            serverLogger.error(e);
+            getServerLogger().error(e);
             shutdown();
         }
 
@@ -386,15 +296,23 @@ public final class Server implements Runnable {
      */
     private void registerDefaultEvents() {
         if (!dumbEvents) {
-            eventManager.registerEvent(new DefaultChatHandler(this));
-            eventManager.registerEvent(new DefaultMutedUserHandler(muteCommandManager));
-            eventManager.registerEvent(new DefaultUserJoinHandler(this));
-            eventManager.registerEvent(new DefaultUserLeaveHandler(this));
-            eventManager.registerEvent(new DefaultServerConsoleChatHandler(this));
-            eventManager.registerEvent(new AuthenticationEventHandler());
-            eventManager.registerEvent(new DefaultUserExecuteCommandHandler(this));
+
+            getEventManager().registerEvent(new DefaultChatHandler(this));
+            getEventManager().registerEvent(new DefaultMutedUserHandler(muteCommandManager));
+            getEventManager().registerEvent(new DefaultUserJoinHandler(this));
+            getEventManager().registerEvent(new DefaultUserLeaveHandler(this));
+            getEventManager().registerEvent(new DefaultServerConsoleChatHandler(this));
+            getEventManager().registerEvent(new AuthenticationEventHandler());
+            getEventManager().registerEvent(new DefaultUserExecuteCommandHandler(this));
+
+            if (eventRegisterationLoggingIsEnabled) {
+                getEventManager().getRegisteredListeners().stream()
+                        .forEach(listener ->
+                                getServerLogger().info("Registering event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
+            }
+
         } else {
-            serverLogger.info("dumbing events initialization");
+            getServerLogger().info("dumbing events initialization.");
         }
     }
 
@@ -413,7 +331,7 @@ public final class Server implements Runnable {
      * Preconditions:
      * - The {@code DelayEventManager} instance must be initialized prior to invoking this method.
      * <p>
-     * Postconditions:
+     * Post conditions:
      * - The {@code DefaultBroadcastHandler} is registered with the {@code DelayEventManager}.
      * <p>
      * Responsibilities:
@@ -424,7 +342,17 @@ public final class Server implements Runnable {
      * - Additional delay-based event handlers could be added in the future by modifying this method.
      */
     private void registerDefaultDelayEvents() {
-        delayEventManager.registerEvent(new DefaultBroadcastHandler());
+        if (!dumbDelayEvent) {
+            getDelayEventManager().registerEvent(new DefaultBroadcastHandler());
+
+            if (delayEventRegisterationLoggingIsEnabled) {
+                getDelayEventManager().getRegisteredListeners().stream()
+                        .forEach(listener -> getServerLogger().info("Registering the delay event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
+            }
+            return;
+        }
+        getServerLogger().info("dumbing delay events initialization.");
+
     }
 
     /**
@@ -447,6 +375,7 @@ public final class Server implements Runnable {
      */
     private void registerDefaultCommands() {
         if (!dumbCommands) {
+
             commandManager.registerCommand(new ChangeRoleCommand(this));
             commandManager.registerCommand(new HelpCommand(this));
             commandManager.registerCommand(new PrivateMessageCommand(this));
@@ -463,9 +392,14 @@ public final class Server implements Runnable {
             commandManager.registerCommand(new RemovePermissionCommand(this));
             commandManager.registerCommand(new CheckPermissionCommand(this));
             commandManager.registerCommand(new RetrievesWrittenBytesCommand(this));
-        } else {
-            serverLogger.info("dumbing commands initialization");
+            if (commandRegisterationLoggingIsEnabled) {
+                commandManager.getExecutors().values().stream().forEach(
+                        commandExecutor -> getServerLogger().info("Registering command: " + commandExecutor + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
+            }
+
+            return;
         }
+        getServerLogger().info("dumbing commands initialization.");
     }
 
     /**
@@ -478,7 +412,7 @@ public final class Server implements Runnable {
      * @param message the message to broadcast to all connected users
      */
     public void broadcast(String message) {
-        getConnections().stream()
+        getConnectionHandlers().stream()
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                 .map(connectionHandler -> (UserHandler) connectionHandler)
                 .forEach(user -> {
@@ -505,7 +439,7 @@ public final class Server implements Runnable {
 
         AtomicLong writtenBytes = new AtomicLong(0L);
 
-        getConnections().stream()
+        getConnectionHandlers().stream()
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                 .map(connectionHandler -> (UserHandler) connectionHandler)
                 .forEach(user -> {
@@ -526,28 +460,15 @@ public final class Server implements Runnable {
         this.authentication = authentication;
     }
 
-    public SSLServerSocket getServerSocket() {
-        return serverSocket;
-    }
 
-    public List<ConnectionHandler> getConnections() {
-        return connections;
-    }
-
-    public ExecutorService getThreadPool() {
-        return threadPool;
-    }
-
-    public ServerLogger getServerLogger() {
-        return serverLogger;
-    }
-
+    @Override
     public EventManager getEventManager() {
-        return eventManager;
+        return super.getEventManager();
     }
 
+    @Override
     public DelayEventManager getDelayEventManager() {
-        return delayEventManager;
+        return super.getDelayEventManager();
     }
 
     public CommandManager getCommandManager() {
@@ -560,10 +481,6 @@ public final class Server implements Runnable {
 
     public MuteCommandManager getMuteCommandManager() {
         return muteCommandManager;
-    }
-
-    public ServerSettings getServerSettings() {
-        return serverSettings;
     }
 
     public ServerDataManager getServerDataManager() {
@@ -600,32 +517,19 @@ public final class Server implements Runnable {
      * - This method is typically invoked when the server needs to shut down either intentionally
      * (e.g., via a shutdown signal) or due to an unexpected exception.
      */
+    @Override
     public void shutdown() {
         try {
-
+            super.shutdown();
             running = false;
-            if (serverSocket != null) {
-                if (!serverSocket.isClosed()) {
-                    serverSocket.close();
-                }
-            }
-
-            if (!threadPool.isShutdown()) {
-                threadPool.shutdown();
-            }
-
-            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow();
-            }
-
-            connections.stream()
+            getConnectionHandlers().stream()
                     .filter(connection -> connection instanceof UserHandler)
                     .map(connection -> (UserHandler) connection)
                     .forEach(UserHandler::shutdown);
 
             getServerDataManager().getUserDao().closeConnection();
         } catch (IOException | InterruptedException e) {
-            serverLogger.error(e);
+            getServerLogger().error(e);
         }
     }
 
@@ -662,47 +566,28 @@ public final class Server implements Runnable {
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
 
-    /**
-     * Injects server settings from an external configuration file into the server instance.
-     * <p>
-     * This method initializes the server's configuration parameters by reading them from a
-     * properties file located at the path specified in {@code ServerUtils.SERVER_SETTINGS_PATH}.
-     * A {@code PropertyInjector} is used to map the properties from the configuration file onto
-     * the current server instance.
-     * <p>
-     * Functionality:
-     * - Reads server settings from a properties file.
-     * - Applies the configuration values to the server's fields using reflection.
-     * <p>
-     * Exception Handling:
-     * - If any exception occurs during the injection process, it is caught and
-     * rethrown as a {@code RuntimeException}.
-     * <p>
-     * Preconditions:
-     * - The properties file specified by {@code ServerUtils.SERVER_SETTINGS_PATH} must exist and
-     * be properly configured with valid key-value pairs for the server settings.
-     * <p>
-     * Postconditions:
-     * - The server instance is configured with settings read from the properties file.
-     * <p>
-     * This method is typically invoked during the initialization of the server or related
-     * components requiring the server's configuration values.
-     */
-    public void injectServerSettings() {
-        try {
-            final PropertyInjector propertyInjector = new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH));
-            propertyInjector.inject(this);
-        } catch (Exception e) {
-            serverLogger.error(e);
-        }
-    }
-
     public void dumbCommandsInitialization() {
         dumbCommands = true;
     }
 
     public void dumbEventsInitialization() {
         dumbEvents = true;
+    }
+
+    public void dumbDelayEventInitialization() {
+        dumbDelayEvent = true;
+    }
+
+    public void disableCommandRegisterationLogging() {
+        commandRegisterationLoggingIsEnabled = false;
+    }
+
+    public void disableEventRegisterationLogging() {
+        eventRegisterationLoggingIsEnabled = false;
+    }
+
+    public void disableDelayEventRegisterationLogging() {
+        delayEventRegisterationLoggingIsEnabled = false;
     }
 
     /**
@@ -722,12 +607,8 @@ public final class Server implements Runnable {
         return instance;
     }
 
-    public List<ConnectionHandler> getConnectionHandlers() {
-        return connectionHandlers;
-    }
-
     public static void main(String[] args) {
-        Server server = new Server();
+        ServerFoundation server = new Server();
         server.run();
     }
 
@@ -794,7 +675,7 @@ public final class Server implements Runnable {
          */
         public @Nullable UserHandler getOnlineUserByUsername(String username) {
 
-            return server.getConnections()
+            return server.getConnectionHandlers()
                     .stream()
                     .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                     .map(connectionHandler -> (UserHandler) connectionHandler)
@@ -814,7 +695,7 @@ public final class Server implements Runnable {
          * or null if no such user is currently online.
          */
         public @Nullable UserHandler getOnlineUserById(String id) {
-            return server.getConnections()
+            return server.getConnectionHandlers()
                     .stream()
                     .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                     .map(connectionHandler -> (UserHandler) connectionHandler)
