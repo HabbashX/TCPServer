@@ -62,6 +62,10 @@ public final class ServerLogger {
         log(ExceptionUtils.getStackTrace(e), Level.ERROR);
     }
 
+    public void error(String message) {
+        log(message, Level.ERROR);
+    }
+
     public void monitor(String message) {
         log(message, Level.MONITOR);
     }
