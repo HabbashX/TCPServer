@@ -150,7 +150,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * @param user   the SSL socket representing the user's connection; must not be null
      * @param server the server instance associated with this user handler; must not be null
      */
-    public UserHandler(@NotNull SSLSocket user, @NotNull Server server) {
+    public UserHandler(@NotNull SSLSocket user, @NotNull Server server) throws IOException {
         super(user, server);
         userDetails = new UserDetails();
         authentication = server.getAuthentication();
@@ -362,7 +362,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
 
     @Override
     public Server getServer() {
-        return super.getServer();
+        return (Server) super.getServer();
     }
 
     /**
@@ -411,9 +411,15 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         return super.getNonVolatilePermissionContainer();
     }
 
+    /**
+     * Retrieves the {@link CountingOutputStream} instance associated with this handler.
+     *
+     * @return the counting output stream used for tracking data sent to the user
+     */
     public CountingOutputStream getCountingOutputStream() {
         return countingOutputStream;
     }
+
 
     /**
      * Terminates the current connection and handles necessary cleanup.
@@ -428,12 +434,13 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * <p>
      * Any IOException that occurs during the shutdown process is caught and ignored.
      */
+    @Override
     public void shutdown() {
 
         try {
             running = false;
 
-            getServer().getConnections().remove(this);
+            getServer().getConnectionHandlers().remove(this);
             final String username = userDetails.getUsername();
 
             if (username != null) {
