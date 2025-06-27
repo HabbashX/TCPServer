@@ -2,9 +2,7 @@ package com.habbashx.tcpserver.handler.console;
 
 import com.habbashx.tcpserver.socket.client.User;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 /**
  * Handles user input from the console and forwards it to the associated output stream.
@@ -15,13 +13,11 @@ import java.io.InputStreamReader;
  * <p>
  * The class is intended to run in a separate thread to allow non-blocking, asynchronous operations.
  */
-public final class UserConsoleInputHandler implements Runnable {
+public final class UserConsoleInputHandler extends ConsoleHandler implements Runnable {
 
     private final User user;
-    private final BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
 
     public UserConsoleInputHandler(User user) {
-        super();
         this.user = user;
     }
 
@@ -43,36 +39,11 @@ public final class UserConsoleInputHandler implements Runnable {
      */
     @Override
     public void run() {
-        try {
+        try (this) {
             String message;
-            while ((message = input.readLine()) != null) {
+            while ((message = getInput().readLine()) != null) {
                 user.getOutput().println(message);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Closes the user input stream and terminates the application.
-     * <p>
-     * This method ensures that the `BufferedReader` associated with
-     * the user input is closed properly to release system resources.
-     * It subsequently exits the application by calling `System.exit(0)`.
-     * If an IOException occurs during the closing operation, it is
-     * wrapped and propagated as a RuntimeException.
-     * <p>
-     * This method is intended to be invoked when the application needs to
-     * cleanly terminate user input handling and shut down.
-     *
-     * @throws RuntimeException if an I/O error occurs while closing the input stream
-     */
-    public void closeUserInput() {
-
-        try {
-            user.shutdown();
-            input.close();
-            System.exit(0);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
