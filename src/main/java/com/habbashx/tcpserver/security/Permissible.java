@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.security;
 
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
 import com.habbashx.tcpserver.socket.server.Server;
 
@@ -72,7 +72,7 @@ public interface Permissible {
     default NonVolatilePermissionContainer getNonVolatilePermissionContainer() {
         /*
         NOTE: NonVolatilePermissionContainer is only support UserHandler
-        if you want to make another Handlers support this feature
+        if you want to make another Handlers to support this feature
         just provide your logic code and make it
         feel free :D
          */

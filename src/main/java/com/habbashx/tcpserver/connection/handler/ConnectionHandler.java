@@ -1,10 +1,10 @@
-package com.habbashx.tcpserver.handler.connection;
+package com.habbashx.tcpserver.connection.handler;
 
 import com.habbashx.annotation.InjectPrefix;
 import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.Shutdownable;
-import com.habbashx.tcpserver.handler.connection.configuration.ConnectionSettings;
-import com.habbashx.tcpserver.handler.connection.util.ConnectionUtils;
+import com.habbashx.tcpserver.connection.configuration.ConnectionSettings;
+import com.habbashx.tcpserver.connection.util.ConnectionUtils;
 import com.habbashx.tcpserver.security.Permissible;
 import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 

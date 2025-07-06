@@ -1,9 +1,9 @@
-package com.habbashx.tcpserver.handler;
+package com.habbashx.tcpserver.connection;
 
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
-import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.io.CountingOutputStream;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;

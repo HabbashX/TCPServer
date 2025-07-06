@@ -2,7 +2,7 @@ package com.habbashx.tcpserver.security.container;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.security.container.annotation.Container;
 import com.habbashx.tcpserver.security.container.manager.ContainerManager;
 import org.jetbrains.annotations.Nullable;

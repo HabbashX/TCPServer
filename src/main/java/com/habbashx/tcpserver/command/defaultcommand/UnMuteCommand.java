@@ -8,7 +8,7 @@ import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

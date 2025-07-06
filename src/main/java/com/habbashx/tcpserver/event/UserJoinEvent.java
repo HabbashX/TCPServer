@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.event;
 
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 
 /**
  * Represents an event that is triggered when a user joins the system or server.

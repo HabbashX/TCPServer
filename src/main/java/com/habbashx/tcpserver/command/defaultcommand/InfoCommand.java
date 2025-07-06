@@ -3,7 +3,7 @@ package com.habbashx.tcpserver.command.defaultcommand;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.NotNull;
 

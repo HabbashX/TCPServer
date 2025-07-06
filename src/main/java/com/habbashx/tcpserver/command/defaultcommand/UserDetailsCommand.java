@@ -7,7 +7,7 @@ import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;

@@ -1,4 +1,4 @@
------------------------------ [HELP] -----------------------------
+
 1. /help -> print help board
 2. /online -> give the number of online users
 3. /msg <username> <message> message users in private
@@ -13,3 +13,5 @@
 12. /addpermission <username> <permission> <isVolatile> (only for administrators)
 13. /removepermission <username> <permission> <isVolatile> (only for administrators)
 14. /checkpermissions <username> <permission> <isVolatile> (only for administrators)
+15. /memoryusage
+16. /bytes check the scent and received bytes by connections

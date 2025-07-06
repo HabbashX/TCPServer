@@ -8,7 +8,7 @@ import com.habbashx.tcpserver.configuration.Configuration;
 import com.habbashx.tcpserver.configuration.JsonConfiguration;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;

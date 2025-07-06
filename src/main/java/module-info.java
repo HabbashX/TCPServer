@@ -28,21 +28,22 @@ module TCPServer {
     exports com.habbashx.tcpserver.delayevent.manager;
     exports com.habbashx.tcpserver.delayevent.handler;
     exports com.habbashx.tcpserver.logger;
-    exports com.habbashx.tcpserver.handler;
-    exports com.habbashx.tcpserver.handler.console;
+    exports com.habbashx.tcpserver.connection;
+    exports com.habbashx.tcpserver.connection.console;
     exports com.habbashx.tcpserver.cooldown;
     exports com.habbashx.tcpserver.configuration;
     exports com.habbashx.tcpserver.annotation;
     exports com.habbashx.tcpserver.io;
-    exports com.habbashx.tcpserver.handler.connection;
+    exports com.habbashx.tcpserver.connection.handler;
     exports com.habbashx.tcpserver.security.container;
     exports com.habbashx.tcpserver.security.auth;
     exports com.habbashx.tcpserver.security.auth.storage;
+    exports com.habbashx.tcpserver.socket.server.foundation;
 
 
     opens com.habbashx.tcpserver.socket.server.settings;
-    opens com.habbashx.tcpserver.handler.connection.configuration;
-    opens com.habbashx.tcpserver.handler;
+    opens com.habbashx.tcpserver.connection.configuration;
+    opens com.habbashx.tcpserver.connection;
 
     opens com.habbashx.tcpserver.socket.server;
     opens com.habbashx.tcpserver.socket.client;

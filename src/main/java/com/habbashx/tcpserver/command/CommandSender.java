@@ -1,7 +1,7 @@
 package com.habbashx.tcpserver.command;
 
-import com.habbashx.tcpserver.handler.UserHandler;
-import com.habbashx.tcpserver.handler.console.ServerConsoleHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * define the specific behavior for console command sending and user-based command sending.
  */
 public interface CommandSender {
+
     /**
      * Prints a message to the appropriate output destination depending on the type of CommandSender.
      * If the current instance is of type UserHandler, the message will be sent to the user's client.

@@ -9,9 +9,9 @@ import com.habbashx.tcpserver.command.manager.MuteCommandManager;
 import com.habbashx.tcpserver.delayevent.BroadcastEvent;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
-import com.habbashx.tcpserver.handler.UserHandler;
-import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
-import com.habbashx.tcpserver.handler.console.ServerConsoleHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
+
+import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
 import com.habbashx.tcpserver.listener.handler.*;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
@@ -30,7 +30,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -252,8 +256,7 @@ public final class Server extends ServerFoundation implements Runnable {
             if (running) {
                 do {
                     SSLSocket user = (SSLSocket) getServerSocket().accept();
-                    ConnectionHandler userHandler = connect(new UserHandler(user, this));
-                    getThreadPool().execute(userHandler);
+                    connect(new UserHandler(user, this),true);
                 } while (running);
             }
         } catch (IOException e) {
@@ -773,9 +776,9 @@ public final class Server extends ServerFoundation implements Runnable {
          */
         private @Nullable UserDetails getUserDetailsFromCsvFile(String element, String specific) {
             try (final Reader reader = new FileReader("data/users.csv")) {
-                Iterable<CSVRecord> userIterable = CSVFormat.DEFAULT.parse(reader);
+                final Iterable<CSVRecord> userIterable = CSVFormat.DEFAULT.parse(reader);
 
-                for (CSVRecord record : userIterable) {
+                for (final CSVRecord record : userIterable) {
                     if (record.get(element).equals(specific)) {
                         return new UserDetails().builder()
                                 .userIP(record.get("userIP"))
@@ -808,7 +811,7 @@ public final class Server extends ServerFoundation implements Runnable {
             final ObjectMapper mapper = new ObjectMapper();
 
             try {
-                List<Map<String, Object>> users = mapper.readValue(new File("data/users.json"), new TypeReference<>() {
+                final List<Map<String, Object>> users = mapper.readValue(new File("data/users.json"), new TypeReference<>() {
                 });
 
                 if (users != null) {
@@ -885,6 +888,7 @@ public final class Server extends ServerFoundation implements Runnable {
             }
         }
 
+        @Contract(pure = true)
         private Connection getConnection() throws SQLException {
             final String url = server.getServerSettings().getDatabaseURL();
             final String username = server.getServerSettings().getDatabaseUsername();
@@ -916,7 +920,7 @@ public final class Server extends ServerFoundation implements Runnable {
 
             final String sql = "INSERT INTO users (userID, userIP, userRole, username, password, userEmail, phoneNumber, isActiveAccount) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, userID);
                 stmt.setString(2, userIP);
                 stmt.setString(3, userRole);
@@ -941,7 +945,7 @@ public final class Server extends ServerFoundation implements Runnable {
          */
         public void updateUser(String column, String targetColumn, String specific, String newValue) throws SQLException {
             final String sql = "UPDATE users SET %s = ? WHERE %s = ?".formatted(targetColumn, column);
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, newValue);
                 stmt.setString(2, specific);
                 stmt.executeUpdate();
@@ -957,7 +961,7 @@ public final class Server extends ServerFoundation implements Runnable {
          */
         public void deleteUser(String element, String specific) throws SQLException {
             final String sql = "DELETE FROM users WHERE %s = ?".formatted(element);
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, specific);
                 stmt.executeUpdate();
             }
@@ -974,9 +978,9 @@ public final class Server extends ServerFoundation implements Runnable {
         public @Nullable UserDetails getUser(String column, String specific) throws SQLException {
             final String sql = "SELECT * FROM users WHERE %s = ?".formatted(column);
 
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (final PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, specific);
-                ResultSet rs = statement.executeQuery();
+                final ResultSet rs = statement.executeQuery();
                 if (rs.next()) {
                     UserDetails user = new UserDetails();
                     user.setUserID(rs.getString("userID"));
@@ -1003,9 +1007,9 @@ public final class Server extends ServerFoundation implements Runnable {
         public @Nullable String getHashedPassword(String username) throws SQLException {
             final String sql = "SELECT * FROM users WHERE username = ?";
 
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (final PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, username);
-                ResultSet rs = statement.executeQuery();
+                final ResultSet rs = statement.executeQuery();
                 if (rs.next()) {
                     return rs.getString("password");
                 }
@@ -1017,6 +1021,7 @@ public final class Server extends ServerFoundation implements Runnable {
             try {
                 if (!connection.isClosed()) {
                     connection.close();
+                    server.getServerLogger().info("database connection is closed !.");
                 }
             } catch (SQLException e) {
                 server.getServerLogger().error(e);
@@ -1083,10 +1088,10 @@ public final class Server extends ServerFoundation implements Runnable {
          * precision, including unit suffix (e.g., "1.23 KB").
          */
         public @NotNull String formatBytes(long bytes) {
-            int unit = 1024;
+            final int unit = 1024;
             if (bytes < unit) return bytes + " B";
-            int exp = (int) (Math.log(bytes) / Math.log(unit));
-            char pre = "KMGTPE".charAt(exp - 1);
+            final int exp = (int) (Math.log(bytes) / Math.log(unit));
+            final char pre = "KMGTPE".charAt(exp - 1);
             return String.format("%.2f %sB", bytes / Math.pow(unit, exp), pre);
         }
 

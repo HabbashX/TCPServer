@@ -1,6 +1,6 @@
-package com.habbashx.tcpserver.handler.connection.util;
+package com.habbashx.tcpserver.connection.util;
 
-import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.logger.ServerLogger;
 import org.jetbrains.annotations.NotNull;
 

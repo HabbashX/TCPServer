@@ -4,8 +4,8 @@ import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.Shutdownable;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
-import com.habbashx.tcpserver.handler.connection.ConnectionHandler;
-import com.habbashx.tcpserver.handler.console.DefaultServerConsoleHandler;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
+import com.habbashx.tcpserver.connection.console.DefaultServerConsoleHandler;
 import com.habbashx.tcpserver.logger.ServerLogger;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 import com.habbashx.tcpserver.socket.server.settings.annotation.Settings;
@@ -169,12 +169,12 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      * @param autoExecute       if true, the connection handler will be executed in the thread pool
      * @return the same connection handler instance
      */
-    public ConnectionHandler connect(@NotNull ConnectionHandler connectionHandler, boolean autoExecute) {
+    public void connect(@NotNull ConnectionHandler connectionHandler, boolean autoExecute) {
 
         if (autoExecute) {
             threadPool.execute(connectionHandler);
         }
-        return connect(connectionHandler);
+        connect(connectionHandler);
     }
 
     /**

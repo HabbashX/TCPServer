@@ -1,7 +1,7 @@
 package com.habbashx.tcpserver.event;
 
 import com.habbashx.tcpserver.cooldown.CooldownManager;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 
 /**
  * Represents an event triggered when a user sends a chat message in the system.

@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.handler.connection.configuration;
+package com.habbashx.tcpserver.connection.configuration;
 
 import com.habbashx.annotation.InjectProperty;
 

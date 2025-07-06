@@ -1,7 +1,7 @@
 package com.habbashx.tcpserver.event;
 
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 
 /**
  * Represents an event triggered when a user executes a command.

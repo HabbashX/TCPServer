@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.socket.client;
 
-import com.habbashx.tcpserver.handler.console.UserConsoleInputHandler;
+import com.habbashx.tcpserver.connection.console.UserConsoleInputHandler;
 import com.habbashx.tcpserver.socket.client.foundation.ClientFoundation;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 

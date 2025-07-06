@@ -1,4 +1,4 @@
-package com.habbashx.tcpserver.handler.console;
+package com.habbashx.tcpserver.connection.console;
 
 import java.io.BufferedReader;
 import java.io.Closeable;

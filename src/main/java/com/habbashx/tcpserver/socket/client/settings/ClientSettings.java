@@ -15,14 +15,14 @@ public class ClientSettings {
      * represent the value of defined host in settings file
      * If not defined, it will be set to "localhost" by default.
      */
-    @InjectProperty("client.host")
+    @InjectProperty("connection.host")
     private String host;
 
     /**
      * represent the value of defined port in settings file
      * If not defined, it will be set to 8080 by default.
      */
-    @InjectProperty("client.port")
+    @InjectProperty("connection.port")
     private int port;
 
     public String getHost() {

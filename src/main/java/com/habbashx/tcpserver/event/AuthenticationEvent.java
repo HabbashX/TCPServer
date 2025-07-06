@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.event;
 
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 
 /**
  * The AuthenticationEvent class represents an event that occurs during an authentication operation.

@@ -1,27 +1,19 @@
 package com.habbashx.tcpserver.command.manager;
 
 import com.habbashx.tcpserver.command.CommandSender;
-import com.habbashx.tcpserver.handler.UserHandler;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 import static com.habbashx.tcpserver.socket.server.Server.getInstance;
 
 /**
@@ -31,7 +23,7 @@ import static com.habbashx.tcpserver.socket.server.Server.getInstance;
  * <p>
  * The banned user data is stored in a CSV file named "bannedUsers.csv".
  * The file contains a single column with the header "username".
- *
+ * <p>
  * Key operations include:
  * - Banning a user by adding their username to the file.
  * - Unbanning a user by removing their username from the file.
@@ -41,7 +33,7 @@ import static com.habbashx.tcpserver.socket.server.Server.getInstance;
  */
 public final class BanCommandManager {
 
-    private final File file = new File("data/bannedUsers.csv");
+    private final File bannedUsersFile = new File("data/bannedUsers.csv");
 
     private static final String HEADER = "username";
 
@@ -52,27 +44,27 @@ public final class BanCommandManager {
      * command sender and the user being banned. The banned user is then shut down.
      * If the user is already banned, an appropriate message is sent to the command sender.
      *
-     * @param user the target user who is to be banned
+     * @param user          the target user who is to be banned
      * @param commandSender the person or system issuing the ban command
      * @throws RuntimeException if an I/O error occurs during file operations
      */
     @SuppressWarnings("deprecation")
-    public synchronized void banUser(@NotNull UserHandler user , @NotNull CommandSender commandSender) {
+    public synchronized void banUser(@NotNull UserHandler user, @NotNull CommandSender commandSender) {
 
-        try (final Writer writer = new FileWriter(file)) {
+        try (final Writer writer = new FileWriter(bannedUsersFile)) {
 
-             CSVFormat format = CSVFormat.DEFAULT.withHeader(HEADER);
-             CSVPrinter printer = new CSVPrinter(writer,format);
+            CSVFormat format = CSVFormat.DEFAULT.withHeader(HEADER);
+            CSVPrinter printer = new CSVPrinter(writer, format);
 
             final String username = user.getUserDetails().getUsername();
 
             if (!isUserBanned(username)) {
                 printer.printRecord(username);
-                sendMessage(commandSender,LIME_GREEN+"user have been banned successfully"+RESET);
-                user.sendMessage(RED+"you got banned"+RESET);
+                sendMessage(commandSender, LIME_GREEN + "user have been banned successfully" + RESET);
+                user.sendMessage(RED + "you got banned" + RESET);
                 user.shutdown();
             } else {
-                sendMessage(commandSender,RED + "user already banned" + RESET);
+                sendMessage(commandSender, RED + "user already banned" + RESET);
             }
 
             printer.flush();
@@ -88,7 +80,7 @@ public final class BanCommandManager {
      * Unbans a user by removing their username from the banned users list and updating the related data source.
      * Sends a confirmation message to the command sender upon successful unbanning.
      *
-     * @param userDetails The details of the user to be unbanned, must not be null.
+     * @param userDetails   The details of the user to be unbanned, must not be null.
      * @param commandSender The sender of the command requesting the unban operation.
      */
     @SuppressWarnings("deprecation")
@@ -96,10 +88,10 @@ public final class BanCommandManager {
 
         final Set<String> bannedUsers = getBannedUsers();
 
-        try (final Writer writer = new BufferedWriter(new FileWriter(file))) {
+        try (final Writer writer = new BufferedWriter(new FileWriter(bannedUsersFile))) {
 
             CSVFormat format = CSVFormat.DEFAULT.withHeader(HEADER);
-            CSVPrinter printer = new CSVPrinter(writer,format);
+            CSVPrinter printer = new CSVPrinter(writer, format);
 
             final String username = userDetails.getUsername();
 
@@ -123,13 +115,14 @@ public final class BanCommandManager {
         }
     }
 
-    private void sendMessage(CommandSender sender , String message) {
+    private void sendMessage(CommandSender sender, String message) {
         if (sender instanceof UserHandler userHandler) {
             userHandler.sendMessage(message);
         } else {
             System.out.println(message);
         }
     }
+
     /**
      * Checks if a user is banned by verifying if their username exists in the banned users list.
      *
@@ -145,11 +138,12 @@ public final class BanCommandManager {
      * Retrieves the list of banned users from the data source.
      * The method reads a file containing banned user information
      * and extracts the usernames into a``` setjava.
-
-     /**
+     * <p>
+     * /**
      * Retrieves the list *
+     *
      * @return a set of usernames representing of the users who banned are currently users banned
-    .
+     * .
      * @ * Thisthrows method RuntimeException if reads an from I/O error occurs a while accessing file the file
      */
     @SuppressWarnings("deprecation")
@@ -157,7 +151,7 @@ public final class BanCommandManager {
 
         final Set<String> bannedUsers = new HashSet<>();
 
-        try (final Reader reader = new FileReader(file)){
+        try (final Reader reader = new FileReader(bannedUsersFile)) {
 
             final Iterable<CSVRecord> userIterable = CSVFormat.DEFAULT.withHeader(HEADER).parse(reader);
 
