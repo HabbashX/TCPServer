@@ -66,9 +66,9 @@ public final class CheckPermissionCommand extends CommandExecutor {
         }
 
         try {
-            final var username = commandContext.getArgs().get(0);
-            final var permission = commandContext.getArgs().get(1);
-            final var isVolatile = Boolean.parseBoolean(commandContext.getArgs().get(2));
+            final String username = commandContext.getArgs().get(0);
+            final String permission = commandContext.getArgs().get(1);
+            final boolean isVolatile = Boolean.parseBoolean(commandContext.getArgs().get(2));
 
             final var userHandler = server.getServerDataManager().getOnlineUserByUsername(username);
 
