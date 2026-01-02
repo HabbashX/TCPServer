@@ -6,6 +6,7 @@ import com.habbashx.tcpserver.Shutdownable;
 import com.habbashx.tcpserver.socket.client.settings.ClientSettings;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 import com.habbashx.tcpserver.util.ClientUtils;
+import com.habbashx.tcpserver.util.ServerUtils;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -16,7 +17,6 @@ import java.net.InetSocketAddress;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-import static com.habbashx.tcpserver.util.ServerUtils.injectServerSettings;
 
 /**
  * Represents the foundation for a client in a TCP server environment.
@@ -77,11 +77,10 @@ public abstract class ClientFoundation implements Runnable, Shutdownable {
         try {
             SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             userSocket = (SSLSocket) sslSocketFactory.createSocket();
-            System.out.println(clientSettings.getHost());
             userSocket.connect(new InetSocketAddress(clientSettings.getHost(), clientSettings.getPort()));
         } catch (IOException e) {
             if (e instanceof ConnectException) {
-                System.out.println(RED + "cannot connect to server" + RESET);
+                System.out.println(RED + "cannot connect to the server" + RESET);
                 return;
             }
             throw new RuntimeException(e);
@@ -109,7 +108,9 @@ public abstract class ClientFoundation implements Runnable, Shutdownable {
      * which could impact application security or functionality.
      */
     public void registerTruststore() {
+        assert serverSettings.getTruststorePath() != null;
         System.setProperty("javax.net.ssl.trustStore", serverSettings.getTruststorePath());
+        assert serverSettings.getTruststorePassword() != null;
         System.setProperty("javax.net.ssl.trustStorePassword", serverSettings.getTruststorePassword());
     }
 
@@ -139,6 +140,32 @@ public abstract class ClientFoundation implements Runnable, Shutdownable {
         ClientUtils.generateClientSettingsFile();
         PropertyInjector propertyInjector = new PropertyInjector(new File(ClientUtils.CLIENT_SETTINGS_PATH));
         propertyInjector.inject(clientSettings);
+    }
+
+    /**
+     * Injects server settings from an external configuration file into the current User instance.
+     * <p>
+     * This method utilizes the `PropertyInjector` utility to read and inject properties
+     * from a configuration file located at the path specified by `SERVER_SETTINGS_PATH`.
+     * The injected properties configure the internal state of the application, enabling
+     * it to adhere to the desired behavior and settings defined in the server configuration.
+     * <p>
+     * The method is designed to provide a streamlined way of centralizing configuration management
+     * by ensuring that all properties specified in the configuration file are automatically
+     * applied to the user's required fields or settings.
+     * <p>
+     * Throws a runtime exception in case of errors, such as:
+     * - The configuration file is missing or cannot be read.
+     * - There is a failure to inject the properties.
+     * - Invalid configuration parameters are provided, which could hinder application functionality.
+     * <p>
+     * This method is invoked at the initialization phase of the `User` class to ensure all
+     * necessary configurations are applied before further operation.
+     *
+     * @throws RuntimeException if an error occurs during the property injection process
+     */
+    public void injectServerSettings(Object object) {
+        ServerUtils.injectServerSettings(object);
     }
 
     /**
