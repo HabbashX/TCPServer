@@ -3,8 +3,8 @@ package com.habbashx.tcpserver.command.defaultcommand;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.security.Permission;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
@@ -76,10 +76,9 @@ public final class AddPermissionCommand extends CommandExecutor {
             return;
         }
 
-        final var targetUsername = commandContext.getArgs().get(0);
-        final var permission = Integer.parseInt(commandContext.getArgs().get(1));
-        final var isVolatilePermission = Boolean.parseBoolean(commandContext.getArgs().get(2));
-
+        final String targetUsername = commandContext.getArgs().get(0);
+        final int permission = Integer.parseInt(commandContext.getArgs().get(1));
+        final boolean isVolatilePermission = Boolean.parseBoolean(commandContext.getArgs().get(2));
         final UserHandler targetUserHandler = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
 
         if (targetUserHandler != null) {
