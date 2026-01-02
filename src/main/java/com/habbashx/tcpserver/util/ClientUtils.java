@@ -26,7 +26,7 @@ public class ClientUtils {
      */
     public static void generateClientSettingsFile() {
 
-        Path path = Path.of(CLIENT_SETTINGS_PATH);
+        final Path path = Path.of(CLIENT_SETTINGS_PATH);
 
         if (!Files.exists(path)) {
             try {
