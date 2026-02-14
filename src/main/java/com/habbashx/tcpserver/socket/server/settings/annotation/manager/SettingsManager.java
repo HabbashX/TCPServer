@@ -2,6 +2,7 @@ package com.habbashx.tcpserver.socket.server.settings.annotation.manager;
 
 import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 import com.habbashx.tcpserver.socket.server.settings.annotation.Settings;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The {@code SettingsManager} class is responsible for managing and initializing
@@ -104,7 +105,7 @@ public class SettingsManager {
 
     private final ServerFoundation serverFoundation;
 
-    public SettingsManager(ServerFoundation serverFoundation) {
+    public SettingsManager(@NotNull ServerFoundation serverFoundation) {
         this.serverFoundation = serverFoundation;
         Settings settings = serverFoundation.getClass().getAnnotation(Settings.class);
 
