@@ -134,8 +134,7 @@ public class NonVolatilePermissionContainer extends ContainerManager {
         try {
             List<Map<String, Object>> per = mapper.readValue(
                     nonVolatilePermissionFile,
-                    new TypeReference<List<Map<String, Object>>>() {
-                    }
+                    new TypeReference<>() {}
             );
 
             boolean userUpdated = false;
@@ -202,7 +201,7 @@ public class NonVolatilePermissionContainer extends ContainerManager {
     private void initPermissions() {
         try {
 
-            List<Map<String, Object>> per = mapper.readValue(nonVolatilePermissionFile, new TypeReference<List<Map<String, Object>>>() {
+            final List<Map<String, Object>> per = mapper.readValue(nonVolatilePermissionFile, new TypeReference<List<Map<String, Object>>>() {
             });
 
             permissions = per.stream()

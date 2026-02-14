@@ -1,6 +1,6 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.MayBeEmpty;
+import com.habbashx.tcpserver.annotation.MaybeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
@@ -95,7 +95,7 @@ public final class MuteCommand extends CommandExecutor {
 
         final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
 
-        @MayBeEmpty
+        @MaybeEmpty
         final String targetUsername = commandContext.getArgs().get(0);
         @Nullable
         final UserHandler target = server.getServerDataManager().getOnlineUserByUsername(targetUsername);

@@ -23,7 +23,7 @@ public final class MuteCommandManager {
 
     private static final String USER_ALREADY_MUTED_MESSAGE = RED + "user already muted !." + RESET;
     private static final String USER_MUTED_SUCCESSFULLY_MESSAGE = LIME_GREEN + "user muted successfully !." + RESET;
-    private static final String USER_UNMUTED_SUCCESSFULLY_MESSAGE = LIME_GREEN + "user un muted successfully !." + RESET;
+    private static final String USER_UN_MUTED_MESSAGE = LIME_GREEN + "user un muted successfully !." + RESET;
     private static final String USER_IS_NOT_MUTED_MESSAGE = RED + "user is not muted" + RESET;
 
     /**
@@ -103,7 +103,7 @@ public final class MuteCommandManager {
                     csvPrinter.printRecord(u);
                 }
                 csvPrinter.close(true);
-                sendMessage(commandSender, USER_UNMUTED_SUCCESSFULLY_MESSAGE);
+                sendMessage(commandSender, USER_UN_MUTED_MESSAGE);
             } catch (IOException e) {
                 getInstance().getServerLogger().error(e);
             }
