@@ -12,6 +12,7 @@ import java.io.File;
  * The class is designed for static access and should not be instantiated.
  */
 public final class ServerUtils {
+
     /**
      * Represents the file path to the properties file used
      * for configuring server settings.
@@ -19,7 +20,6 @@ public final class ServerUtils {
      * located in the "settings" directory.
      */
     public static final String SERVER_SETTINGS_PATH = "server/settings/settings.properties";
-
 
     /**
      * Injects server settings from an external configuration file into the current User instance.

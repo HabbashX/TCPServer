@@ -1,6 +1,11 @@
 package com.habbashx.tcpserver.socket.server.settings;
 
+import com.habbashx.annotation.DecryptWith;
 import com.habbashx.annotation.InjectProperty;
+import com.habbashx.tcpserver.security.crypto.DatabasePasswordDecryptor;
+import com.habbashx.tcpserver.security.crypto.KeyStorePasswordDecryptor;
+import com.habbashx.tcpserver.security.crypto.TrustStorePasswordDecryptor;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The ServerSettings class encapsulates configuration properties required for server setup,
@@ -58,6 +63,7 @@ public final class ServerSettings {
      * It is used to unlock the keystore for accessing cryptographic keys.
      */
     @InjectProperty("server.settings.security.keystore.password")
+    @DecryptWith(KeyStorePasswordDecryptor.class)
     private String keyStorePassword;
 
     /**
@@ -74,6 +80,7 @@ public final class ServerSettings {
      * The truststore is typically used to store certificates for establishing secure communications.
      */
     @InjectProperty("server.settings.security.truststore.password")
+    @DecryptWith(TrustStorePasswordDecryptor.class)
     private String trustStorePassword;
 
     /**
@@ -113,6 +120,7 @@ public final class ServerSettings {
      * This value is injected from the configuration property "database.password".
      */
     @InjectProperty("server.settings.database.password")
+    @DecryptWith(DatabasePasswordDecryptor.class)
     private String databasePassword;
 
     public ServerSettings() {
@@ -180,53 +188,63 @@ public final class ServerSettings {
         this.databasePassword = databasePassword;
     }
 
-    public String getHost() {
+    public @Nullable String getHost() {
         return host;
     }
 
-    public int getPort() {
+    public @IfNull(defaultValue = "0") int getPort() {
         return port;
     }
 
-    public boolean isReusableAddress() {
+    public @IfNull(defaultValue = "false") boolean isReusableAddress() {
         return isReusableAddress;
     }
 
-    public String getKeystorePassword() {
+    public @Nullable String getKeystorePassword() {
         return keyStorePassword;
     }
 
-    public String getKeystorePath() {
+    public @Nullable String getKeystorePath() {
         return keyStorePath;
     }
 
-    public String getTruststorePath() {
+    public @Nullable String getTruststorePath() {
         return trustStorePath;
     }
 
-    public String getTruststorePassword() {
+    public @Nullable String getTruststorePassword() {
         return trustStorePassword;
     }
 
-    public String getUserChatCooldown() {
+    public @Nullable String getUserChatCooldown() {
         return userChatCooldown;
     }
 
-    public String getAuthStorageType() {
+    public @Nullable String getAuthStorageType() {
         return authStorageType;
     }
 
-    public String getDatabaseURL() {
+    public @Nullable String getDatabaseURL() {
         return databaseURL;
     }
 
-    public String getDatabaseUsername() {
+    public @Nullable String getDatabaseUsername() {
         return databaseUsername;
     }
 
-    public String getDatabasePassword() {
+    public @Nullable String getDatabasePassword() {
         return databasePassword;
     }
 
+    /*
+     IfNull annotation is added just to showing you the default of
+     non-null values like integer and boolean
 
+     NOTE: IfNull Annotation does not affect in performance and runtime,
+           and it does not modify the return value
+           it`s just for doc and show other developers the purpose of it.
+     */
+    @interface IfNull {
+        String defaultValue();
+    }
 }

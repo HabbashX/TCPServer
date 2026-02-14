@@ -2,17 +2,40 @@ package com.habbashx.tcpserver.socket.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.tcpserver.command.defaultcommand.*;
+import com.habbashx.tcpserver.command.defaultcommand.AddPermissionCommand;
+import com.habbashx.tcpserver.command.defaultcommand.BanCommand;
+import com.habbashx.tcpserver.command.defaultcommand.ChangeRoleCommand;
+import com.habbashx.tcpserver.command.defaultcommand.CheckPermissionCommand;
+import com.habbashx.tcpserver.command.defaultcommand.HelpCommand;
+import com.habbashx.tcpserver.command.defaultcommand.InfoCommand;
+import com.habbashx.tcpserver.command.defaultcommand.ListUserCommand;
+import com.habbashx.tcpserver.command.defaultcommand.MuteCommand;
+import com.habbashx.tcpserver.command.defaultcommand.NicknameCommand;
+import com.habbashx.tcpserver.command.defaultcommand.PrivateGroupCommand;
+import com.habbashx.tcpserver.command.defaultcommand.PrivateMessageCommand;
+import com.habbashx.tcpserver.command.defaultcommand.RemovePermissionCommand;
+import com.habbashx.tcpserver.command.defaultcommand.RetrievesWrittenBytesCommand;
+import com.habbashx.tcpserver.command.defaultcommand.ServerMemoryUsageCommand;
+import com.habbashx.tcpserver.command.defaultcommand.UnBanCommand;
+import com.habbashx.tcpserver.command.defaultcommand.UnMuteCommand;
+import com.habbashx.tcpserver.command.defaultcommand.UserDetailsCommand;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.command.manager.CommandManager;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
+import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
 import com.habbashx.tcpserver.delayevent.BroadcastEvent;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
-import com.habbashx.tcpserver.connection.UserHandler;
-
-import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
-import com.habbashx.tcpserver.listener.handler.*;
+import com.habbashx.tcpserver.listener.handler.AuthenticationEventHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultBroadcastHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultChatHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultMutedUserHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultPrivateGroupChatHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultServerConsoleChatHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultUserExecuteCommandHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultUserJoinHandler;
+import com.habbashx.tcpserver.listener.handler.DefaultUserLeaveHandler;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.auth.DefaultAuthentication;
@@ -32,9 +55,11 @@ import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +85,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  * <p>
  * Implements {@code Runnable} for running the server inside a thread
  */
-public final class Server extends ServerFoundation implements Runnable {
+public final class Server extends ServerFoundation {
 
     /**
      * A singleton instance of the Server class, ensuring only one instance is created
@@ -95,10 +120,10 @@ public final class Server extends ServerFoundation implements Runnable {
 
     /**
      * The {@code muteCommandManager} is an instance of {@link MuteCommandManager} used to
-     * handle commands and operations related to muting and unmuteCommandingManager users} on used to the server manage.
+     * handle commands and operations related to muting and unmuteCommandingManager users on used to the server manage.
      * <p>
      * * This mut objecting manages-related the operations lifecycle on of the mute server commands., This including maintaining handling a commands persistent for
-     * mut *ing data un storei offing muted users,
+     * mut *ing data un store offing muted users,
      * validating * operations maintaining to the avoid list duplication of or currently inconsistent multipotencies users,     * , * and ensuring orchestra consternating across notifications related to command operations send.
      * ers *
      * about * It results is of responsible their for actions:
@@ -167,13 +192,55 @@ public final class Server extends ServerFoundation implements Runnable {
      */
     private boolean dumbEvents = false;
 
+    /**
+     * A flag indicating whether the "dumb delay events" mode is enabled.
+     * <p>
+     * When set to {@code true}, the server disables the initialization of delay-based event handlers.
+     * This can be useful for debugging or scenarios where delay event processing needs to be bypassed.
+     * Defaults to {@code false}, enabling delay event initialization.
+     */
     private boolean dumbDelayEvent = false;
 
-    private boolean commandRegisterationLoggingIsEnabled = true;
+    /**
+     * A flag indicating whether logging is enabled for command registration.
+     * <p>
+     * When set to {@code true}, the server logs messages whenever a command is registered.
+     * This can be useful for debugging or monitoring the registration process.
+     * Defaults to {@code true}.
+     */
+    private boolean commandRegistrationLogging = true;
 
-    private boolean eventRegisterationLoggingIsEnabled = true;
+    /**
+     * A flag indicating whether logging is enabled for event registration.
+     * <p>
+     * When set to {@code true}, the server logs messages whenever an event is registered.
+     * This can be useful for debugging or monitoring the event registration process.
+     * Defaults to {@code true}.
+     */
+    private boolean eventRegistrationLogging = true;
 
-    private boolean delayEventRegisterationLoggingIsEnabled = true;
+    /**
+     * A flag indicating whether logging is enabled for delay event registration.
+     * <p>
+     * When set to {@code true}, the server logs messages whenever a delay event is registered.
+     * This can be useful for debugging or monitoring the delay event registration process.
+     * Defaults to {@code true}.
+     */
+    private boolean delayEventRegistrationLogging = true;
+
+    /**
+     * A map that associates each {@link UserHandler} with their corresponding {@link PrivateGroup}.
+     * <p>
+     * This map is used to manage private groups within the server. Each {@link UserHandler} represents
+     * a user who owns a private group, and the associated {@link PrivateGroup} contains the details
+     * of the group, such as its members and group-specific operations.
+     * <p>
+     * Key: {@link UserHandler} - The user who owns the private group.
+     * Value: {@link PrivateGroup} - The private group managed by the user.
+     * <p>
+     * This map allows efficient retrieval and management of private groups based on their owners.
+     */
+    private final Map<UserHandler, PrivateGroup> privateGroups = new HashMap<>();
 
     /**
      * Indicates whether the server is currently running.
@@ -185,16 +252,15 @@ public final class Server extends ServerFoundation implements Runnable {
 
     public Server() {
         super();
-        disableDefaultFeatures();
-        disableCommandRegisterationLogging();
-        disableEventRegisterationLogging();
-        disableDelayEventRegisterationLogging();
+        disableEventRegistrationLogging();
+        disableDelayEventRegistrationLogging();
         authentication = new DefaultAuthentication(this);
         serverDataManager = new ServerDataManager(this);
         registerDefaultEvents();
         registerDefaultDelayEvents();
         registerDefaultCommands();
         registerKeystore();
+        disableDefaultConsoleHandler();
     }
 
     /**
@@ -206,7 +272,9 @@ public final class Server extends ServerFoundation implements Runnable {
      * SSL-based secure communication in the server.
      */
     public void registerKeystore() {
+        assert getServerSettings().getKeystorePath() != null;
         System.setProperty("javax.net.ssl.keyStore", getServerSettings().getKeystorePath());
+        assert getServerSettings().getKeystorePassword() != null;
         System.setProperty("javax.net.ssl.keyStorePassword", getServerSettings().getKeystorePassword());
     }
 
@@ -256,7 +324,7 @@ public final class Server extends ServerFoundation implements Runnable {
             if (running) {
                 do {
                     SSLSocket user = (SSLSocket) getServerSocket().accept();
-                    connect(new UserHandler(user, this),true);
+                    connect(new UserHandler(user, this), true);
                 } while (running);
             }
         } catch (IOException e) {
@@ -307,8 +375,9 @@ public final class Server extends ServerFoundation implements Runnable {
             getEventManager().registerEvent(new DefaultServerConsoleChatHandler(this));
             getEventManager().registerEvent(new AuthenticationEventHandler());
             getEventManager().registerEvent(new DefaultUserExecuteCommandHandler(this));
+            getEventManager().registerEvent(new DefaultPrivateGroupChatHandler());
 
-            if (eventRegisterationLoggingIsEnabled) {
+            if (eventRegistrationLogging) {
                 getEventManager().getRegisteredListeners().stream()
                         .forEach(listener ->
                                 getServerLogger().info("Registering event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
@@ -348,7 +417,7 @@ public final class Server extends ServerFoundation implements Runnable {
         if (!dumbDelayEvent) {
             getDelayEventManager().registerEvent(new DefaultBroadcastHandler());
 
-            if (delayEventRegisterationLoggingIsEnabled) {
+            if (delayEventRegistrationLogging) {
                 getDelayEventManager().getRegisteredListeners().stream()
                         .forEach(listener -> getServerLogger().info("Registering the delay event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
             }
@@ -395,7 +464,8 @@ public final class Server extends ServerFoundation implements Runnable {
             commandManager.registerCommand(new RemovePermissionCommand(this));
             commandManager.registerCommand(new CheckPermissionCommand(this));
             commandManager.registerCommand(new RetrievesWrittenBytesCommand(this));
-            if (commandRegisterationLoggingIsEnabled) {
+            commandManager.registerCommand(new PrivateGroupCommand(this));
+            if (commandRegistrationLogging) {
                 commandManager.getExecutors().values().stream().forEach(
                         commandExecutor -> getServerLogger().info("Registering command: " + commandExecutor + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
             }
@@ -440,7 +510,7 @@ public final class Server extends ServerFoundation implements Runnable {
      */
     public long getWrittenBytes() {
 
-        AtomicLong writtenBytes = new AtomicLong(0L);
+        final AtomicLong writtenBytes = new AtomicLong(0L);
 
         getConnectionHandlers().stream()
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
@@ -581,16 +651,21 @@ public final class Server extends ServerFoundation implements Runnable {
         dumbDelayEvent = true;
     }
 
-    public void disableCommandRegisterationLogging() {
-        commandRegisterationLoggingIsEnabled = false;
+    public void disableCommandRegistrationLogging() {
+        commandRegistrationLogging = false;
     }
 
-    public void disableEventRegisterationLogging() {
-        eventRegisterationLoggingIsEnabled = false;
+    public void disableEventRegistrationLogging() {
+        eventRegistrationLogging = false;
     }
 
-    public void disableDelayEventRegisterationLogging() {
-        delayEventRegisterationLoggingIsEnabled = false;
+    public void disableDelayEventRegistrationLogging() {
+        delayEventRegistrationLogging = false;
+    }
+
+
+    public Map<UserHandler, PrivateGroup> getPrivateGroups() {
+        return privateGroups;
     }
 
     /**
@@ -611,7 +686,7 @@ public final class Server extends ServerFoundation implements Runnable {
     }
 
     public static void main(String[] args) {
-        ServerFoundation server = new Server();
+        final ServerFoundation server = new Server();
         server.run();
     }
 
@@ -662,6 +737,7 @@ public final class Server extends ServerFoundation implements Runnable {
 
         public ServerDataManager(@NotNull Server server) {
             this.server = server;
+            assert server.getServerSettings().getAuthStorageType() != null;
             final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
             authStorageType = AuthStorageType.valueOf(authType);
             userDao = new UserDao(server);
@@ -888,11 +964,28 @@ public final class Server extends ServerFoundation implements Runnable {
             }
         }
 
+        /**
+         * Establishes a connection to the database using the server's configuration settings.
+         * <p>
+         * This method retrieves the database URL, username, and password from the server's settings
+         * and uses them to create a connection via the {@link DriverManager#getConnection(String, String, String)} method.
+         * <p>
+         * Preconditions:
+         * - The database URL must not be null.
+         * <p>
+         * Exceptions:
+         * - Throws {@link SQLException} if a database access error occurs.
+         *
+         * @return a {@link Connection} object representing the established database connection
+         * @throws SQLException if a database access error occurs
+         */
         @Contract(pure = true)
         private Connection getConnection() throws SQLException {
             final String url = server.getServerSettings().getDatabaseURL();
             final String username = server.getServerSettings().getDatabaseUsername();
             final String password = server.getServerSettings().getDatabasePassword();
+
+            assert url != null;
             return DriverManager.getConnection(url, username, password);
         }
 
@@ -1017,6 +1110,14 @@ public final class Server extends ServerFoundation implements Runnable {
             return null;
         }
 
+        /**
+         * Closes the database connection if it is open.
+         * <p>
+         * This method checks whether the database connection is still open and, if so,
+         * closes it to release the associated resources. It also logs a message indicating
+         * that the connection has been successfully closed. If an SQL exception occurs during
+         * the process, the error is logged.
+         */
         public void closeConnection() {
             try {
                 if (!connection.isClosed()) {
@@ -1095,5 +1196,159 @@ public final class Server extends ServerFoundation implements Runnable {
             return String.format("%.2f %sB", bytes / Math.pow(unit, exp), pre);
         }
 
+    }
+
+    /**
+     * Represents a private group within the server, managed by a specific user.
+     * <p>
+     * This class provides functionality for managing group members, broadcasting messages,
+     * and retrieving group-related details. Each private group is owned by a single user
+     * and has a unique identifier.
+     */
+    public static class PrivateGroup {
+
+        private final Server instance;
+
+        /**
+         * A list of users who are members of the private group.
+         * <p>
+         * This list contains {@link UserHandler} instances representing the users
+         * currently added to the private group. It is initialized as an empty list
+         * and can be modified by adding or removing users.
+         */
+        private final List<UserHandler> users = new ArrayList<>();
+        /**
+         * The owner of the private group.
+         * <p>
+         * This {@link UserHandler} instance represents the user who created and manages
+         * the private group. The group owner has administrative privileges over the group.
+         */
+        private final UserHandler groupOwner;
+
+        /**
+         * The username of the private group owner.
+         * <p>
+         * This field stores the name of the user who owns and manages the private group.
+         * It is initialized during the creation of the group and remains constant.
+         */
+        private final String ownerName;
+
+        /**
+         * The unique identifier of the private group.
+         * <p>
+         * This field holds a randomly generated string that uniquely identifies the private group.
+         * It is used to distinguish this group from others within the server.
+         */
+        private final String groupID;
+
+        /**
+         * Constructs a new PrivateGroup instance.
+         *
+         * @param instance   the server instance associated with this private group
+         * @param groupOwner the user who owns the private group
+         */
+        public PrivateGroup(Server instance, @NotNull UserHandler groupOwner) {
+            this.instance = instance;
+            this.groupOwner = groupOwner;
+            ownerName = groupOwner.getUserDetails().getUsername();
+            groupID = generateRandomID();
+        }
+
+        /**
+         * Adds a user to the private group by their username.
+         * <p>
+         * If the user is not found, a message is sent to the group owner.
+         *
+         * @param username the username of the user to add
+         */
+        public void addUser(String username) {
+            @Nullable final UserHandler userHandler = instance.getServerDataManager().getOnlineUserByUsername(username);
+
+            if (userHandler != null) {
+                users.add(userHandler);
+            } else {
+                groupOwner.sendMessage("user not found");
+            }
+        }
+
+        /**
+         * Removes a user from the private group by their username.
+         * <p>
+         * If the user is not found, a message is sent to the group owner.
+         *
+         * @param username the username of the user to remove
+         */
+        public void removeUser(String username) {
+            users.stream().forEach(
+                    userHandler -> {
+                        if (userHandler.getUserDetails().getUsername().equals(username)) {
+                            users.remove(userHandler);
+                        } else {
+                            groupOwner.sendMessage("user not found");
+                        }
+                    }
+            );
+        }
+
+        /**
+         * Broadcasts a message to all users in the private group.
+         *
+         * @param message the message to broadcast
+         */
+        public void broadcast(String message) {
+            users.stream().forEach(userHandler -> userHandler.sendMessage(message));
+        }
+
+        /**
+         * Retrieves the list of users in the private group.
+         *
+         * @return the list of users in the group
+         */
+        public List<UserHandler> getUsers() {
+            return users;
+        }
+
+        /**
+         * Generates a random unique identifier for the private group.
+         *
+         * @return the generated unique identifier as a string
+         */
+        private @NotNull String generateRandomID() {
+
+            int min = 10000000;
+            int max = 99999999;
+
+            int randNumber = (int) Math.floor(Math.random() * (max - min + 1) + min);
+
+            return String.valueOf(randNumber);
+        }
+
+        /**
+         * Retrieves the owner of the private group.
+         *
+         * @return the user handler representing the group owner
+         */
+        public UserHandler getGroupOwner() {
+            return groupOwner;
+        }
+
+        /**
+         * Retrieves the username of the group owner.
+         *
+         * @return the username of the group owner
+         */
+        public String getOwnerName() {
+            return ownerName;
+        }
+
+
+        /**
+         * Retrieves the unique identifier of the private group.
+         *
+         * @return the unique identifier of the group
+         */
+        public String getGroupID() {
+            return groupID;
+        }
     }
 }

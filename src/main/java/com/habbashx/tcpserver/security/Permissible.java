@@ -77,7 +77,7 @@ public interface Permissible {
         feel free :D
          */
 
-        if (this instanceof UserHandler userHandler) {
+        if (this instanceof final UserHandler userHandler) {
             return new NonVolatilePermissionContainer(userHandler);
         } else {
             Server.getInstance().getServerLogger().error("unsupported handler: " + this);

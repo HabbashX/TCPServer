@@ -1,11 +1,10 @@
 package com.habbashx.tcpserver.socket.server.foundation;
 
-import com.habbashx.injector.PropertyInjector;
 import com.habbashx.tcpserver.Shutdownable;
+import com.habbashx.tcpserver.connection.console.DefaultServerConsoleHandler;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
-import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
-import com.habbashx.tcpserver.connection.console.DefaultServerConsoleHandler;
 import com.habbashx.tcpserver.logger.ServerLogger;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 import com.habbashx.tcpserver.socket.server.settings.annotation.Settings;
@@ -16,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -140,6 +138,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
 
             SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             serverSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
+            assert serverSettings.getHost() != null;
             serverSocket.bind(new InetSocketAddress(serverSettings.getHost(), serverSettings.getPort()));
             if (defaultLogging) {
                 serverLogger.info("server started at port: " + serverSettings.getPort());
@@ -167,7 +166,6 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      *
      * @param connectionHandler the connection handler to be registered
      * @param autoExecute       if true, the connection handler will be executed in the thread pool
-     * @return the same connection handler instance
      */
     public void connect(@NotNull ConnectionHandler connectionHandler, boolean autoExecute) {
 
@@ -240,8 +238,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
                 settingsManager.initSettings();
 
             } else {
-                PropertyInjector injector = new PropertyInjector(new File(ServerUtils.SERVER_SETTINGS_PATH));
-                injector.inject(serverSettings);
+                ServerUtils.injectServerSettings(serverSettings);
             }
 
             serverLogger.info("initialized server settings successfully.");
