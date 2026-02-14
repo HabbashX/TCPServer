@@ -1,14 +1,14 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.MayBeEmpty;
+import com.habbashx.tcpserver.annotation.MaybeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.NotNull;
@@ -25,13 +25,13 @@ import static com.habbashx.tcpserver.security.Permission.UN_BAN_PERMISSION;
  * Represents a command to unban a user from the server. This command
  * allows authorized users to lift the ban on a previously banned user.
  * The command is equipped with a cooldown mechanism and logs its execution.
- *
+ * <p>
  * Features:
  * - Removes a user's ban if their username is provided and they exist.
  * - Provides messages for usage instructions and error handling.
  * - Thread-safe execution with locking to ensure proper state management.
  * - Utilizes a cooldown system to limit rapid command execution.
- *
+ * <p>
  * Command annotation details:
  * - name: "unban"
  * - permission: Default constant `UN_BAN_PERMISSION`.
@@ -40,18 +40,18 @@ import static com.habbashx.tcpserver.security.Permission.UN_BAN_PERMISSION;
  * - cooldownTimeUnit: TimeUnit.SECONDS.
  * - cooldownTime: 10 seconds.
  * - executionLog: true.
- *
+ * <p>
  * Dependencies:
  * - BanCommandManager: Manages ban and unban processes.
  * - Server: Provides access to user and server data.
- *
+ * <p>
  * Exceptions and validations:
  * - If no username is provided, an error message is sent with the usage format.
  * - If the user is not found, a user-not-found message is sent.
- *
+ * <p>
  * Threading:
  * - A reentrant lock is used to ensure thread-safe operations during command execution.
- *
+ * <p>
  * Override Methods:
  * - `execute(CommandContext commandContext)`: Executes the unban logic.
  * - `getCooldownManager()`: Retrieves auxiliary cooldown manager from the parent class.
@@ -59,7 +59,7 @@ import static com.habbashx.tcpserver.security.Permission.UN_BAN_PERMISSION;
 @Command(
         name = "unban",
         permission = UN_BAN_PERMISSION,
-        aliases = {"unbanned","unblock"},
+        aliases = {"unbanned", "unblock"},
         description = "block user from joining the server",
         cooldownTimeUnit = TimeUnit.SECONDS,
         cooldownTime = 10L,
@@ -68,7 +68,7 @@ import static com.habbashx.tcpserver.security.Permission.UN_BAN_PERMISSION;
 public final class UnBanCommand extends CommandExecutor {
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /unban <username>";
-    private static final String USER_NOT_FOUND_MESSAGE = RED+"user is not found"+RESET;
+    private static final String USER_NOT_FOUND_MESSAGE = RED + "user is not found" + RESET;
 
     private final BanCommandManager banCommandManager;
     private final Server server;
@@ -84,11 +84,11 @@ public final class UnBanCommand extends CommandExecutor {
 
 
         if (commandContext.getArgs().isEmpty()) {
-            sendMessage(commandContext.getSender(),USER_NOT_FOUND_MESSAGE);
+            sendMessage(commandContext.getSender(), USER_NOT_FOUND_MESSAGE);
             return;
         }
 
-        @MayBeEmpty
+        @MaybeEmpty
         String targetUsername = commandContext.getArgs().get(0);
         @Nullable
         UserDetails targetUser = server.getServerDataManager().getUserByUsername(targetUsername);
@@ -107,9 +107,9 @@ public final class UnBanCommand extends CommandExecutor {
         }
     }
 
-    private void sendMessage(CommandSender commandSender ,String message) {
+    private void sendMessage(CommandSender commandSender, String message) {
 
-        if (commandSender instanceof UserHandler userHandler) {
+        if (commandSender instanceof final UserHandler userHandler) {
             userHandler.sendMessage(message);
         } else {
             System.out.println(message);

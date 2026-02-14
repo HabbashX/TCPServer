@@ -26,7 +26,7 @@ public class VersionChecker {
 
         try {
             final var url = new URL("https://raw.githubusercontent.com/HabbashX/TCPServer/main/src/main/java/com/habbashx/tcpserver/version/version.txt");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
             if (connection.getResponseCode() == 200) {
@@ -34,8 +34,8 @@ public class VersionChecker {
                 try (final var currentVersionReader = new BufferedReader(new FileReader("src/main/java/com/habbashx/tcpserver/version/version.txt"));
                      final var newestVersionReader = new BufferedReader(new InputStreamReader(connection.getInputStream()))
                 ) {
-                    String currentVersion = currentVersionReader.readLine();
-                    String newestVersion = newestVersionReader.readLine().trim();
+                    final String currentVersion = currentVersionReader.readLine();
+                    final String newestVersion = newestVersionReader.readLine().trim();
 
                     if (currentVersion.contentEquals(newestVersion)) {
                         serverFoundation.getServerLogger().info("project version: " + currentVersion);

@@ -1,9 +1,9 @@
 package com.habbashx.tcpserver.connection;
 
 import com.habbashx.tcpserver.command.CommandSender;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
-import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.io.CountingOutputStream;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
@@ -22,7 +22,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.*;
+import static com.habbashx.tcpserver.logger.ConsoleColor.BG_BRIGHT_BLUE;
+import static com.habbashx.tcpserver.logger.ConsoleColor.BG_ORANGE;
+import static com.habbashx.tcpserver.logger.ConsoleColor.BLACK;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 /**
  * Handles user interactions and communication with the server.
@@ -203,6 +207,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
 
             authenticationRequest();
 
+            assert getServer().getServerSettings().getUserChatCooldown() != null;
             final int cooldownSecond = Integer.parseInt(getServer().getServerSettings().getUserChatCooldown());
             final UserChatEvent userChatEvent = new UserChatEvent(userDetails.getUsername(), this, cooldownSecond);
 

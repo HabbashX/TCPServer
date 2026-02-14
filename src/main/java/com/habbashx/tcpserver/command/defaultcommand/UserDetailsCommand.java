@@ -1,13 +1,13 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.MayBeEmpty;
+import com.habbashx.tcpserver.annotation.MaybeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;
@@ -131,7 +131,7 @@ public final class UserDetailsCommand extends CommandExecutor {
         }
 
         try {
-            @MayBeEmpty final String target = commandContext.getArgs().get(0);
+            @MaybeEmpty final String target = commandContext.getArgs().get(0);
 
             @Nullable
             UserDetails userDetails;
@@ -143,7 +143,7 @@ public final class UserDetailsCommand extends CommandExecutor {
                 } else {
                     userDetails = server.getServerDataManager().getUserById(target);
                 }
-                if (commandContext.getSender() instanceof UserHandler userHandler) {
+                if (commandContext.getSender() instanceof final UserHandler userHandler) {
                     Role userRole = userHandler.getUserDetails().getUserRole();
                     sendUserDetails(userRole, userDetails, userHandler);
                 } else {
@@ -191,7 +191,7 @@ public final class UserDetailsCommand extends CommandExecutor {
 
     private void sendMessage(CommandSender commandSender, String message) {
 
-        if (commandSender instanceof UserHandler userHandler) {
+        if (commandSender instanceof final UserHandler userHandler) {
             userHandler.sendMessage(message);
         } else {
             System.out.println(message);

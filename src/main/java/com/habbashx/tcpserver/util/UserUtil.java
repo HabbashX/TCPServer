@@ -88,15 +88,15 @@ public final class UserUtil {
      * the current year followed by a six-digit random number.
      */
     public static @NotNull String generateRandomID() {
-        Year currentYear = Year.now();
+        final Year currentYear = Year.now();
 
-        int min = 100000;
-        int max = 999999;
+        final int min = 100000;
+        final int max = 999999;
 
-        int randNumber = (int) Math.floor(Math.random() * (max - min + 1) + min);
+        final int randNumber = (int) Math.floor(Math.random() * (max - min + 1) + min);
 
-        String year = String.valueOf(currentYear);
-        String randomNumber = String.valueOf(randNumber);
+        final String year = String.valueOf(currentYear);
+        final String randomNumber = String.valueOf(randNumber);
 
         return year + randomNumber;
     }
