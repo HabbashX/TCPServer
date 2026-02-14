@@ -94,14 +94,14 @@ public final class CheckPermissionCommand extends CommandExecutor {
                         commandContext.getSender().printMessage("has permission: " + hasPermission);
                         return;
                     }
-                    boolean hasPermission = userHandler.hasVolatilePermission(Integer.parseInt(permission));
+                    final boolean hasPermission = userHandler.hasVolatilePermission(Integer.parseInt(permission));
                     commandContext.getSender().printMessage("has permission: " + hasPermission);
                 }
                 return;
             }
             commandContext.getSender().printMessage(USER_NOT_FOUND);
 
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             commandContext.getSender().printMessage(RED + "Invalid permission ID: " + RESET);
         }
     }

@@ -22,5 +22,5 @@ import java.lang.annotation.Target;
  * This annotation should be applied only to local variables.
  */
 @Target(ElementType.LOCAL_VARIABLE)
-public @interface MayBeEmpty {
+public @interface MaybeEmpty {
 }

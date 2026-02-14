@@ -19,11 +19,22 @@ import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.*;
+import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
+import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 import static com.habbashx.tcpserver.security.Permission.CHANGE_ROLE_PERMISSION;
 
 /**
@@ -131,14 +142,12 @@ public final class ChangeRoleCommand extends CommandExecutor {
             return;
         }
 
-        @MaybeEmpty
-        String targetUsername = commandContext.getArgs().get(0);
-        @MaybeEmpty
-        String specifiedRole = commandContext.getArgs().get(1).toUpperCase();
+        @MaybeEmpty final String targetUsername = commandContext.getArgs().get(0);
+        @MaybeEmpty final String specifiedRole = commandContext.getArgs().get(1).toUpperCase();
 
         if (isRoleExists(specifiedRole)) {
 
-            if (commandContext.getSender() instanceof UserHandler userHandler) {
+            if (commandContext.getSender() instanceof final UserHandler userHandler) {
                 String senderUsername = userHandler.getUserDetails().getUsername();
 
                 if (senderUsername.equals(targetUsername)) {
@@ -146,7 +155,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
                     return;
                 }
             }
-            Role role = Role.valueOf(specifiedRole);
+            final Role role = Role.valueOf(specifiedRole);
             Objects.requireNonNull(server.getServerDataManager().getOnlineUserByUsername(targetUsername)).getUserDetails().setUserRole(role);
             changeRoleInUsersFile(targetUsername, role);
             sendMessage(commandContext.getSender(), RANK_CHANGED_MESSAGE);
@@ -163,6 +172,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
      */
     private void changeRoleInUsersFile(String username, Role role) {
 
+        assert server.getServerSettings().getAuthStorageType() != null;
         @Nullable final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
 
         final AuthStorageType authStorageType = AuthStorageType.valueOf(authType);
@@ -223,7 +233,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
 
             final CSVPrinter printer = new CSVPrinter(writer, DEFAULT_FORMAT);
 
-            for (Map<String, Object> user : users) {
+            for (final Map<String, Object> user : users) {
 
                 printer.printRecord(
                         user.get("userIP"),
@@ -311,7 +321,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
      */
     private void sendMessage(CommandSender commandSender, String message) {
 
-        if (commandSender instanceof UserHandler userHandler) {
+        if (commandSender instanceof final UserHandler userHandler) {
             userHandler.sendMessage(message);
         } else {
             System.out.println(message);
@@ -327,7 +337,7 @@ public final class ChangeRoleCommand extends CommandExecutor {
      */
     private boolean isRoleExists(String role) {
 
-        for (String r : AVAILABLE_ROLES) {
+        for (final String r : AVAILABLE_ROLES) {
             if (r.equals(role)) {
                 return true;
             }

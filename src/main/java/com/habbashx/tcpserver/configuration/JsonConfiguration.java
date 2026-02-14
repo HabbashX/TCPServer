@@ -34,7 +34,7 @@ public final class JsonConfiguration extends Configuration {
     public JsonConfiguration(@NotNull String configurationFile, Server server) {
         this.configurationFile = new File(configurationFile);
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            final ObjectMapper mapper = new ObjectMapper();
             configData = mapper.readValue(this.configurationFile, Map.class);
         } catch (IOException e) {
             server.getServerLogger().error(e);
@@ -60,8 +60,8 @@ public final class JsonConfiguration extends Configuration {
 
         Map<String, Object> currentNode = configData;
 
-        for (String part : pathParts) {
-            Object value = currentNode.get(part);
+        for (final String part : pathParts) {
+            final Object value = currentNode.get(part);
 
             if (value instanceof Map) {
                 currentNode = (Map<String, Object>) value;
@@ -83,11 +83,10 @@ public final class JsonConfiguration extends Configuration {
     public void modify(@NotNull String node, @NotNull String newValue) {
 
         @Language("RegExp") final String[] pathParts = node.split("\\.");
-
         Map<String, Object> currentNode = configData;
 
         for (int i = 0; i < pathParts.length - 1; i++) {
-            String part = pathParts[i];
+            final String part = pathParts[i];
             Object child = currentNode.get(part);
 
             if (!(child instanceof Map)) {

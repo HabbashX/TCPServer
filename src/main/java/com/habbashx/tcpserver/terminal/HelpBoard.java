@@ -50,13 +50,13 @@ public class HelpBoard {
      */
     private static @NotNull String getHelpBoard(int halfLineLength) throws IOException {
 
-        String helpLine = "-".repeat(Math.max(0, halfLineLength)) +
+        final String helpLine = "-".repeat(Math.max(0, halfLineLength)) +
                 " " + "[HELP]" + " " +
                 "-".repeat(Math.max(0, halfLineLength));
-        StringBuilder stringBuilder = new StringBuilder();
+        final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(helpLine);
 
-        BufferedReader reader = new BufferedReader(new FileReader(HELP_BOARD_FILE));
+        final BufferedReader reader = new BufferedReader(new FileReader(HELP_BOARD_FILE));
         String line;
         while ((line = reader.readLine()) != null) {
             stringBuilder.append(line).append(System.lineSeparator());
@@ -75,7 +75,7 @@ public class HelpBoard {
     private static int getLongestLineLength() throws IOException {
         int longestLineLength = 0;
 
-        BufferedReader reader = new BufferedReader(new FileReader(HELP_BOARD_FILE));
+        final BufferedReader reader = new BufferedReader(new FileReader(HELP_BOARD_FILE));
         String line;
         while ((line = reader.readLine()) != null) {
             int lineLength = line.length();

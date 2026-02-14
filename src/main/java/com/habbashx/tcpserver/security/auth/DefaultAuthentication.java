@@ -2,8 +2,8 @@ package com.habbashx.tcpserver.security.auth;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.tcpserver.event.AuthenticationEvent;
 import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.event.AuthenticationEvent;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.storage.AuthStorageType;
 import com.habbashx.tcpserver.socket.server.Server;
@@ -15,7 +15,12 @@ import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +30,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-import static com.habbashx.tcpserver.util.UserUtil.*;
+import static com.habbashx.tcpserver.util.UserUtil.isValidEmail;
+import static com.habbashx.tcpserver.util.UserUtil.isValidPhoneNumber;
+import static com.habbashx.tcpserver.util.UserUtil.isValidUsername;
 
 /**
  * DefaultAuthentication is a final implementation of the Authentication class, designed to manage user authentication
@@ -140,6 +147,7 @@ public final class DefaultAuthentication extends Authentication {
 
     public DefaultAuthentication(@NotNull Server server) {
         this.server = server;
+        assert server.getServerSettings().getAuthStorageType() != null;
         final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
         final String fileType = authType.toLowerCase();
         authStorageType = AuthStorageType.valueOf(authType);

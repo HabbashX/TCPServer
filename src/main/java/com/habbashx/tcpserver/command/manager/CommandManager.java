@@ -146,7 +146,7 @@ public final class CommandManager {
 
                 final int permissionValue = commandExecutorClass.getAnnotation(Command.class).permission();
                 final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
-                long cooldownTime = getCooldownTimeUnit(commandInformation.cooldownTime(), commandInformation.cooldownTimeUnit());
+                final long cooldownTime = getCooldownTimeUnit(commandInformation.cooldownTime(), commandInformation.cooldownTimeUnit());
                 commandExecutor.getCooldownManager().setCooldownTime(cooldownTime);
                 if (commandSender instanceof UserHandler userHandler) {
                     final NonVolatilePermissionContainer container = userHandler.getNonVolatilePermissionContainer();
@@ -172,7 +172,7 @@ public final class CommandManager {
                         userHandler.sendMessage(NO_PERMISSION_MESSAGE);
                     }
                 } else {
-                    CommandContext commandContext = new CommandContext(senderName, args, commandSender);
+                    final CommandContext commandContext = new CommandContext(senderName, args, commandSender);
                     executeCommand(commandExecutor, commandContext, commandInformation.isAsync());
                 }
             } else {

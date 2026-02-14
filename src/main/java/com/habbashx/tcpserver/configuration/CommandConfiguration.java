@@ -15,6 +15,20 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class CommandConfiguration {
 
+    public @Nullable Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor,
+                                                     @NotNull Configuration configuration) {
+
+        final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
+
+        if (configFile != null) {
+            return configuration;
+        }
+        server.getServerLogger().error("error in configuration loading for the command: " + commandExecutor +
+                "\n" + "configFile is null please ensure if you`ve add config file for this command");
+
+        return null;
+    }
+
     /**
      * Loads the configuration file associated with the command and initializes
      * a JSON-based configuration object. The configuration file path is derived
@@ -25,11 +39,17 @@ public final class CommandConfiguration {
      * @return a {@link JsonConfiguration} object representing the loaded configuration,
      * which enables interaction with configuration data stored in a JSON file.
      */
-    public Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor) {
+    public @Nullable Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor) {
 
         final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
-        assert configFile != null;
-        return new JsonConfiguration(configFile, server);
+
+        if (configFile != null) {
+            return new JsonConfiguration(configFile, server);
+        }
+        server.getServerLogger().error("error in configuration loading for the command: " + commandExecutor +
+                "\n" + "configFile is null please ensure if you`ve add config file for this command");
+        return null;
     }
+
 
 }
