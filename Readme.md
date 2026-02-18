@@ -7,7 +7,7 @@ you can just use TCP server for your own purposes.
 
 ## Version
 
-- 1.1.3
+- 1.1.4
 
 ## Features
 
