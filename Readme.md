@@ -45,11 +45,16 @@ you can just use TCP server for your own purposes.
 
 - **Console Text Color**
 
+---
+
+- **Database password decryptor & KeyStore password decryptor & TrustStore password decryptor**
+
 ## New Features
 
 - **ServerMemoryUsage**: show usage of server memory
 - **Connection Handler Interface**
 - **Event Handler Configuration**
+- **Private Groups**
 
 ## Additional additions
 
