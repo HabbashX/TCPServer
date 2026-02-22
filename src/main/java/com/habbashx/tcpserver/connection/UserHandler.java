@@ -20,13 +20,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.BG_BRIGHT_BLUE;
-import static com.habbashx.tcpserver.logger.ConsoleColor.BG_ORANGE;
-import static com.habbashx.tcpserver.logger.ConsoleColor.BLACK;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 
 /**
  * Handles user interactions and communication with the server.
@@ -147,6 +146,31 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * allowing for graceful shutdown or termination of the handler's processes.
      */
     private boolean running = true;
+
+    /**
+     * A thread-safe queue that buffers messages to be sent to the connected user.
+     * <p>
+     * This queue is used to store messages before they are transmitted to the user,
+     * allowing asynchronous message handling without blocking the sender. It implements
+     * {@link ConcurrentLinkedQueue} to ensure thread-safe operations in a multi-threaded environment.
+     * <p>
+     * Messages are added to this queue via the {@link #sendMessage(String)} method
+     * and are processed and sent by the {@link #trySend()} method.
+     */
+    private final Queue<String> messageQueue = new ConcurrentLinkedQueue<>();
+
+    /**
+     * An atomic boolean flag that indicates whether a sending operation is currently in progress.
+     * <p>
+     * This flag is used to coordinate message sending operations, ensuring that only one
+     * thread at a time is processing and transmitting messages from the {@code messageQueue}.
+     * It uses atomic compare-and-set operations to avoid race conditions and ensure
+     * thread-safety without explicit synchronization.
+     * <p>
+     * The flag is set to {@code true} when a send operation starts and reset to {@code false}
+     * when the operation completes, allowing subsequent send attempts to proceed.
+     */
+    private final AtomicBoolean isSending = new AtomicBoolean(false);
 
     /**
      * Constructs a UserHandler instance for managing a user connection and server communication.
@@ -336,35 +360,108 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     }
 
     /**
-     * Sends a message to the output stream associated with this handler.
+     * Sends a message to the user by adding it to the message queue and triggering the send mechanism.
+     * <p>
+     * This method ensures thread-safe message delivery by queuing the message and attempting to send it
+     * asynchronously without blocking the caller.
      *
-     * @param message the message to be sent; must not be null
+     * @param message the message to be sent to the user
      */
     public void sendMessage(String message) {
-        output.println(message);
+        messageQueue.offer(message);
+        trySend();
     }
 
+    /**
+     * Attempts to send all queued messages to the user in an asynchronous manner.
+     * <p>
+     * This method uses an atomic flag to ensure that only one thread is sending messages at a time.
+     * If a send operation is already in progress, this method will not initiate a new one.
+     * The actual sending is delegated to the server's thread pool for non-blocking execution.
+     */
+    private void trySend() {
+
+        if (isSending.compareAndSet(false, true)) {
+            getServer().getThreadPool().submit(() -> {
+                try {
+                    while (true) {
+                        String msg;
+
+                        while ((msg = messageQueue.poll()) != null) {
+                            output.println(msg);
+                        }
+
+                        isSending.set(false);
+
+                        if (messageQueue.isEmpty()) {
+                            break;
+                        }
+                        if (!isSending.compareAndSet(false, true)) {
+                            break;
+                        }
+                        if (messageQueue.size() >= 200) {
+                            this.shutdown();
+                        }
+                    }
+                } catch (Exception e) {
+                    isSending.set(false);
+                    shutdown();
+                }
+            });
+        }
+    }
+
+    /**
+     * Sets the user details associated with this handler.
+     *
+     * @param userDetails the user details to be associated with this handler
+     */
     public void setUserDetails(UserDetails userDetails) {
         this.userDetails = userDetails;
     }
 
+    /**
+     * Retrieves the user details associated with this handler.
+     *
+     * @return the user details associated with this handler
+     */
     public UserDetails getUserDetails() {
         return userDetails;
     }
 
+    /**
+     * Retrieves the SSL socket associated with this user handler.
+     *
+     * @return the SSL socket used for user communication
+     */
     @Override
     public SSLSocket getUserSocket() {
         return super.getUserSocket();
     }
 
+    /**
+     * Retrieves the {@link BufferedReader} used for reading input from the user.
+     *
+     * @return the buffered reader for user input
+     */
     public BufferedReader getReader() {
         return input;
     }
 
+    /**
+     * Retrieves the {@link PrintWriter} used for sending output to the user.
+     *
+     * @return the print writer for user output
+     */
     public PrintWriter getWriter() {
         return output;
     }
 
+    /**
+     * Retrieves the server instance associated with this user handler.
+     *
+     * @return the server instance managing this user handler
+     */
     @Override
     public Server getServer() {
         return (Server) super.getServer();
@@ -380,37 +477,74 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         return userDetails.getUserRole().getPermissions().contains(permission);
     }
 
+    /**
+     * Checks if the user has a specific volatile permission.
+     * <p>
+     * Volatile permissions are temporary permissions that apply to the current session only.
+     *
+     * @param permission the permission value to check
+     * @return {@code true} if the user has the volatile permission; {@code false} otherwise
+     */
     @Override
     public boolean hasVolatilePermission(int permission) {
         return permissions.contains(0);
     }
 
+    /**
+     * Adds a single permission to the user's volatile permission list.
+     *
+     * @param permission the permission value to add
+     */
     @Override
     public void addPermission(int permission) {
         permissions.add(permission);
     }
 
+    /**
+     * Removes a single permission from the user's volatile permission list.
+     *
+     * @param permission the permission value to remove
+     */
     @Override
     public void removePermission(int permission) {
         permissions.remove(permission);
     }
 
+    /**
+     * Adds multiple permissions to the user's volatile permission list.
+     *
+     * @param permissions the list of permission values to add
+     */
     @Override
     public void addPermissions(List<Integer> permissions) {
         this.permissions.addAll(permissions);
     }
 
+    /**
+     * Removes multiple permissions from the user's volatile permission list.
+     *
+     * @param permissions the list of permission values to remove
+     */
     @Override
     public void removePermissions(List<Integer> permissions) {
         this.permissions.removeAll(permissions);
     }
 
-
+    /**
+     * Retrieves the list of volatile permissions assigned to this handler.
+     *
+     * @return the list of permission values assigned to this handler
+     */
     @Override
     public List<Integer> getHandlerPermissions() {
         return permissions;
     }
 
+    /**
+     * Retrieves the non-volatile permission container associated with this handler.
+     *
+     * @return the non-volatile permission container
+     */
     @Override
     public NonVolatilePermissionContainer getNonVolatilePermissionContainer() {
         return super.getNonVolatilePermissionContainer();
@@ -446,6 +580,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
             running = false;
 
             getServer().getConnectionHandlers().remove(this);
+            getServer().getAuthenticatedUsers().remove(getUserDetails().getUsername());
             final String username = userDetails.getUsername();
 
             if (username != null) {
@@ -470,11 +605,24 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         }
     }
 
+    /**
+     * Retrieves the reentrant lock associated with this handler for thread synchronization.
+     *
+     * @return the reentrant lock used for synchronization
+     */
     @Override
     public ReentrantLock getReentrantLock() {
         return CommandSender.super.getReentrantLock();
     }
 
+    /**
+     * Compares this UserHandler instance with another object for equality.
+     * <p>
+     * Two UserHandler instances are considered equal if they have the same user details.
+     *
+     * @param object the object to compare with
+     * @return {@code true} if the objects are equal; {@code false} otherwise
+     */
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
@@ -482,62 +630,37 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         return Objects.equals(userDetails, that.userDetails);
     }
 
+    /**
+     * Returns the hash code value for this UserHandler instance.
+     * <p>
+     * The hash code is based on the user details associated with this handler.
+     *
+     * @return the hash code value for this UserHandler
+     */
     @Override
     public int hashCode() {
         return Objects.hashCode(userDetails);
     }
 
+    /**
+     * Returns the type identifier for this handler.
+     *
+     * @return the handler type as "UserHandler"
+     */
     @Contract(pure = true)
     @Override
     public @NotNull String getHandlerType() {
         return "UserHandler";
     }
 
+    /**
+     * Returns a description of this handler.
+     *
+     * @return the handler description (currently empty)
+     */
     @Contract(pure = true)
     @Override
     public @NotNull String getHandlerDescription() {
-        return """
-                The `UserHandler` class is responsible for managing and facilitating communication between
-                the server and a connected user. It extends `ConnectionHandler` and implements the `CommandSender`
-                interface.
-                
-                Key Details:
-                
-                1. Purpose:
-                   - Handles user interaction, including authentication, command execution, and messaging.
-                   - Maintains user-specific session controls and permissions.
-                
-                2. Attributes:
-                   - `UserDetails`: Stores user identity, role, and account status.
-                   - `BufferedReader input`: Reads user commands/messages from the connection.
-                   - `PrintWriter output`: Sends messages or responses to the user.
-                   - `Authentication`: Manages login and registration workflows securely.
-                   - `CountingOutputStream`: Tracks the volume of data sent to the user.
-                   - `List<Integer> permissions`: Represents user-specific permissions for role-based actions.
-                   - `boolean running`: Indicates whether the handler is actively processing interactions.
-                
-                3. Functionalities:
-                   - Authentication:
-                     - Guides users through login or registration processes.
-                     - Validates user credentials using the `Authentication` class.
-                   - Command & Messaging:
-                     - Executes commands handled by the server's command manager.
-                     - Processes and broadcasts user messages or triggers relevant events.
-                   - Session Management:
-                     - Starts, monitors, and shuts down user sessions gracefully.
-                   - Resource Safety:
-                     - Handles errors and ensures proper closure of input/output streams.
-                
-                4. Core Methods:
-                   - `run()`: Main loop for executing user interaction logic.
-                   - `authenticationRequest()`: Prompts the user for login or registration.
-                   - `sendRegisterRequest()`: Handles new user registration.
-                   - `sendLoginRequest()`: Handles user login.
-                   - `sendMessage(String message)`: Sends messages to the user.
-                
-                Designed for maintaining secure and reliable communication with connected users,
-                the `UserHandler` ensures scalability, error handling, and proper resource management
-                throughout the server-client interaction lifecycle.
-                """;
+        return "";
     }
 }
