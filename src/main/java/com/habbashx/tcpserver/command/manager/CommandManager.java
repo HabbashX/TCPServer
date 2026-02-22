@@ -182,7 +182,6 @@ public final class CommandManager {
             sendMessage(commandSender, UNKNOWN_COMMAND_MESSAGE);
         }
     }
-
     /**
      * Executes a command using the given {@link CommandExecutor} and {@link CommandContext}.
      * The execution can be done either synchronously or asynchronously depending on the value of {@code isAsync}.
