@@ -2,23 +2,7 @@ package com.habbashx.tcpserver.socket.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.habbashx.tcpserver.command.defaultcommand.AddPermissionCommand;
-import com.habbashx.tcpserver.command.defaultcommand.BanCommand;
-import com.habbashx.tcpserver.command.defaultcommand.ChangeRoleCommand;
-import com.habbashx.tcpserver.command.defaultcommand.CheckPermissionCommand;
-import com.habbashx.tcpserver.command.defaultcommand.HelpCommand;
-import com.habbashx.tcpserver.command.defaultcommand.InfoCommand;
-import com.habbashx.tcpserver.command.defaultcommand.ListUserCommand;
-import com.habbashx.tcpserver.command.defaultcommand.MuteCommand;
-import com.habbashx.tcpserver.command.defaultcommand.NicknameCommand;
-import com.habbashx.tcpserver.command.defaultcommand.PrivateGroupCommand;
-import com.habbashx.tcpserver.command.defaultcommand.PrivateMessageCommand;
-import com.habbashx.tcpserver.command.defaultcommand.RemovePermissionCommand;
-import com.habbashx.tcpserver.command.defaultcommand.RetrievesWrittenBytesCommand;
-import com.habbashx.tcpserver.command.defaultcommand.ServerMemoryUsageCommand;
-import com.habbashx.tcpserver.command.defaultcommand.UnBanCommand;
-import com.habbashx.tcpserver.command.defaultcommand.UnMuteCommand;
-import com.habbashx.tcpserver.command.defaultcommand.UserDetailsCommand;
+import com.habbashx.tcpserver.command.defaultcommand.*;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.command.manager.CommandManager;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
@@ -27,15 +11,7 @@ import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
 import com.habbashx.tcpserver.delayevent.BroadcastEvent;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
-import com.habbashx.tcpserver.listener.handler.AuthenticationEventHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultBroadcastHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultChatHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultMutedUserHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultPrivateGroupChatHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultServerConsoleChatHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultUserExecuteCommandHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultUserJoinHandler;
-import com.habbashx.tcpserver.listener.handler.DefaultUserLeaveHandler;
+import com.habbashx.tcpserver.listener.handler.*;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.auth.DefaultAuthentication;
@@ -53,18 +29,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.sql.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
@@ -323,7 +290,7 @@ public final class Server extends ServerFoundation {
 
             if (running) {
                 do {
-                    SSLSocket user = (SSLSocket) getServerSocket().accept();
+                    final SSLSocket user = (SSLSocket) getServerSocket().accept();
                     connect(new UserHandler(user, this), true);
                 } while (running);
             }
@@ -485,18 +452,8 @@ public final class Server extends ServerFoundation {
      * @param message the message to broadcast to all connected users
      */
     public void broadcast(String message) {
-        getConnectionHandlers().stream()
-                .filter(connectionHandler -> connectionHandler instanceof UserHandler)
-                .map(connectionHandler -> (UserHandler) connectionHandler)
-                .forEach(user -> {
-                    ReentrantLock reentrantLock = user.getReentrantLock();
-                    reentrantLock.lock();
-                    try {
-                        user.sendMessage(message);
-                    } finally {
-                        reentrantLock.unlock();
-                    }
-                });
+        getAuthenticatedUsers().values().forEach(user -> user.sendMessage(message)
+        );
     }
 
     /**
@@ -516,13 +473,12 @@ public final class Server extends ServerFoundation {
                 .filter(connectionHandler -> connectionHandler instanceof UserHandler)
                 .map(connectionHandler -> (UserHandler) connectionHandler)
                 .forEach(user -> {
-                            ReentrantLock reentrantLock = user.getReentrantLock();
-                            reentrantLock.lock();
 
+                            user.getReentrantLock().lock();
                             try {
                                 writtenBytes.addAndGet(user.getCountingOutputStream().getBytesWritten());
                             } finally {
-                                reentrantLock.unlock();
+                                user.getReentrantLock().unlock();
                             }
                         }
                 );
@@ -595,9 +551,8 @@ public final class Server extends ServerFoundation {
         try {
             super.shutdown();
             running = false;
-            getConnectionHandlers().stream()
-                    .filter(connection -> connection instanceof UserHandler)
-                    .map(connection -> (UserHandler) connection)
+            getAuthenticatedUsers().values()
+                    .stream()
                     .forEach(UserHandler::shutdown);
 
             getServerDataManager().getUserDao().closeConnection();
@@ -738,7 +693,7 @@ public final class Server extends ServerFoundation {
         public ServerDataManager(@NotNull Server server) {
             this.server = server;
             assert server.getServerSettings().getAuthStorageType() != null;
-            final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
+            @Nullable final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
             authStorageType = AuthStorageType.valueOf(authType);
             userDao = new UserDao(server);
         }
@@ -754,10 +709,8 @@ public final class Server extends ServerFoundation {
          */
         public @Nullable UserHandler getOnlineUserByUsername(String username) {
 
-            return server.getConnectionHandlers()
+            return server.getAuthenticatedUsers().values()
                     .stream()
-                    .filter(connectionHandler -> connectionHandler instanceof UserHandler)
-                    .map(connectionHandler -> (UserHandler) connectionHandler)
                     .filter(userHandler -> userHandler.getUserDetails().getUsername()
                             .equals(username)).findFirst().orElse(null);
         }
@@ -774,10 +727,8 @@ public final class Server extends ServerFoundation {
          * or null if no such user is currently online.
          */
         public @Nullable UserHandler getOnlineUserById(String id) {
-            return server.getConnectionHandlers()
+            return server.getAuthenticatedUsers().values()
                     .stream()
-                    .filter(connectionHandler -> connectionHandler instanceof UserHandler)
-                    .map(connectionHandler -> (UserHandler) connectionHandler)
                     .filter(userHandler -> userHandler.getUserDetails().getUserID().equals(id))
                     .findFirst()
                     .orElse(null);
