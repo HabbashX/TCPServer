@@ -15,24 +15,16 @@ import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 import org.mindrot.jbcrypt.BCrypt;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-import static com.habbashx.tcpserver.util.UserUtil.isValidEmail;
-import static com.habbashx.tcpserver.util.UserUtil.isValidPhoneNumber;
-import static com.habbashx.tcpserver.util.UserUtil.isValidUsername;
+import static com.habbashx.tcpserver.util.UserUtil.*;
 
 /**
  * DefaultAuthentication is a final implementation of the Authentication class, designed to manage user authentication
@@ -143,6 +135,8 @@ public final class DefaultAuthentication extends Authentication {
      */
     private final ObjectMapper mapper = new ObjectMapper();
 
+    private static final ReentrantLock FILE_LOCKER = new ReentrantLock();
+
     private static final String USER_ALREADY_CONNECTED_MESSAGE = RED + "user already connected to server" + RESET;
 
     public DefaultAuthentication(@NotNull Server server) {
@@ -169,9 +163,8 @@ public final class DefaultAuthentication extends Authentication {
     @Override
     public void register(@NotNull String username, @NotNull String password, String email, String phoneNumber, @NotNull UserHandler userHandler) {
 
-        final ReentrantLock reentrantLock = userHandler.getReentrantLock();
-        reentrantLock.lock();
 
+        FILE_LOCKER.lock();
         try {
             if (!isUserExists(username)) {
 
@@ -207,7 +200,7 @@ public final class DefaultAuthentication extends Authentication {
                 }
             }
         } finally {
-            reentrantLock.unlock();
+            FILE_LOCKER.unlock();
         }
     }
 
@@ -223,9 +216,8 @@ public final class DefaultAuthentication extends Authentication {
     @Override
     public void login(@NotNull String username, @NotNull String password, @NotNull UserHandler userHandler) {
 
-        final ReentrantLock reentrantLock = userHandler.getReentrantLock();
 
-        reentrantLock.lock();
+        FILE_LOCKER.lock();
         try {
             switch (authStorageType) {
                 case CSV -> csvLogin(username, password, userHandler);
@@ -233,7 +225,7 @@ public final class DefaultAuthentication extends Authentication {
                 case SQL -> sqlLogin(username, password, userHandler);
             }
         } finally {
-            reentrantLock.unlock();
+            FILE_LOCKER.unlock();
         }
     }
 
@@ -536,12 +528,7 @@ public final class DefaultAuthentication extends Authentication {
      */
     public boolean isUserConnected(String username) {
 
-        return server.getConnectionHandlers().stream()
-                .filter(connectionHandler -> connectionHandler instanceof UserHandler)
-                .map(connectionHandler -> (UserHandler) connectionHandler)
-                .map(user -> user.getUserDetails().getUsername())
-                .filter(Objects::nonNull)
-                .anyMatch(name -> name.equals(username));
+        return server.getAuthenticatedUsers().containsKey(username);
     }
 
     public Server getServer() {
