@@ -1,6 +1,7 @@
 package com.habbashx.tcpserver.socket.server.foundation;
 
 import com.habbashx.tcpserver.Shutdownable;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.connection.console.DefaultServerConsoleHandler;
 import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
@@ -17,12 +18,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.concurrent.*;
 
 /**
  * ServerFoundation is an abstract base class that provides a secure, configurable, and concurrent
@@ -54,11 +51,9 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      */
     private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
-    /**
-     * A thread-safe list that holds instances of ConnectionHandler.
-     * This list is used to manage and store active connection handlers.
-     */
-    private final List<ConnectionHandler> connectionHandlers = Collections.synchronizedList(new ArrayList<>());
+    private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
+
+    private final ConcurrentMap<String, UserHandler> authenticatedUsers = new ConcurrentHashMap<>();
 
     /**
      * The eventManager is responsible for managing and dispatching events
@@ -175,6 +170,10 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
         connect(connectionHandler);
     }
 
+    public void registerAuthenticatedUser(String username, UserHandler handler) {
+        authenticatedUsers.put(username, handler);
+    }
+
     /**
      * @return the server's SSL server socket
      */
@@ -192,8 +191,12 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
     /**
      * @return a list of all active connection handlers
      */
-    public List<ConnectionHandler> getConnectionHandlers() {
+    public Set<ConnectionHandler> getConnectionHandlers() {
         return connectionHandlers;
+    }
+
+    public ConcurrentMap<String, UserHandler> getAuthenticatedUsers() {
+        return authenticatedUsers;
     }
 
     /**
