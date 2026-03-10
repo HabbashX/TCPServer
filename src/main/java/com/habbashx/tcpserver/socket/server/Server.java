@@ -641,8 +641,7 @@ public final class Server extends ServerFoundation {
     }
 
     public static void main(String[] args) {
-        final ServerFoundation server = new Server();
-        server.run();
+        Server.getInstance().run();
     }
 
     /**
@@ -1230,15 +1229,12 @@ public final class Server extends ServerFoundation {
          * @param username the username of the user to remove
          */
         public void removeUser(String username) {
-            users.stream().forEach(
-                    userHandler -> {
-                        if (userHandler.getUserDetails().getUsername().equals(username)) {
-                            users.remove(userHandler);
-                        } else {
-                            groupOwner.sendMessage("user not found");
-                        }
-                    }
+            boolean removed = users.removeIf(
+                    userHandler -> userHandler.getUserDetails().getUsername().equals(username)
             );
+            if (!removed) {
+                groupOwner.sendMessage("user not found");
+            }
         }
 
         /**
