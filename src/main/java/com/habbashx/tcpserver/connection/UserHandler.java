@@ -487,7 +487,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     @Override
     public boolean hasVolatilePermission(int permission) {
-        return permissions.contains(0);
+        return permissions.contains(permission);
     }
 
     /**
