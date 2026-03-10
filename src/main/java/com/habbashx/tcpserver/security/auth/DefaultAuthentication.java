@@ -180,6 +180,7 @@ public final class DefaultAuthentication extends Authentication {
 
                 if (!isValidEmail(email)) {
                     userHandler.sendMessage(RED + "invalid email" + RESET);
+                    return;
                 }
 
                 if (!authenticationFileStorage.exists()) {
@@ -251,7 +252,7 @@ public final class DefaultAuthentication extends Authentication {
                 final String id = UserUtil.generateRandomID();
                 final Role role = Role.DEFAULT;
                 printer.printRecord(
-                        UserUtil.getUserHostAddress(),
+                        userHandler.getUserSocket().getLocalAddress(),
                         UserUtil.generateRandomID(),
                         Role.DEFAULT, // default rank is the default rank for newest users
                         username,
