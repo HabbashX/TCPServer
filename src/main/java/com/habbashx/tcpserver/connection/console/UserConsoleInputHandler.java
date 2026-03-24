@@ -1,8 +1,12 @@
 package com.habbashx.tcpserver.connection.console;
 
+import com.habbashx.tcpserver.connection.packet.TextPacket;
+import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.socket.client.User;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Scanner;
 
 /**
  * Handles user input from the console and forwards it to the associated output stream.
@@ -15,37 +19,29 @@ import java.io.IOException;
  */
 public final class UserConsoleInputHandler extends ConsoleHandler implements Runnable {
 
+
     private final User user;
 
     public UserConsoleInputHandler(User user) {
         this.user = user;
     }
 
-    /**
-     * Reads input messages from the console and forwards them to the associated user's output stream.
-     * <p>
-     * This method continuously listens for messages from the system's standard input (console) through the
-     * `BufferedReader` instance assigned to `input`. When a message is received, it is immediately forwarded
-     * to the `PrintWriter` instance obtained from the associated `User` object.
-     * <p>
-     * The method will block on reading input from the console until an input line is available
-     * or the stream is closed. If the input is null (indicating end of stream), the loop terminates. In case
-     * of an I/O error during reading, the method throws a RuntimeException wrapping the `IOException`.
-     * <p>
-     * This method is constructed to operate in a separate thread, enabling asynchronous handling of user input
-     * without blocking the main application flow.
-     *
-     * @throws RuntimeException if an I/O error occurs during input reading
-     */
     @Override
     public void run() {
-        try (this) {
-            String message;
-            while ((message = getInput().readLine()) != null) {
-                user.getOutput().println(message);
+        final Scanner scanner = new Scanner(System.in);
+        final DataOutputStream output = user.getOutput();
+
+        try {
+            while (user.isRunning()) {
+                String message = scanner.nextLine();
+                if (message == null) continue;
+
+                TextPacket packet = new TextPacket(message);
+                PacketFactory.writePacket(output, packet);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("Error sending message to server: " + e.getMessage());
+            user.shutdown();
         }
     }
 }

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="EntryPointsManager">
     <writeAnnotations>
+      <writeAnnotation name="com.habbashx.annotation.InjectPrefix" />
       <writeAnnotation name="com.habbashx.annotation.InjectProperty" />
     </writeAnnotations>
   </component>

@@ -41,7 +41,7 @@ public final class ListUserCommand extends CommandExecutor {
         ).toList().size();
 
         if (commandContext.getSender() instanceof UserHandler user) {
-            user.sendMessage("online users: " + onlineUsers);
+            user.sendTextMessage("online users: " + onlineUsers);
         } else {
             System.out.println("online users: " + onlineUsers);
         }

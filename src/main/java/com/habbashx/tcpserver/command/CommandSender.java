@@ -28,7 +28,7 @@ public interface CommandSender {
     default void printMessage(String message) {
 
         if (this instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else if (this instanceof ServerConsoleHandler) {
             System.out.println(message);
         }

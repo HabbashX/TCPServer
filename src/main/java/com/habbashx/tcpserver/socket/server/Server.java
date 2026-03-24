@@ -452,8 +452,8 @@ public final class Server extends ServerFoundation {
      * @param message the message to broadcast to all connected users
      */
     public void broadcast(String message) {
-        getAuthenticatedUsers().values().forEach(user -> user.sendMessage(message)
-        );
+        getAuthenticatedUsers().values()
+                .forEach(user -> user.sendTextMessage(message));
     }
 
     /**
@@ -1217,7 +1217,7 @@ public final class Server extends ServerFoundation {
             if (userHandler != null) {
                 users.add(userHandler);
             } else {
-                groupOwner.sendMessage("user not found");
+                groupOwner.sendTextMessage("user not found");
             }
         }
 
@@ -1233,7 +1233,7 @@ public final class Server extends ServerFoundation {
                     userHandler -> userHandler.getUserDetails().getUsername().equals(username)
             );
             if (!removed) {
-                groupOwner.sendMessage("user not found");
+                groupOwner.sendTextMessage("user not found");
             }
         }
 
@@ -1243,7 +1243,7 @@ public final class Server extends ServerFoundation {
          * @param message the message to broadcast
          */
         public void broadcast(String message) {
-            users.stream().forEach(userHandler -> userHandler.sendMessage(message));
+            users.stream().forEach(userHandler -> userHandler.sendTextMessage(message));
         }
 
         /**

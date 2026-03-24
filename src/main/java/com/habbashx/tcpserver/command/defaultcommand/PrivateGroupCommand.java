@@ -60,14 +60,14 @@ public final class PrivateGroupCommand extends CommandExecutor {
         if (commandContext.getSender() instanceof final UserHandler userHandler) {
 
             if (commandContext.getArgs().isEmpty()) {
-                userHandler.sendMessage(CHOOSE_COMMAND_MESSAGE);
+                userHandler.sendTextMessage(CHOOSE_COMMAND_MESSAGE);
                 return;
             }
             final String command = commandContext.getArgs().get(0);
             if (command != null) {
                 doCommand(command.toUpperCase(), userHandler, commandContext.getArgs());
             } else {
-                userHandler.sendMessage(CHOOSE_COMMAND_MESSAGE);
+                userHandler.sendTextMessage(CHOOSE_COMMAND_MESSAGE);
             }
         } else {
             System.out.println(CONSOLE_EXECUTE_COMMAND_WARNING_MESSAGE);
@@ -135,11 +135,11 @@ public final class PrivateGroupCommand extends CommandExecutor {
             if (privateGroup == null) {
                 server.getPrivateGroups().put(userHandler, new PrivateGroup(server, userHandler));
                 server.getPrivateGroups().get(userHandler).addUser(userHandler.getUserDetails().getUsername());
-                userHandler.sendMessage(LIME_GREEN + "group created successfully." + WHITE);
+                userHandler.sendTextMessage(LIME_GREEN + "group created successfully." + WHITE);
                 return;
             }
 
-            userHandler.sendMessage(BRIGHT_RED + "you`re already in group" + WHITE);
+            userHandler.sendTextMessage(BRIGHT_RED + "you`re already in group" + WHITE);
         }
 
         /**
@@ -157,15 +157,15 @@ public final class PrivateGroupCommand extends CommandExecutor {
 
                 if (privateGroup != null) {
                     server.getPrivateGroups().remove(userHandler);
-                    userHandler.sendMessage(LIME_GREEN + "group deleted successfully." + WHITE);
-                    userHandler.sendMessage(server.getPrivateGroups().toString());
+                    userHandler.sendTextMessage(LIME_GREEN + "group deleted successfully." + WHITE);
+                    userHandler.sendTextMessage(server.getPrivateGroups().toString());
                     return;
                 }
             } else {
-                userHandler.sendMessage(BRIGHT_RED + "you`re not in group to delete it" + WHITE);
+                userHandler.sendTextMessage(BRIGHT_RED + "you`re not in group to delete it" + WHITE);
                 return;
             }
-            userHandler.sendMessage(BRIGHT_RED + "you`re not the owner of the group to delete it" + WHITE);
+            userHandler.sendTextMessage(BRIGHT_RED + "you`re not the owner of the group to delete it" + WHITE);
         }
 
         /**
@@ -179,12 +179,12 @@ public final class PrivateGroupCommand extends CommandExecutor {
         public void joinGroup(UserHandler userHandler, String groupID) {
 
             if (isUserInGroup(userHandler)) {
-                userHandler.sendMessage(BRIGHT_RED + "you're already in group" + WHITE);
+                userHandler.sendTextMessage(BRIGHT_RED + "you're already in group" + WHITE);
                 return;
             }
 
             if (groupID == null || groupID.isEmpty()) {
-                userHandler.sendMessage(BRIGHT_RED + "please enter group id" + WHITE);
+                userHandler.sendTextMessage(BRIGHT_RED + "please enter group id" + WHITE);
                 return;
             }
 
@@ -193,13 +193,13 @@ public final class PrivateGroupCommand extends CommandExecutor {
                     .findFirst()
                     .ifPresentOrElse(group -> {
                         if (group.getUsers().contains(userHandler)) {
-                            userHandler.sendMessage(BRIGHT_YELLOW + "you're already in that specific group" + WHITE);
+                            userHandler.sendTextMessage(BRIGHT_YELLOW + "you're already in that specific group" + WHITE);
                         } else {
                             group.getUsers().add(userHandler);
                             final String username = userHandler.getUserDetails().getUsername();
                             group.broadcast(username + " joined the group");
                         }
-                    }, () -> userHandler.sendMessage(BRIGHT_RED + "group with id " + groupID + " not found" + WHITE));
+                    }, () -> userHandler.sendTextMessage(BRIGHT_RED + "group with id " + groupID + " not found" + WHITE));
 
         }
 
@@ -218,14 +218,14 @@ public final class PrivateGroupCommand extends CommandExecutor {
                     .ifPresentOrElse(group -> {
 
                         if (group.getOwnerName().equals(userHandler.getUserDetails().getUsername())) {
-                            userHandler.sendMessage(BRIGHT_RED + "you`re the owner of the group, you cannot leave it. you can delete it instead." + WHITE);
+                            userHandler.sendTextMessage(BRIGHT_RED + "you`re the owner of the group, you cannot leave it. you can delete it instead." + WHITE);
                             return;
                         }
                         group.getUsers().remove(userHandler);
                         final String username = userHandler.getUserDetails().getUsername();
                         group.broadcast(username + " left the group");
-                        userHandler.sendMessage("you`ve left the group");
-                    }, () -> userHandler.sendMessage(BRIGHT_RED + "you`re not in group to leave it" + WHITE));
+                        userHandler.sendTextMessage("you`ve left the group");
+                    }, () -> userHandler.sendTextMessage(BRIGHT_RED + "you`re not in group to leave it" + WHITE));
 
         }
 
@@ -243,7 +243,7 @@ public final class PrivateGroupCommand extends CommandExecutor {
                     .filter(g -> g.getUsers().contains(userHandler))
                     .findFirst()
                     .ifPresentOrElse(group -> server.getEventManager().triggerEvent(new PrivateGroupChatEvent(message, userHandler, group)),
-                            () -> userHandler.sendMessage(BRIGHT_RED + "you`re not in group to send message" + WHITE));
+                            () -> userHandler.sendTextMessage(BRIGHT_RED + "you`re not in group to send message" + WHITE));
         }
 
         /**
@@ -257,12 +257,12 @@ public final class PrivateGroupCommand extends CommandExecutor {
             server.getPrivateGroups().values().stream()
                     .filter(g -> g.getUsers().contains(userHandler))
                     .findFirst()
-                    .ifPresentOrElse(group -> userHandler.sendMessage("""
+                    .ifPresentOrElse(group -> userHandler.sendTextMessage("""
                                     Group ID: %s
                                     Group Owner: %s
                                     Current Users Count: %s
                                     """.formatted(group.getGroupID(), group.getOwnerName(), String.valueOf(group.getUsers().size()))),
-                            () -> userHandler.sendMessage(BRIGHT_RED + "you`re not in group to get group info" + WHITE));
+                            () -> userHandler.sendTextMessage(BRIGHT_RED + "you`re not in group to get group info" + WHITE));
         }
 
         private boolean isUserInGroup(UserHandler userHandler) {

@@ -6,9 +6,9 @@ import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,43 +23,43 @@ import static com.habbashx.tcpserver.security.Permission.BAN_PERMISSION;
  * The BanCommand class represents a command to ban a user from joining the server.
  * This class extends the CommandExecutor abstract class and is annotated with the {@code @Command}
  * annotation to provide metadata about its name, aliases, permission, cooldown, and execution logging.
- *
+ * <p>
  * Responsibilities:
  * - Executes the user banning functionality when invoked, validating input arguments and user status.
  * - Prevents users from banning themselves.
  * - Sends appropriate feedback messages to the command sender.
  * - Handles concurrency using reentrant locks to ensure thread safety during execution.
  * - Integrates with the {@code BanCommandManager} to process and enforce bans.
- *
+ * <p>
  * Annotations:
  * - {@code @Command}: Specifies the command name as "ban," provides alternative aliases, defines the required
- *   permission level, sets the description, cooldown time, and ensures execution logging.
- *
+ * permission level, sets the description, cooldown time, and ensures execution logging.
+ * <p>
  * Thread Safety:
  * - Implements thread safety by acquiring a {@link ReentrantLock} from the command sender during execution.
- *
+ * <p>
  * Key Components:
  * - {@code execute(CommandContext commandContext)}: Processes the command invocation, validates user input,
- *   and applies the ban to the specified target user if all conditions are met.
+ * and applies the ban to the specified target user if all conditions are met.
  * - {@code sendMessage(CommandSender commandSender, String message)}: Utility function to send messages
- *   to the command sender, supporting both user handlers and console output.
+ * to the command sender, supporting both user handlers and console output.
  * - {@code CooldownManager getCooldownManager()}: Retrieves the associated cooldown manager for this command.
- *
+ * <p>
  * Usage Conditions:
  * - The command expects exactly one argument representing the target username to ban.
  * - The sender must not be attempting to ban themselves.
  * - The target user must exist or be online on the server.
- *
+ * <p>
  * Dependencies:
  * - {@code Server}: Facilitates access to server-related services and online user retrieval.
  * - {@code BanCommandManager}: Handles the logic for banning users.
  * - {@code CommandContext}: Encapsulates information about the command invocation, including arguments
- *   and the sender.
+ * and the sender.
  */
 @Command(
         name = "ban",
         permission = BAN_PERMISSION,
-        aliases = {"banned","block"},
+        aliases = {"banned", "block"},
         description = "block user from joining the server",
         cooldownTimeUnit = TimeUnit.SECONDS,
         cooldownTime = 10L,
@@ -68,8 +68,8 @@ import static com.habbashx.tcpserver.security.Permission.BAN_PERMISSION;
 public final class BanCommand extends CommandExecutor {
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /ban <username>";
-    private static final String USER_NOT_FOUND_MESSAGE = RED+"user not found"+RESET;
-    private static final String CANNOT_BAN_SELF_MESSAGE = RED+"you cannot ban yourself :D"+RESET;
+    private static final String USER_NOT_FOUND_MESSAGE = RED + "user not found" + RESET;
+    private static final String CANNOT_BAN_SELF_MESSAGE = RED + "you cannot ban yourself :D" + RESET;
     private final Server server;
 
     /**
@@ -80,7 +80,7 @@ public final class BanCommand extends CommandExecutor {
      */
     private final BanCommandManager banManager;
 
-    public BanCommand(Server server ,BanCommandManager banManager) {
+    public BanCommand(Server server, BanCommandManager banManager) {
         this.server = server;
         this.banManager = banManager;
     }
@@ -100,14 +100,12 @@ public final class BanCommand extends CommandExecutor {
     public void execute(@NotNull CommandContext commandContext) {
 
         if (commandContext.getArgs().isEmpty()) {
-            sendMessage(commandContext.getSender(),COMMAND_USAGE_MESSAGE);
+            sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
             return;
         }
 
-        @MaybeEmpty
-        final String targetUsername = commandContext.getArgs().get(0);
-        @Nullable
-        final UserHandler targetUser = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
+        @MaybeEmpty final String targetUsername = commandContext.getArgs().get(0);
+        @Nullable final UserHandler targetUser = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
 
         final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
 
@@ -136,7 +134,7 @@ public final class BanCommand extends CommandExecutor {
     private void sendMessage(CommandSender commandSender, String message) {
 
         if (commandSender instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }

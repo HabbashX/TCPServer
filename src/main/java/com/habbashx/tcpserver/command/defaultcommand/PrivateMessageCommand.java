@@ -13,9 +13,7 @@ import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.BRIGHT_RED;
-import static com.habbashx.tcpserver.logger.ConsoleColor.GRAY;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 
 
 /**
@@ -46,7 +44,7 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
         name = "msg",
         cooldownTimeUnit = TimeUnit.SECONDS,
         cooldownTime = 5L,
-        configFile = "commands-configuration/privateMessageCommand-configuration.json"
+        configFile = "server/commands-configuration/privateMessageCommand-configuration.json"
 )
 public final class PrivateMessageCommand extends CommandExecutor {
 
@@ -65,7 +63,7 @@ public final class PrivateMessageCommand extends CommandExecutor {
 
         if (context.getSender() instanceof final UserHandler userHandler) {
             if (context.getArgs().size() < 2) {
-                userHandler.sendMessage(COMMAND_USAGE_MESSAGE);
+                userHandler.sendTextMessage(COMMAND_USAGE_MESSAGE);
                 return;
             }
 
@@ -79,13 +77,13 @@ public final class PrivateMessageCommand extends CommandExecutor {
             if (targetUser != null) {
                 if (!targetUser.getUserDetails().getUsername().equals(context.getSenderName())) {
                     assert privateMessageStyle != null;
-                    targetUser.sendMessage(privateMessageStyle
+                    targetUser.sendTextMessage(privateMessageStyle
                             .formatted(GRAY, BRIGHT_RED, GRAY, RESET) +
                             context.getSenderName() + ": " + message);
                 } else
-                    userHandler.sendMessage(BRIGHT_RED + "you cannot message your self :D" + RESET);
+                    userHandler.sendTextMessage(BRIGHT_RED + "you cannot message your self :D" + RESET);
 
-            } else userHandler.sendMessage("User " + targetUsername + " not found.");
+            } else userHandler.sendTextMessage("User " + targetUsername + " not found.");
 
         }
     }

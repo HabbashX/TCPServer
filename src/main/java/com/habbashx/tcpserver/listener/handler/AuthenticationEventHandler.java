@@ -46,17 +46,17 @@ public final class AuthenticationEventHandler implements Listener<Authentication
         final UserJoinEvent userJoinEvent = new UserJoinEvent(username, event.getUserHandler());
         if (event.isRegisterOperation()) {
             if (event.isAuthenticated()) {
-                event.getUserHandler().sendMessage(LIME_GREEN + "Register Successfully" + RESET);
+                event.getUserHandler().sendTextMessage(LIME_GREEN + "Register Successfully" + RESET);
                 event.getUserHandler().getServer().getEventManager().triggerEvent(userJoinEvent);
             } else {
-                event.getUserHandler().sendMessage(RED + "this username already registered in system");
+                event.getUserHandler().sendTextMessage(RED + "this username already registered in system");
                 event.getUserHandler().shutdown();
             }
         } else if (event.isAuthenticated()) {
-            event.getUserHandler().sendMessage(LIME_GREEN + "login successfully" + RESET);
+            event.getUserHandler().sendTextMessage(LIME_GREEN + "login successfully" + RESET);
             event.getUserHandler().getServer().getEventManager().triggerEvent(userJoinEvent);
         } else {
-            event.getUserHandler().sendMessage(RED + "wrong username or password" + RESET);
+            event.getUserHandler().sendTextMessage(RED + "wrong username or password" + RESET);
             event.getUserHandler().shutdown();
         }
     }

@@ -47,7 +47,7 @@ public final class InfoCommand extends CommandExecutor {
 
             UserDetails userDetails = userHandler.getUserDetails();
 
-            userHandler.sendMessage(USER_DETAILS_MESSAGE.formatted(
+            userHandler.sendTextMessage(USER_DETAILS_MESSAGE.formatted(
                     userDetails.getUserIP(),
                     userDetails.getUserID(),
                     userDetails.getUserRole(),

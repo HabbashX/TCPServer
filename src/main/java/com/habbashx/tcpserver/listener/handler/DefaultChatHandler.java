@@ -61,11 +61,11 @@ public final class DefaultChatHandler implements Listener<UserChatEvent> {
                     sendMessage(userChatEvent);
                 } else {
                     final int remainingCoolDown = (int) userChatEvent.getRemainingCooldown();
-                    userChatEvent.getUser().sendMessage(RED + "you`re on cooldown for " + remainingCoolDown + " second" + RESET);
+                    userChatEvent.getUser().sendTextMessage(RED + "you`re on cooldown for " + remainingCoolDown + " second" + RESET);
                 }
             }
         } else {
-            userChatEvent.getUser().sendMessage(RED + "you cannot send empty message" + RESET);
+            userChatEvent.getUser().sendTextMessage(RED + "you cannot send empty message" + RESET);
         }
     }
 

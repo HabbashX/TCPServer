@@ -192,7 +192,7 @@ public final class UserDetailsCommand extends CommandExecutor {
     private void sendMessage(CommandSender commandSender, String message) {
 
         if (commandSender instanceof final UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }

@@ -1,6 +1,9 @@
 package com.habbashx.tcpserver.connection.console;
 
 import com.habbashx.tcpserver.command.CommandSender;
+import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.connection.packet.TextPacket;
+import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
 import com.habbashx.tcpserver.socket.server.Server;
 
@@ -19,6 +22,7 @@ import java.io.IOException;
  * its parent class. Additionally, it implements both the {@code Runnable}
  * interfaces, allowing it to run as a separate thread and be safely closed when the server shuts down.
  */
+
 public final class ServerConsoleHandler extends ConsoleHandler implements CommandSender {
 
     private final Server server;
@@ -27,35 +31,26 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
         this.server = server;
     }
 
-    /**
-     * Continuously reads input from the server console, processes it as either a command
-     * or a general message, and appropriately triggers the server's command or event management systems.
-     * <p>
-     * This method is the entry point for handling server-side console input and is invoked
-     * when the {@code ServerConsoleHandler} instance is executed in its own thread.
-     * <p>
-     * Behavior:
-     * - Commands (prefixed by "/") are passed to the server's command manager for execution.
-     * - General messages (not prefixed by "/") are wrapped in a {@code ServerConsoleChatEvent}
-     * and passed to the server's event manager.
-     * <p>
-     * Exceptions:
-     * - If an {@code IOException} occurs while reading console input, the method will
-     * rethrow it as a {@code RuntimeException}.
-     * <p>
-     * Thread-Safety:
-     * - This method operates within a separate thread, ensuring asynchronous handling
-     * of console input and management operations.
-     */
     @Override
     public void run() {
-
         try (this) {
             String message;
             while ((message = getInput().readLine()) != null) {
                 if (message.startsWith("/")) {
                     server.getCommandManager().executeCommand("Server", message, this);
                 } else {
+                    TextPacket packet = PacketFactory.createText(message);
+
+                    for (var handler : server.getConnectionHandlers()) {
+                        if (handler instanceof UserHandler user) {
+                            try {
+                                user.sendPacket(packet);
+                            } catch (Exception e) {
+                                user.shutdown();
+                            }
+                        }
+                    }
+
                     server.getEventManager().triggerEvent(new ServerConsoleChatEvent(message));
                 }
             }

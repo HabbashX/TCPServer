@@ -41,7 +41,7 @@ public final class MuteCommandManager {
      */
     private final Set<String> mutedUsers = new HashSet<>();
 
-    private final File mutedUsersFile = new File("data/mutedUsers.csv");
+    private final File mutedUsersFile = new File("server/data/mutedUsers.csv");
 
     /**
      * A constant representing the header key used to refer to the username field in data parsing operations,
@@ -116,7 +116,7 @@ public final class MuteCommandManager {
     private void sendMessage(CommandSender commandSender, String message) {
 
         if (commandSender instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }

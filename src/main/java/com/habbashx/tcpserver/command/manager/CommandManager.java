@@ -163,13 +163,13 @@ public final class CommandManager {
                         } else {
                             final int cooldown = (int) commandExecutor.getCooldownManager().getRemainingTime(senderName);
                             if (commandInformation.cooldownTimeUnit() == TimeUnit.SECONDS) {
-                                userHandler.sendMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "seconds"));
+                                userHandler.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "seconds"));
                             } else if (commandInformation.cooldownTimeUnit() == TimeUnit.MILLI_SECONDS) {
-                                userHandler.sendMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "milli seconds"));
+                                userHandler.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "milli seconds"));
                             }
                         }
                     } else {
-                        userHandler.sendMessage(NO_PERMISSION_MESSAGE);
+                        userHandler.sendTextMessage(NO_PERMISSION_MESSAGE);
                     }
                 } else {
                     final CommandContext commandContext = new CommandContext(senderName, args, commandSender);
@@ -182,6 +182,7 @@ public final class CommandManager {
             sendMessage(commandSender, UNKNOWN_COMMAND_MESSAGE);
         }
     }
+
     /**
      * Executes a command using the given {@link CommandExecutor} and {@link CommandContext}.
      * The execution can be done either synchronously or asynchronously depending on the value of {@code isAsync}.
@@ -202,7 +203,7 @@ public final class CommandManager {
     private void sendMessage(CommandSender commandSender, String message) {
 
         if (commandSender instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }

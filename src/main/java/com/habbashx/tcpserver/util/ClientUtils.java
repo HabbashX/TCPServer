@@ -16,7 +16,7 @@ public class ClientUtils {
      * The path to the client settings file.
      * This file contains configuration properties for the client connection.
      */
-    public static final String CLIENT_SETTINGS_PATH = "connection/settings/connection.properties";
+    public static final String CLIENT_SETTINGS_PATH = "server/connection/settings/connection.properties";
 
     /**
      * Generates a client settings file at the specified path if it does not already exist.

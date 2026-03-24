@@ -39,7 +39,7 @@ public final class DefaultUserJoinHandler implements Listener<UserJoinEvent> {
         }
 
         userJoinEvent.setCancelled(true);
-        userJoinEvent.getUser().sendMessage(RED + "you are banned from the server" + RESET);
+        userJoinEvent.getUser().sendTextMessage(RED + "you are banned from the server" + RESET);
         userJoinEvent.getUser().getUserDetails().setUsername(null);
         server.getServerLogger().monitor("the user: " + userJoinEvent.getUsername() + " trying to join to the server");
         userJoinEvent.getUser().shutdown();

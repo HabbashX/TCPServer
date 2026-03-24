@@ -50,7 +50,7 @@ public class ConnectionUtils {
      * @param path the {@link Path} representing the file to which the writer should write.
      *             Must not be null.
      * @return a {@link FileWriter} instance ready for writing to the specified file.
-     *         Will never return null.
+     * Will never return null.
      * @throws IOException if an I/O error occurs while creating the writer or writing to the file.
      */
     private static @NotNull FileWriter getWriter(@NotNull Path path) throws IOException {
@@ -81,6 +81,6 @@ public class ConnectionUtils {
      */
     public static @NotNull String getConnectionHandlerFile(@NotNull ConnectionHandler connectionHandler) {
 
-        return "connection/settings/" + connectionHandler.getClass().getSimpleName() + ".properties";
+        return "server/connection/settings/" + connectionHandler.getClass().getSimpleName() + ".properties";
     }
 }

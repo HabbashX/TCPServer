@@ -41,7 +41,7 @@ module TCPServer {
     exports com.habbashx.tcpserver.security.auth.storage;
     exports com.habbashx.tcpserver.socket.server.foundation;
     exports com.habbashx.tcpserver.security.crypto;
-
+    exports com.habbashx.tcpserver.connection.packet;
 
     opens com.habbashx.tcpserver.socket.server.settings;
     opens com.habbashx.tcpserver.connection.configuration;

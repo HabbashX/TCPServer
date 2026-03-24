@@ -18,7 +18,7 @@ public final class RolePermissionUtils {
 
     /**
      * Retrieves the permissions associated with the "default" role.
-     *
+     * <p>
      * This method provides the set of permission IDs assigned specifically
      * to the "default" role in the application.
      *
@@ -39,7 +39,7 @@ public final class RolePermissionUtils {
 
     /**
      * Retrieves the permissions associated with the "operator" role.
-     *
+     * <p>
      * This method provides a set of permission IDs assigned to users
      * with the "operator" role in the application. It uses the underlying
      * role-to-permissions mapping mechanism to fetch the associated permissions.
@@ -52,7 +52,7 @@ public final class RolePermissionUtils {
 
     /**
      * Retrieves the permissions associated with the "administrator" role.
-     *
+     * <p>
      * This method provides the set of permission IDs assigned specifically
      * to the "administrator" role in the application by utilizing
      * the internal role-to-permissions mapping.
@@ -87,7 +87,7 @@ public final class RolePermissionUtils {
      */
     private static @Nullable Set<Integer> getRolePermissions(String role) {
 
-        final File file = new File("data/role-permissions.json");
+        final File file = new File("server/data/role-permissions.json");
         final ObjectMapper mapper = new ObjectMapper();
         try {
             Set<Map<String, Set<Integer>>> roles = mapper.readValue(file, new TypeReference<>() {

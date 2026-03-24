@@ -41,7 +41,7 @@ public final class ServerMemoryUsageCommand extends CommandExecutor {
                     serverMemoryMonitor.formatBytes(usedMemory) + " / " + serverMemoryMonitor.formatBytes(maxMemory)
             );
         } else if (commandContext.getSender() instanceof final UserHandler userHandler) {
-            userHandler.sendMessage("this command not available for users :D");
+            userHandler.sendTextMessage("this command not available for users :D");
         }
     }
 }

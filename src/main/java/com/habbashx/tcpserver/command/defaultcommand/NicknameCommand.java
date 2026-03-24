@@ -63,7 +63,7 @@ public final class NicknameCommand extends CommandExecutor {
 
             try {
                 if (commandContext.getArgs().isEmpty()) {
-                    userHandler.sendMessage(COMMAND_USAGE);
+                    userHandler.sendTextMessage(COMMAND_USAGE);
                     return;
                 }
 
@@ -72,7 +72,7 @@ public final class NicknameCommand extends CommandExecutor {
                 if (!UserUtil.isValidUsername(nickname)) {
                     userHandler.getUserDetails().setUsername(nickname);
                 } else {
-                    userHandler.sendMessage(INVALID_USERNAME_CONTEXT_MESSAGE);
+                    userHandler.sendTextMessage(INVALID_USERNAME_CONTEXT_MESSAGE);
                 }
 
             } finally {

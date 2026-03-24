@@ -6,9 +6,9 @@ import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
+import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
-import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,21 +23,21 @@ import static com.habbashx.tcpserver.security.Permission.MUTE_PERMISSION;
  * The MuteCommand class handles the process of muting users in the application.
  * This implementation extends the CommandExecutor class, providing the core
  * functionality for executing the mute command.
- *
+ * <p>
  * The command is structured with features such as:
  * - Command annotation to define metadata including name, permission, aliases,
- *   description, cooldown, and execution properties.
+ * description, cooldown, and execution properties.
  * - Integration with a server implementation to find user information and
- *   manage user states.
+ * manage user states.
  * - Usage of a MuteCommandManager to perform muting-related operations.
- *
+ * <p>
  * Features:
  * - Cooldown mechanism to limit the frequency of command usage.
  * - Command execution can be asynchronous to avoid blocking the main thread.
  * - Provides detailed feedback messages for improper usage or if the specified
- *   user cannot be found.
+ * user cannot be found.
  * - Includes a lock mechanism to ensure thread safety during execution.
- *
+ * <p>
  * Note:
  * This mute command is designed to be minimalistic. For additional features,
  * you may need to customize or extend the implementation. The command can also
@@ -46,7 +46,7 @@ import static com.habbashx.tcpserver.security.Permission.MUTE_PERMISSION;
 @Command(
         name = "mute",
         permission = MUTE_PERMISSION,
-        aliases ={"curse"},
+        aliases = {"curse"},
         description = "mute users",
         cooldownTimeUnit = TimeUnit.SECONDS,
         cooldownTime = 10L,
@@ -60,7 +60,7 @@ import static com.habbashx.tcpserver.security.Permission.MUTE_PERMISSION;
 public final class MuteCommand extends CommandExecutor {
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /mute <username>";
-    private static final String USER_NOT_FOUND_MESSAGE = RED+"user is not found"+RESET;
+    private static final String USER_NOT_FOUND_MESSAGE = RED + "user is not found" + RESET;
 
     private final Server server;
 
@@ -71,7 +71,7 @@ public final class MuteCommand extends CommandExecutor {
      */
     private final MuteCommandManager muteCommandManager;
 
-    public MuteCommand(Server server ,MuteCommandManager muteCommandManager) {
+    public MuteCommand(Server server, MuteCommandManager muteCommandManager) {
         this.server = server;
         this.muteCommandManager = muteCommandManager;
     }
@@ -95,10 +95,8 @@ public final class MuteCommand extends CommandExecutor {
 
         final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
 
-        @MaybeEmpty
-        final String targetUsername = commandContext.getArgs().get(0);
-        @Nullable
-        final UserHandler target = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
+        @MaybeEmpty final String targetUsername = commandContext.getArgs().get(0);
+        @Nullable final UserHandler target = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
 
         reentrantLock.lock();
         try {
@@ -122,14 +120,15 @@ public final class MuteCommand extends CommandExecutor {
         }
     }
 
-    private void sendMessage(CommandSender commandSender ,String message) {
+    private void sendMessage(CommandSender commandSender, String message) {
 
         if (commandSender instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }
     }
+
     @Override
     public CooldownManager getCooldownManager() {
         return super.getCooldownManager();

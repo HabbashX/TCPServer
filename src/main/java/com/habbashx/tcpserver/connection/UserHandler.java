@@ -2,6 +2,10 @@ package com.habbashx.tcpserver.connection;
 
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
+import com.habbashx.tcpserver.connection.packet.FilePacket;
+import com.habbashx.tcpserver.connection.packet.Packet;
+import com.habbashx.tcpserver.connection.packet.TextPacket;
+import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
 import com.habbashx.tcpserver.io.CountingOutputStream;
@@ -13,15 +17,12 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLSocket;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.io.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -77,7 +78,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * Note that this reader must not be closed directly, as it is managed within the lifecycle
      * of the {@code UserHandler} instance.
      */
-    private final BufferedReader input;
+    private final DataInputStream input;
     /**
      * A {@code PrintWriter} used to send output data to the connected user.
      * <p>
@@ -89,7 +90,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * remains constant, preventing reassignment after initialization. Thread-safety must be
      * handled externally if needed for concurrent access.
      */
-    private final PrintWriter output;
+    private final DataOutputStream output;
 
     /**
      * Represents an authentication mechanism for the associated {@link UserHandler}.
@@ -120,7 +121,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * Used primarily to manage and validate user permissions for various commands
      * and interactions handled by the server.
      */
-    private final List<Integer> permissions = new ArrayList<>();
+    private final List<Integer> permissions = new CopyOnWriteArrayList<>();
 
     /**
      * A {@link CountingOutputStream} instance used within the {@code UserHandler} class
@@ -145,19 +146,10 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * It is primarily used to control the execution flow of the {@link UserHandler#run()} method,
      * allowing for graceful shutdown or termination of the handler's processes.
      */
-    private boolean running = true;
+    private volatile boolean running = true;
 
-    /**
-     * A thread-safe queue that buffers messages to be sent to the connected user.
-     * <p>
-     * This queue is used to store messages before they are transmitted to the user,
-     * allowing asynchronous message handling without blocking the sender. It implements
-     * {@link ConcurrentLinkedQueue} to ensure thread-safe operations in a multi-threaded environment.
-     * <p>
-     * Messages are added to this queue via the {@link #sendMessage(String)} method
-     * and are processed and sent by the {@link #trySend()} method.
-     */
-    private final Queue<String> messageQueue = new ConcurrentLinkedQueue<>();
+
+    private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
     /**
      * An atomic boolean flag that indicates whether a sending operation is currently in progress.
@@ -184,8 +176,8 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         authentication = server.getAuthentication();
         try {
             countingOutputStream = new CountingOutputStream(user.getOutputStream());
-            input = new BufferedReader(new InputStreamReader(user.getInputStream()));
-            output = new PrintWriter(countingOutputStream, true);
+            input = new DataInputStream(user.getInputStream());
+            output = new DataOutputStream(countingOutputStream);
             setupSettings();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -226,28 +218,26 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     @Override
     public void run() {
-
         try {
-
             authenticationRequest();
 
             assert getServer().getServerSettings().getUserChatCooldown() != null;
             final int cooldownSecond = Integer.parseInt(getServer().getServerSettings().getUserChatCooldown());
             final UserChatEvent userChatEvent = new UserChatEvent(userDetails.getUsername(), this, cooldownSecond);
 
-            if (running) {
-                do {
-                    String message;
-                    while (((message = input.readLine())) != null) {
-                        if (message.startsWith("/")) {
-                            getServer().getCommandManager().executeCommand(userDetails.getUsername(), message, this);
-                        } else {
-                            userChatEvent.setMessage(message);
-                            getServer().getEventManager().triggerEvent(userChatEvent);
-                        }
+            while (running) {
+                Packet packet = PacketFactory.readPacket(input);
+                if (packet instanceof TextPacket textPacket) {
+                    String msg = textPacket.message();
+                    if (msg.startsWith("/")) {
+                        getServer().getCommandManager().executeCommand(userDetails.getUsername(), msg, this);
+                    } else {
+                        userChatEvent.setMessage(msg);
+                        getServer().getEventManager().triggerEvent(userChatEvent);
                     }
-                } while (running);
+                }
             }
+
         } catch (IOException e) {
             shutdown();
         }
@@ -277,16 +267,28 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * @throws IOException if an I/O error occurs during input or output handling.
      */
     private void authenticationRequest() throws IOException {
-        sendMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE, BLACK, RESET, BG_BRIGHT_BLUE, BLACK, RESET));
-        final String choice = input.readLine();
-        switch (choice) {
-            case "register" -> sendRegisterRequest();
-            case "login" -> sendLoginRequest();
-            default -> {
-                sendMessage(RED + "please register or login" + RESET);
-                authenticationRequest();
+        int retries = 0;
+        final int maxRetries = 5;
+
+        while (running && retries < maxRetries) {
+            sendTextMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE, BLACK, RESET, BG_BRIGHT_BLUE, BLACK, RESET));
+            final Packet choicePacket = PacketFactory.readPacket(input);
+            if (choicePacket instanceof TextPacket choiceText) {
+                switch (choiceText.message()) {
+                    case "register" -> {
+                        sendRegisterRequest();
+                        return;
+                    }
+                    case "login" -> {
+                        sendLoginRequest();
+                        return;
+                    }
+                    default -> sendTextMessage(RED + "Please enter 'register' or 'login'" + RESET);
+                }
             }
+            retries++;
         }
+        shutdown();
     }
 
     /**
@@ -313,16 +315,21 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * @throws IOException if an I/O error occurs during input or output handling.
      */
     private void sendRegisterRequest() throws IOException {
-        sendMessage("enter username");
-        final String username = input.readLine();
-        sendMessage("enter password");
-        final String password = input.readLine();
-        sendMessage("enter email");
-        final String email = input.readLine();
-        sendMessage("enter phone number");
-        final String phoneNumber = input.readLine();
-        authentication.register(username, password, email, phoneNumber, this);
+        sendTextMessage("Enter username");
+        String username = ((TextPacket) PacketFactory.readPacket(input)).message();
+
+        sendTextMessage("Enter password");
+        String password = ((TextPacket) PacketFactory.readPacket(input)).message();
+
+        sendTextMessage("Enter email");
+        String email = ((TextPacket) PacketFactory.readPacket(input)).message();
+
+        sendTextMessage("Enter phone number");
+        String phone = ((TextPacket) PacketFactory.readPacket(input)).message();
+
+        authentication.register(username, password, email, phone, this);
     }
+
 
     /**
      * Initiates the login process for a user by prompting them to enter their
@@ -352,64 +359,115 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * @throws IOException if an I/O error occurs while reading user input.
      */
     private void sendLoginRequest() throws IOException {
-        sendMessage("enter username");
-        final String username = input.readLine();
-        sendMessage("enter password");
-        final String password = input.readLine();
+        sendTextMessage("Enter username");
+        String username = ((TextPacket) PacketFactory.readPacket(input)).message();
+
+        sendTextMessage("Enter password");
+        String password = ((TextPacket) PacketFactory.readPacket(input)).message();
+
         authentication.login(username, password, this);
     }
 
-    /**
-     * Sends a message to the user by adding it to the message queue and triggering the send mechanism.
-     * <p>
-     * This method ensures thread-safe message delivery by queuing the message and attempting to send it
-     * asynchronously without blocking the caller.
-     *
-     * @param message the message to be sent to the user
-     */
-    public void sendMessage(String message) {
-        messageQueue.offer(message);
+
+    public void sendTextMessage(String message) {
+        queuePacket(PacketFactory.createText(message));
+    }
+
+
+    public void queuePacket(Packet packet) {
+        packetQueue.add(packet);
         trySend();
     }
 
-    /**
-     * Attempts to send all queued messages to the user in an asynchronous manner.
-     * <p>
-     * This method uses an atomic flag to ensure that only one thread is sending messages at a time.
-     * If a send operation is already in progress, this method will not initiate a new one.
-     * The actual sending is delegated to the server's thread pool for non-blocking execution.
-     */
     private void trySend() {
+        if (!isSending.compareAndSet(false, true)) return;
 
-        if (isSending.compareAndSet(false, true)) {
-            getServer().getThreadPool().submit(() -> {
-                try {
-                    while (true) {
-                        String msg;
+        getServer().getThreadPool().submit(() -> {
+            try {
+                Packet packet;
+                while ((packet = packetQueue.poll()) != null) {
+                    sendPacketInternal(packet);
+                }
+            } finally {
+                isSending.set(false);
+                if (!packetQueue.isEmpty()) trySend();
+            }
+        });
+    }
 
-                        while ((msg = messageQueue.poll()) != null) {
-                            output.println(msg);
-                        }
+    public void sendPacket(Packet packet) {
+        synchronized (output) {
+            try {
+                switch (packet.getType()) {
+                    case 1 -> { // TEXT
+                        TextPacket p = (TextPacket) packet;
+                        byte[] data = p.message().getBytes();
+                        output.writeInt(1);
+                        output.writeInt(data.length);
+                        output.write(data);
+                    }
+                    case 2 -> {
+                        FilePacket p = (FilePacket) packet;
+                        byte[] nameBytes = p.fileName().getBytes();
+                        output.writeInt(2);
+                        output.writeInt(nameBytes.length);
+                        output.write(nameBytes);
 
-                        isSending.set(false);
-
-                        if (messageQueue.isEmpty()) {
-                            break;
-                        }
-                        if (!isSending.compareAndSet(false, true)) {
-                            break;
-                        }
-                        if (messageQueue.size() >= 200) {
-                            this.shutdown();
+                        output.writeLong(p.fileSize());
+                        InputStream fileData = p.data();
+                        byte[] buffer = new byte[4096];
+                        int read;
+                        while ((read = fileData.read(buffer)) != -1) {
+                            output.write(buffer, 0, read);
                         }
                     }
-                } catch (Exception e) {
-                    isSending.set(false);
-                    shutdown();
+                    default -> throw new IOException("Unknown packet type");
                 }
-            });
+                output.flush();
+            } catch (IOException e) {
+                shutdown();
+            }
         }
     }
+
+    /**
+     * Only used internally: sends packet immediately
+     */
+    private void sendPacketInternal(Packet packet) {
+        synchronized (output) {
+            try {
+                switch (packet.getType()) {
+                    case 1 -> { // TEXT
+                        TextPacket p = (TextPacket) packet;
+                        byte[] data = p.message().getBytes();
+                        output.writeInt(1);
+                        output.writeInt(data.length);
+                        output.write(data);
+                    }
+                    case 2 -> { // FILE
+                        FilePacket p = (FilePacket) packet;
+                        byte[] nameBytes = p.fileName().getBytes();
+                        output.writeInt(2);
+                        output.writeInt(nameBytes.length);
+                        output.write(nameBytes);
+                        output.writeLong(p.fileSize());
+                        try (InputStream fileData = p.data()) {
+                            byte[] buffer = new byte[4096];
+                            int read;
+                            while ((read = fileData.read(buffer)) != -1) {
+                                output.write(buffer, 0, read);
+                            }
+                        }
+                    }
+                    default -> throw new IOException("Unknown packet type");
+                }
+                output.flush();
+            } catch (IOException e) {
+                shutdown();
+            }
+        }
+    }
+
 
     /**
      * Sets the user details associated with this handler.
@@ -444,7 +502,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      *
      * @return the buffered reader for user input
      */
-    public BufferedReader getReader() {
+    public DataInputStream getReader() {
         return input;
     }
 
@@ -453,7 +511,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      *
      * @return the print writer for user output
      */
-    public PrintWriter getWriter() {
+    public DataOutputStream getWriter() {
         return output;
     }
 
@@ -575,33 +633,28 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     @Override
     public void shutdown() {
+        running = false; // stop the handler
 
         try {
-            running = false;
+            if (getServer().getConnectionHandlers() != null) {
+                getServer().getConnectionHandlers().remove(this);
+            }
 
-            getServer().getConnectionHandlers().remove(this);
-            getServer().getAuthenticatedUsers().remove(getUserDetails().getUsername());
-            final String username = userDetails.getUsername();
-
-            if (username != null) {
+            String username = userDetails.getUsername();
+            if (username != null && getServer().getAuthenticatedUsers() != null) {
+                getServer().getAuthenticatedUsers().remove(username);
                 getServer().getEventManager().triggerEvent(new UserLeaveEvent(username, this));
             }
 
-            input.close();
-            output.close();
-            if (!getUserSocket().isInputShutdown() && !getUserSocket().isOutputShutdown()) {
-                getUserSocket().shutdownInput();
-                getUserSocket().shutdownOutput();
-                getUserSocket().getInputStream().close();
-                getUserSocket().getOutputStream().close();
-            }
+            if (input != null) input.close();
+            if (output != null) output.close();
 
-            if (!getUserSocket().isClosed()) {
+            if (getUserSocket() != null && !getUserSocket().isClosed()) {
                 getUserSocket().close();
             }
 
-
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            getServer().getServerLogger().error(e);
         }
     }
 

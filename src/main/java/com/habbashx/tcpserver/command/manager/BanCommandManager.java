@@ -33,7 +33,7 @@ import static com.habbashx.tcpserver.socket.server.Server.getInstance;
  */
 public final class BanCommandManager {
 
-    private final File bannedUsersFile = new File("data/bannedUsers.csv");
+    private final File bannedUsersFile = new File("server/data/bannedUsers.csv");
 
     private static final String HEADER = "username";
 
@@ -61,7 +61,7 @@ public final class BanCommandManager {
             if (!isUserBanned(username)) {
                 printer.printRecord(username);
                 sendMessage(commandSender, LIME_GREEN + "user have been banned successfully" + RESET);
-                user.sendMessage(RED + "you got banned" + RESET);
+                user.sendTextMessage(RED + "you got banned" + RESET);
                 user.shutdown();
             } else {
                 sendMessage(commandSender, RED + "user already banned" + RESET);
@@ -117,7 +117,7 @@ public final class BanCommandManager {
 
     private void sendMessage(CommandSender sender, String message) {
         if (sender instanceof UserHandler userHandler) {
-            userHandler.sendMessage(message);
+            userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
         }
