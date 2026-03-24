@@ -47,26 +47,20 @@ public final class DefaultAuthentication extends Authentication {
                     .activeAccount(true)
                     .build();
 
-            // Validation
             for (UserValidator validator : validators) {
                 validator.validate(details);
             }
-
             if (storage.isUserExists(username)) {
                 userHandler.sendTextMessage("User already exists!");
                 return;
             }
 
-            // Hash password
             String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-            // Register user
             storage.registerUser(details, hashedPassword);
 
-            // Update handler
             userHandler.setUserDetails(details);
 
-            // Trigger success event
             server.getEventManager().triggerEvent(new AuthenticationEvent(userHandler, true, true));
 
         } catch (Exception e) {

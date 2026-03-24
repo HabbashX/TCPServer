@@ -25,7 +25,7 @@ public final class UserDetails {
     private final String phoneNumber;
     private final boolean isActiveAccount;
 
-    private UserDetails(UserDetailsBuilder builder) {
+    public UserDetails(UserDetailsBuilder builder) {
         this.userIP = builder.userIP;
         this.userID = builder.userID;
         this.userRole = builder.userRole;

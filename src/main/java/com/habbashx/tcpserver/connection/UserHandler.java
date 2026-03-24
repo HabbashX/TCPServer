@@ -29,28 +29,23 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 
 /**
- * Handles user interactions and communication with the server.
+ * Manages a user's connection, authentication, messaging, and packet communication with the server.
  * <p>
- * This class manages the lifecycle of a user connection, including registration, login,
- * message handling, and```java
- * /**
- * Handles user interactions and communication with the server.
+ * This class handles the full lifecycle of a user session, including login, registration, chat,
+ * and command execution. It extends {@link ConnectionHandler} and implements {@link CommandSender},
+ * enabling command execution and asynchronous handling through {@link Runnable}.
  * <p>
- * This class manages the lifecycle of user sessions, including authentication,
- * message handling, and interaction through commands. It extends the functionality
- * of {@link CommandSender} for executing commands and implements {@link Runnable}
- * for running user interaction on command execution. It operates as a thread, enabling asynchronous
- * communication between the user and the server.
+ * Responsibilities include:
+ * <ul>
+ *     <li>Maintaining {@link UserDetails} and session-specific permissions.</li>
+ *     <li>Secure registration and login using the {@link Authentication} system.</li>
+ *     <li>Thread-safe message and packet handling using {@link DataInputStream}, {@link DataOutputStream},
+ *         {@link CountingOutputStream}, and a {@link ConcurrentLinkedQueue} for packet queuing.</li>
+ *     <li>Triggering server events such as {@link UserChatEvent} and {@link UserLeaveEvent}.</li>
+ *     <li>Graceful shutdown and resource cleanup.</li>
+ * </ul>
  * <p>
- * UserHandler extends CommandSender, inheriting its functionalities for
- * executing commands and managing message communication. It also implements
- * Runnable to allow concurrent execution.
- * <p>
- * The class is responsible for maintaining user details, handling authentication,
- * and interacting with server events like messaging and user connection management.
- * <p>
- * Thread-safety is managed internally via the use of locking in the parent class
- * and proper resource cleanup upon shutting down the connection.
+ * Thread-safety is enforced using atomic operations and internal synchronization where necessary.
  */
 public final class UserHandler extends ConnectionHandler implements CommandSender {
 
@@ -148,7 +143,9 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     private volatile boolean running = true;
 
-
+    /**
+     * Queue for pending packets to send to the user.
+     */
     private final Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
 
     /**
@@ -165,14 +162,15 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     private final AtomicBoolean isSending = new AtomicBoolean(false);
 
     /**
-     * Constructs a UserHandler instance for managing a user connection and server communication.
+     * Constructs a UserHandler for a user connection.
      *
-     * @param user   the SSL socket representing the user's connection; must not be null
-     * @param server the server instance associated with this user handler; must not be null
+     * @param user   the SSL socket representing the user's connection
+     * @param server the server instance managing this connection
+     * @throws IOException if streams cannot be initialized
      */
     public UserHandler(@NotNull SSLSocket user, @NotNull Server server) throws IOException {
         super(user, server);
-        userDetails = new UserDetails();
+        userDetails = new UserDetails(UserDetails.builder());
         authentication = server.getAuthentication();
         try {
             countingOutputStream = new CountingOutputStream(user.getOutputStream());
@@ -368,17 +366,24 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         authentication.login(username, password, this);
     }
 
-
+    /**
+     * Queues a text message packet for sending to the user.
+     */
     public void sendTextMessage(String message) {
         queuePacket(PacketFactory.createText(message));
     }
 
-
+    /**
+     * Adds a packet to the sending queue and triggers asynchronous send.
+     */
     public void queuePacket(Packet packet) {
         packetQueue.add(packet);
         trySend();
     }
 
+    /**
+     * Attempts to send queued packets asynchronously using the server thread pool.
+     */
     private void trySend() {
         if (!isSending.compareAndSet(false, true)) return;
 
@@ -395,6 +400,11 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         });
     }
 
+    /**
+     * Sends a packet to the user immediately, synchronized on the output stream.
+     *
+     * @param packet the packet to send
+     */
     public void sendPacket(Packet packet) {
         synchronized (output) {
             try {
@@ -431,20 +441,20 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     }
 
     /**
-     * Only used internally: sends packet immediately
+     * Internal helper for sending packets, used by {@link #queuePacket} and {@link #sendPacket}.
      */
     private void sendPacketInternal(Packet packet) {
         synchronized (output) {
             try {
                 switch (packet.getType()) {
-                    case 1 -> { // TEXT
+                    case 1 -> {
                         TextPacket p = (TextPacket) packet;
                         byte[] data = p.message().getBytes();
                         output.writeInt(1);
                         output.writeInt(data.length);
                         output.write(data);
                     }
-                    case 2 -> { // FILE
+                    case 2 -> {
                         FilePacket p = (FilePacket) packet;
                         byte[] nameBytes = p.fileName().getBytes();
                         output.writeInt(2);
