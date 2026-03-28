@@ -10,6 +10,7 @@ module TCPServer {
     requires mysql.connector.j;
     requires property.parser;
     requires jdk.jfr;
+    requires com.zaxxer.hikari;
 
     exports com.habbashx.tcpserver.security;
     exports com.habbashx.tcpserver.socket.server;
@@ -49,6 +50,8 @@ module TCPServer {
     opens com.habbashx.tcpserver.socket.client.settings;
     opens com.habbashx.tcpserver.socket.server;
     opens com.habbashx.tcpserver.socket.client;
+    opens com.habbashx.tcpserver.data.database;
+    opens com.habbashx.tcpserver.data;
 
 
 }

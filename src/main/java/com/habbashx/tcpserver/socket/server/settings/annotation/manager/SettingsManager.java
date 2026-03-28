@@ -182,9 +182,6 @@ public class SettingsManager {
         serverFoundation.getServerSettings().setTrustStorePassword(getTruststorePassword());
         serverFoundation.getServerSettings().setUserChatCooldown(getUserChatCooldown());
         serverFoundation.getServerSettings().setAuthStorageType(getAuthStorageType());
-        serverFoundation.getServerSettings().setDatabaseURL(getDatabaseURL());
-        serverFoundation.getServerSettings().setDatabaseUsername(getDatabaseUsername());
-        serverFoundation.getServerSettings().setDatabasePassword(getDatabasePassword());
     }
 
 }

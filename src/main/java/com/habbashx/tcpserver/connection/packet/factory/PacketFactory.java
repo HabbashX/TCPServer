@@ -3,8 +3,8 @@ package com.habbashx.tcpserver.connection.packet.factory;
 import com.habbashx.tcpserver.connection.packet.FilePacket;
 import com.habbashx.tcpserver.connection.packet.Packet;
 import com.habbashx.tcpserver.connection.packet.TextPacket;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,44 +12,44 @@ import java.io.InputStream;
 public class PacketFactory {
 
 
-    public static TextPacket createText(String message) {
+    public static @NotNull TextPacket createText(final String message) {
         return new TextPacket(message);
     }
 
-    public static FilePacket createFile(String name, long size, InputStream data) {
-        return new FilePacket(name, size, data);
-    }
-
-    public static Packet readPacket(DataInputStream input) throws IOException {
+    public static Packet readPacket(java.io.DataInputStream input) throws IOException {
         int type = input.readInt();
-        return switch (type) {
-            case 1 -> {
-                int len = input.readInt();
-                byte[] data = input.readNBytes(len);
-                yield new TextPacket(new String(data));
+        switch (type) {
+            case 1 -> { // TEXT
+                int length = input.readInt();
+                byte[] data = new byte[length];
+                input.readFully(data);
+                return new TextPacket(new String(data));
             }
-            case 2 -> {
-                int nameLen = input.readInt();
-                byte[] nameBytes = input.readNBytes(nameLen);
-                String name = new String(nameBytes);
-                long fileSize = input.readLong();
-                yield new FilePacket(name, fileSize, input);
+            case 2 -> { // FILE
+                int nameLength = input.readInt();
+                byte[] nameBytes = new byte[nameLength];
+                input.readFully(nameBytes);
+                String fileName = new String(nameBytes);
+
+                long size = input.readLong();
+                InputStream fileData = input; // stream of the rest
+                return new FilePacket(fileName, size, fileData);
             }
-            default -> throw new IOException("Unknown packet type");
-        };
+            default -> throw new IOException("Unknown packet type: " + type);
+        }
     }
 
-
+ 
     public static void writePacket(DataOutputStream output, Packet packet) throws IOException {
         switch (packet.getType()) {
-            case 1 -> { // TEXT
+            case 1 -> {
                 TextPacket text = (TextPacket) packet;
                 byte[] data = text.message().getBytes();
                 output.writeInt(1);
                 output.writeInt(data.length);
                 output.write(data);
             }
-            case 2 -> { // FILE
+            case 2 -> {
                 FilePacket file = (FilePacket) packet;
                 byte[] nameBytes = file.fileName().getBytes();
                 output.writeInt(2);

@@ -133,7 +133,6 @@ public class EventManager {
      * to maintain the correct execution order of listeners when events are triggered.
      */
     private void sortListeners() {
-
         registeredListeners.sort(Comparator.comparingInt(this::getPriority).reversed());
     }
 

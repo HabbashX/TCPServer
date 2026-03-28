@@ -2,7 +2,6 @@ package com.habbashx.tcpserver.socket.server.settings;
 
 import com.habbashx.annotation.DecryptWith;
 import com.habbashx.annotation.InjectProperty;
-import com.habbashx.tcpserver.security.crypto.DatabasePasswordDecryptor;
 import com.habbashx.tcpserver.security.crypto.KeyStorePasswordDecryptor;
 import com.habbashx.tcpserver.security.crypto.TrustStorePasswordDecryptor;
 import org.jetbrains.annotations.Nullable;
@@ -100,28 +99,6 @@ public final class ServerSettings {
     @InjectProperty("server.settings.security.authentication.datastore.type")
     private String authStorageType;
 
-    /**
-     * Represents the URL of the database used for establishing a connection to the database.
-     * The value is injected through the configuration property "database.url".
-     */
-    @InjectProperty("server.settings.database.url")
-    private String databaseURL;
-
-    /**
-     * Represents the username used to connect to the database.
-     * This field is configured through the "database.username" property.
-     * It is typically injected from an external configuration.
-     */
-    @InjectProperty("server.settings.database.username")
-    private String databaseUsername;
-
-    /**
-     * The password used to authenticate the connection to the database.
-     * This value is injected from the configuration property "database.password".
-     */
-    @InjectProperty("server.settings.database.password")
-    @DecryptWith(DatabasePasswordDecryptor.class)
-    private String databasePassword;
 
     public ServerSettings() {
     }
@@ -135,9 +112,6 @@ public final class ServerSettings {
         this.trustStorePassword = trustStorePassword;
         this.authStorageType = authStorageType;
         this.userChatCooldown = userChatCooldown;
-        this.databaseURL = databaseURL;
-        this.databasePassword = databasePassword;
-        this.databaseUsername = databaseUsername;
     }
 
     public void setHost(String host) {
@@ -176,18 +150,6 @@ public final class ServerSettings {
         this.userChatCooldown = userChatCooldown;
     }
 
-    public void setDatabaseURL(String databaseURL) {
-        this.databaseURL = databaseURL;
-    }
-
-    public void setDatabaseUsername(String databaseUsername) {
-        this.databaseUsername = databaseUsername;
-    }
-
-    public void setDatabasePassword(String databasePassword) {
-        this.databasePassword = databasePassword;
-    }
-
     public @Nullable String getHost() {
         return host;
     }
@@ -224,17 +186,6 @@ public final class ServerSettings {
         return authStorageType;
     }
 
-    public @Nullable String getDatabaseURL() {
-        return databaseURL;
-    }
-
-    public @Nullable String getDatabaseUsername() {
-        return databaseUsername;
-    }
-
-    public @Nullable String getDatabasePassword() {
-        return databasePassword;
-    }
 
     /*
      IfNull annotation is added just to showing you the default of

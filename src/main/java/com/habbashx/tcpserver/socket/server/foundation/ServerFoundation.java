@@ -136,8 +136,9 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
             assert serverSettings.getHost() != null;
             serverSocket.bind(new InetSocketAddress(serverSettings.getHost(), serverSettings.getPort()));
             if (defaultLogging) {
-                serverLogger.info("server started at port: " + serverSettings.getPort());
-                serverLogger.info("waiting for user connections.");
+                getServerLogger().info("Server started at port: " + getServerSettings().getPort());
+                getServerLogger().info("Server is secured with ssl protocol");
+                getServerLogger().info("waiting for user connections....");
             }
 
         } catch (IOException e) {

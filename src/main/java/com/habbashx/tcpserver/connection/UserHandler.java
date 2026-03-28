@@ -8,6 +8,7 @@ import com.habbashx.tcpserver.connection.packet.TextPacket;
 import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.UserChatEvent;
 import com.habbashx.tcpserver.event.UserLeaveEvent;
+import com.habbashx.tcpserver.exception.UnknownPacketException;
 import com.habbashx.tcpserver.io.CountingOutputStream;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
@@ -23,6 +24,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -161,6 +164,10 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     private final AtomicBoolean isSending = new AtomicBoolean(false);
 
+    private final boolean isUploading = false;
+
+    private final ExecutorService uploadWorker = Executors.newSingleThreadExecutor();
+
     /**
      * Constructs a UserHandler for a user connection.
      *
@@ -224,15 +231,22 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
             final UserChatEvent userChatEvent = new UserChatEvent(userDetails.getUsername(), this, cooldownSecond);
 
             while (running) {
+
                 Packet packet = PacketFactory.readPacket(input);
-                if (packet instanceof TextPacket textPacket) {
-                    String msg = textPacket.message();
-                    if (msg.startsWith("/")) {
-                        getServer().getCommandManager().executeCommand(userDetails.getUsername(), msg, this);
-                    } else {
-                        userChatEvent.setMessage(msg);
-                        getServer().getEventManager().triggerEvent(userChatEvent);
+                switch (packet) {
+                    case TextPacket(String msg) -> {
+                        if (msg.startsWith("/")) {
+                            getServer().getCommandManager().executeCommand(userDetails.getUsername(), msg, this);
+                        } else {
+                            userChatEvent.setMessage(msg);
+                            getServer().getEventManager().triggerEvent(userChatEvent);
+                        }
                     }
+
+                    case FilePacket(String name, long size, InputStream data) -> {
+
+                    }
+                    default -> throw new UnknownPacketException("Invalid Packet Protocol");
                 }
             }
 
@@ -271,8 +285,8 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         while (running && retries < maxRetries) {
             sendTextMessage("%s%sregister%s or %s%slogin%s".formatted(BG_ORANGE, BLACK, RESET, BG_BRIGHT_BLUE, BLACK, RESET));
             final Packet choicePacket = PacketFactory.readPacket(input);
-            if (choicePacket instanceof TextPacket choiceText) {
-                switch (choiceText.message()) {
+            if (choicePacket instanceof TextPacket(String message)) {
+                switch (message) {
                     case "register" -> {
                         sendRegisterRequest();
                         return;
@@ -643,7 +657,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     @Override
     public void shutdown() {
-        running = false; // stop the handler
+        running = false;
 
         try {
             if (getServer().getConnectionHandlers() != null) {
@@ -666,6 +680,10 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         } catch (IOException e) {
             getServer().getServerLogger().error(e);
         }
+    }
+
+    public boolean isUploading() {
+        return isUploading;
     }
 
     /**

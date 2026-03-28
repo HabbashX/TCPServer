@@ -7,9 +7,7 @@ import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.event.UserExecuteCommandEvent;
-import com.habbashx.tcpserver.security.container.NonVolatilePermissionContainer;
 import com.habbashx.tcpserver.socket.server.Server;
-import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -105,7 +103,6 @@ public final class CommandManager {
             final String commandName = commandInformation.name();
             registerCommand(commandName, commandExecutor);
 
-
             if (0 < commandInformation.aliases().length) {
                 for (final String alias : commandInformation.aliases()) {
                     registerCommand(alias, commandExecutor);
@@ -123,63 +120,68 @@ public final class CommandManager {
     }
 
     /**
-     * Executes a given command based on the provided input and permissions.
+     * Parses and dispatches a command from a raw message string.
+     * <p>
+     * This implementation utilizes Modern Java 21+ features including:
+     * <ul>
+     * <li><b>Pattern Matching for switch:</b> To handle different {@link CommandSender} types.</li>
+     * <li><b>Guard Clauses (when):</b> To handle permissions and cooldowns as distinct states.</li>
+     * <li><b>Early Returns:</b> To reduce nesting and improve scannability.</li>
+     * </ul>
      *
-     * @param senderName    The name of the sender executing the command. Cannot be null.
-     * @param message       The command message input by the sender. Cannot be null and must start with a "/".
-     * @param commandSender The CommandSender instance representing the entity executing the command. Cannot be null.
+     * @param senderName    The unique identifier/name of the entity sending the command.
+     * @param message       The raw input string (must start with '/' to be processed).
+     * @param commandSender The source of the command (e.g., UserHandler, Console).
+     * @throws NullPointerException if any argument is null.
      */
-    public void executeCommand(@NotNull String senderName, @NotNull String message, @NotNull CommandSender commandSender) {
-
+    public void executeCommand(@NotNull final String senderName, @NotNull final String message, @NotNull final CommandSender commandSender) {
         if (!message.startsWith("/")) return;
 
-        @Language(value = "RegExp") final String[] parts = message.substring(1).split(" ");
+        final String[] parts = message.substring(1).split(" ");
         final String commandName = parts[0].toLowerCase();
-        final List<String> args = List.of(parts).subList(1, parts.length);
+        final List<String> args = Arrays.stream(parts).skip(1).toList();
 
-        final CommandExecutor commandExecutor = executors.get(commandName);
-
-        if (commandExecutor != null) {
-            final Class<? extends CommandExecutor> commandExecutorClass = commandExecutor.getClass();
-
-            if (commandExecutorClass.isAnnotationPresent(Command.class)) {
-
-                final int permissionValue = commandExecutorClass.getAnnotation(Command.class).permission();
-                final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
-                final long cooldownTime = getCooldownTimeUnit(commandInformation.cooldownTime(), commandInformation.cooldownTimeUnit());
-                commandExecutor.getCooldownManager().setCooldownTime(cooldownTime);
-                if (commandSender instanceof UserHandler userHandler) {
-                    final NonVolatilePermissionContainer container = userHandler.getNonVolatilePermissionContainer();
-
-                    if (hasPermission(permissionValue, userHandler)) {
-
-                        if (!commandExecutor.getCooldownManager().isOnCooldown(senderName)) {
-                            CommandContext commandContext = new CommandContext(senderName, args, userHandler);
-                            executeCommand(commandExecutor, commandContext, commandInformation.isAsync());
-                            if (commandInformation.executionLog()) {
-                                server.getEventManager().triggerEvent(new UserExecuteCommandEvent(senderName, userHandler, commandExecutor));
-                            }
-                            commandExecutor.getCooldownManager().setCooldown(senderName);
-                        } else {
-                            final int cooldown = (int) commandExecutor.getCooldownManager().getRemainingTime(senderName);
-                            if (commandInformation.cooldownTimeUnit() == TimeUnit.SECONDS) {
-                                userHandler.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "seconds"));
-                            } else if (commandInformation.cooldownTimeUnit() == TimeUnit.MILLI_SECONDS) {
-                                userHandler.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(cooldown, "milli seconds"));
-                            }
-                        }
-                    } else {
-                        userHandler.sendTextMessage(NO_PERMISSION_MESSAGE);
-                    }
-                } else {
-                    final CommandContext commandContext = new CommandContext(senderName, args, commandSender);
-                    executeCommand(commandExecutor, commandContext, commandInformation.isAsync());
-                }
-            } else {
-                sendMessage(commandSender, ERROR_IN_EXECUTING_MESSAGE);
-            }
-        } else {
+        CommandExecutor executor = executors.get(commandName);
+        if (executor == null) {
             sendMessage(commandSender, UNKNOWN_COMMAND_MESSAGE);
+            return;
+        }
+
+        Command info = executor.getClass().getAnnotation(Command.class);
+        if (info == null) {
+            sendMessage(commandSender, ERROR_IN_EXECUTING_MESSAGE);
+            return;
+        }
+
+        long cooldownMs = getCooldownTimeUnit(info.cooldownTime(), info.cooldownTimeUnit());
+        executor.getCooldownManager().setCooldownTime(cooldownMs);
+
+        switch (commandSender) {
+            case UserHandler user when !hasPermission(info.permission(), user) ->
+                    user.sendTextMessage(NO_PERMISSION_MESSAGE);
+
+            case UserHandler user when executor.getCooldownManager().isOnCooldown(senderName) ->
+                    handleCooldownMessage(user, executor, info, senderName);
+
+            case UserHandler user -> {
+                executeAndLog(senderName, args, user, executor, info);
+                executor.getCooldownManager().setCooldown(senderName);
+            }
+
+            default -> executeCommand(executor, new CommandContext(senderName, args, commandSender), info.isAsync());
+        }
+    }
+
+    private void handleCooldownMessage(@NotNull final UserHandler user, @NotNull final CommandExecutor executor, @NotNull final Command info, final String name) {
+        int remaining = (int) executor.getCooldownManager().getRemainingTime(name);
+        String unitLabel = String.valueOf(info.cooldownTimeUnit());
+        user.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(remaining, unitLabel));
+    }
+
+    private void executeAndLog(final String name, final List<String> args, final UserHandler user, @NotNull final CommandExecutor exec, @NotNull final Command info) {
+        executeCommand(exec, new CommandContext(name, args, user), info.isAsync());
+        if (info.executionLog()) {
+            server.getEventManager().triggerEvent(new UserExecuteCommandEvent(name, user, exec));
         }
     }
 
@@ -200,9 +202,9 @@ public final class CommandManager {
         }
     }
 
-    private void sendMessage(CommandSender commandSender, String message) {
+    private void sendMessage(final CommandSender commandSender, final String message) {
 
-        if (commandSender instanceof UserHandler userHandler) {
+        if (commandSender instanceof final UserHandler userHandler) {
             userHandler.sendTextMessage(message);
         } else {
             System.out.println(message);
@@ -218,7 +220,7 @@ public final class CommandManager {
      *                 Accepted values are {@link TimeUnit#MILLI_SECONDS} and {@link TimeUnit#SECONDS}.
      * @return The cooldown value converted to the specified time unit, or the original cooldown if the time unit is invalid.
      */
-    private long getCooldownTimeUnit(long cooldown, int timeUnit) {
+    private long getCooldownTimeUnit(final long cooldown, final int timeUnit) {
         if (timeUnit == TimeUnit.MILLI_SECONDS) {
             return cooldown / 1000;
         } else if (timeUnit == TimeUnit.SECONDS) {

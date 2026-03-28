@@ -72,6 +72,8 @@ public final class DefaultAuthentication extends Authentication {
 
     @Override
     public void login(@NotNull String username, @NotNull String password, @NotNull UserHandler userHandler) {
+
+        long start = System.currentTimeMillis();
         lock.lock();
         try {
             if (server.getAuthenticatedUsers().containsKey(username)) {
@@ -81,10 +83,13 @@ public final class DefaultAuthentication extends Authentication {
             }
 
             UserDetails details = storage.getUser(username);
+            long end = System.currentTimeMillis();
+            server.getServerLogger().info("operation took: " + (end - start) + "ms");
             if (details == null) {
                 server.getEventManager().triggerEvent(new AuthenticationEvent(userHandler, false, false));
                 return;
             }
+
 
             String hashed = storage.getHashedPassword(username);
             if (BCrypt.checkpw(password, hashed)) {

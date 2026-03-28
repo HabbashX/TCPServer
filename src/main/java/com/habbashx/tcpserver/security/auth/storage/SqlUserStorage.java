@@ -15,7 +15,7 @@ public final class SqlUserStorage implements UserStorage {
     }
 
     @Override
-    public boolean isUserExists(String username) throws SQLException {
+    public boolean isUserExists(String username) {
         return server.getServerDataManager().getUserByUsername(username) != null;
     }
 

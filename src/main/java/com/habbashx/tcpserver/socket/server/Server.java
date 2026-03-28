@@ -1,36 +1,29 @@
 package com.habbashx.tcpserver.socket.server;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.habbashx.tcpserver.command.defaultcommand.*;
 import com.habbashx.tcpserver.command.manager.BanCommandManager;
 import com.habbashx.tcpserver.command.manager.CommandManager;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
 import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
+import com.habbashx.tcpserver.data.ServerDataManager;
 import com.habbashx.tcpserver.delayevent.BroadcastEvent;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
 import com.habbashx.tcpserver.listener.handler.*;
-import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.Authentication;
 import com.habbashx.tcpserver.security.auth.DefaultAuthentication;
-import com.habbashx.tcpserver.security.auth.storage.AuthStorageType;
 import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
-import com.habbashx.tcpserver.user.UserDetails;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLSocket;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
@@ -219,8 +212,6 @@ public final class Server extends ServerFoundation {
 
     public Server() {
         super();
-        disableEventRegistrationLogging();
-        disableDelayEventRegistrationLogging();
         authentication = new DefaultAuthentication(this);
         serverDataManager = new ServerDataManager(this);
         registerDefaultEvents();
@@ -281,9 +272,6 @@ public final class Server extends ServerFoundation {
     public void run() {
         super.run();
         try {
-            getServerLogger().info("Server started at port: " + getServerSettings().getPort());
-            getServerLogger().info("Server is secured with ssl protocol");
-            getServerLogger().info("waiting for user connections....");
 
             final ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
             getThreadPool().execute(serverConsoleHandler);
@@ -415,6 +403,7 @@ public final class Server extends ServerFoundation {
     private void registerDefaultCommands() {
         if (!dumbCommands) {
 
+            commandManager.registerCommand(new UploadFileCommand());
             commandManager.registerCommand(new ChangeRoleCommand(this));
             commandManager.registerCommand(new HelpCommand(this));
             commandManager.registerCommand(new PrivateMessageCommand(this));
@@ -640,445 +629,10 @@ public final class Server extends ServerFoundation {
         return instance;
     }
 
-    public static void main(String[] args) {
+    void main() {
         Server.getInstance().run();
     }
 
-    /**
-     * The ServerDataManager class is a utility class designed to manage and interact with user data
-     * for a given server instance. It provides methods to fetch user information based on various
-     * criteria such as username, user ID, or email. User data can be retrieved from multiple storage
-     * types including CSV files, JSON files, or an SQL database.
-     * <p>
-     * This class also offers functionality to access online user information, such as retrieving
-     * connected users via their username or ID.
-     * <p>
-     * The behavior of data retrieval methods is determined by the server's configured
-     * authentication storage type.
-     */
-    public static final class ServerDataManager {
-
-        private final Server server;
-        /**
-         * Represents the type of storage mechanism used for authentication data
-         * within the server.
-         * <p>
-         * This variable determines the method of storing and managing user
-         * authentication information, such as usernames, passwords, and roles.
-         * It is utilized by the server to ensure appropriate interaction with
-         * the specified storage medium.
-         * <p>
-         * The available storage types are defined in the {@link AuthStorageType}
-         * enum, which includes options like CSV files, JSON files, or SQL databases.
-         */
-        private final AuthStorageType authStorageType;
-        /**
-         * Represents a reference to the {@link UserDao} instance, which provides data access operations
-         * for user-related queries and manipulations on the underlying data source.
-         * <p>
-         * This variable is used to perform CRUD operations such as inserting, updating, deleting,
-         * and retrieving user details from the data storage system through the {@link UserDao} class.
-         * It serves as a bridge between the {@link ServerDataManager} class and the data source.
-         * <p>
-         * The {@link UserDao} instance encapsulates the logic for interacting with the database or other
-         * data storage mechanisms, allowing high-level methods in the {@link ServerDataManager} class
-         * to retrieve or manipulate user-related data seamlessly.
-         * <p>
-         * Designed as a final field to ensure immutability and preserve the integrity of the data access layer within
-         * the {@link ServerDataManager} lifecycle.
-         */
-        private final UserDao userDao;
-
-        public ServerDataManager(@NotNull Server server) {
-            this.server = server;
-            assert server.getServerSettings().getAuthStorageType() != null;
-            @Nullable final String authType = server.getServerSettings().getAuthStorageType().toUpperCase();
-            authStorageType = AuthStorageType.valueOf(authType);
-            userDao = new UserDao(server);
-        }
-
-        /**
-         * Retrieves an online user by their username.
-         * This method checks the server's active connections to find a user whose username matches the provided input.
-         *
-         * @param username the username of the user to search for; must not be null.
-         *                 If no username is provided or if it is null, the method will return null.
-         * @return the {@link UserHandler} instance representing the online user with the specified username,
-         * or null if no such user is currently online.
-         */
-        public @Nullable UserHandler getOnlineUserByUsername(String username) {
-
-            return server.getAuthenticatedUsers().values()
-                    .stream()
-                    .filter(userHandler -> userHandler.getUserDetails().getUsername()
-                            .equals(username)).findFirst().orElse(null);
-        }
-
-        /**
-         * Retrieves an online user by their unique user ID.
-         * This method iterates through the server's active connections to locate a user
-         * whose user ID matches the provided input.
-         *
-         * @param id the unique identifier of the user to search for; must not be null.
-         *           If no user ID is provided, or if the provided ID does not match
-         *           any online user, the method will return null.
-         * @return the {@link UserHandler} instance representing the online user with the specified user ID,
-         * or null if no such user is currently online.
-         */
-        public @Nullable UserHandler getOnlineUserById(String id) {
-            return server.getAuthenticatedUsers().values()
-                    .stream()
-                    .filter(userHandler -> userHandler.getUserDetails().getUserID().equals(id))
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        /**
-         * Retrieves user details using the provided username.
-         * This method queries the user storage system based on the configured authentication storage type
-         * (e.g., CSV, JSON, or SQL) to fetch the corresponding user information.
-         *
-         * @param username the username of the user to look up; must not be null
-         * @return a {@link UserDetails} object containing the user's information if the username matches an existing record,
-         * or null if no matching user is found
-         */
-        public @Nullable UserDetails getUserByUsername(String username) {
-            return getUserDetails("username", username);
-        }
-
-        /**
-         * Retrieves user details based on the provided user ID.
-         *
-         * @param id the unique identifier of the user to fetch details for
-         * @return a UserDetails object if the user is found, or null if no user is associated with the given ID
-         */
-        public @Nullable UserDetails getUserById(String id) {
-            return getUserDetails("userID", id);
-        }
-
-        /**
-         * Retrieves user details by their email.
-         *
-         * @param email the email address of the user to look up; must not be null or empty
-         * @return the UserDetails associated with the provided email, or null if no user is found
-         */
-        public @Nullable UserDetails getUserByEmail(String email) {
-            return getUserDetails("userEmail", email);
-        }
-
-        /**
-         * Retrieves user details based on the specified element and value.
-         * This method determines the authentication storage type (CSV, JSON, or SQL)
-         * and fetches the user details accordingly.
-         *
-         * @param element  the field/column name to query against; must not be null
-         * @param specific the value of the element to match; must not be null
-         * @return a {@link UserDetails} object containing the user's information if a match is found,
-         * or null if no matching record exists
-         */
-        private @Nullable UserDetails getUserDetails(String element, String specific) {
-
-            try {
-                return switch (authStorageType) {
-                    case CSV -> getUserDetailsFromCsvFile(element, specific);
-                    case JSON -> getUserDetailsFromJsonFile(element, specific);
-                    case SQL -> getUserDetailsFromDatabase(element, specific);
-                };
-            } catch (SQLException e) {
-                server.getServerLogger().error(e);
-                return null;
-            }
-        }
-
-        /**
-         * Retrieves the user details from a CSV file based on a specific field and its value.
-         * This method parses the `data/users.csv` file and checks for a record where the value
-         * of the specified element matches the provided specific value.
-         *
-         * @param element  the name of the CSV column to query; must not be null
-         * @param specific the value to match against in the specified column; must not be null
-         * @return a {@link UserDetails} object containing the details of the matching user if found,
-         * or null if no matching record exists
-         */
-        private @Nullable UserDetails getUserDetailsFromCsvFile(String element, String specific) {
-            try (final Reader reader = new FileReader("data/users.csv")) {
-                final Iterable<CSVRecord> userIterable = CSVFormat.DEFAULT.parse(reader);
-
-                for (final CSVRecord record : userIterable) {
-                    if (record.get(element).equals(specific)) {
-                        return new UserDetails().builder()
-                                .userIP(record.get("userIP"))
-                                .userID(record.get("userID"))
-                                .userRole(Role.valueOf(record.get("userRole")))
-                                .username(record.get("username"))
-                                .userEmail(record.get("userEmail"))
-                                .phoneNumber(record.get("phoneNumber"))
-                                .activeAccount(Boolean.parseBoolean(record.get("isActiveAccount")))
-                                .build();
-                    }
-                }
-                return null;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        /**
-         * Retrieves user details from a JSON file based on the specified element and value.
-         * This method reads a JSON file, iterates through its entries, and returns a {@link UserDetails}
-         * object if a match is found between the provided element and the specified value.
-         *
-         * @param element  the JSON field name to query against; must not be null
-         * @param specific the value that the specified element should match; must not be null
-         * @return a {@link UserDetails} object containing the matched user's information if found,
-         * or null if no matching user is identified
-         */
-        private @Nullable UserDetails getUserDetailsFromJsonFile(String element, String specific) {
-            final ObjectMapper mapper = new ObjectMapper();
-
-            try {
-                final List<Map<String, Object>> users = mapper.readValue(new File("data/users.json"), new TypeReference<>() {
-                });
-
-                if (users != null) {
-                    return users.stream()
-                            .filter(Objects::nonNull)
-                            .filter(user -> user.get(element).equals(specific)).findFirst()
-                            .map(user -> new UserDetails().builder()
-                                    .userIP((String) user.get("userIP"))
-                                    .userID((String) user.get("userID"))
-                                    .userRole(Role.valueOf((String) user.get("userRole")))
-                                    .userEmail((String) user.get("userEmail"))
-                                    .username((String) user.get(("username")))
-                                    .phoneNumber((String) user.get("phoneNumber"))
-                                    .activeAccount((boolean) user.get("isActiveAccount"))
-                                    .build()).orElse(null);
-                }
-                return null;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-
-        /**
-         * Retrieves user details from the database based on the specified column and value.
-         *
-         * @param column   the database column to be used for the query (e.g., "username", "email")
-         * @param specific the specific value to match in the specified column
-         * @return the UserDetails object representing the user, or null if no matching user is found
-         * @throws SQLException if a database access error occurs
-         */
-        private @Nullable UserDetails getUserDetailsFromDatabase(String column, String specific) throws SQLException {
-            return userDao.getUser(column, specific);
-        }
-
-        public UserDao getUserDao() {
-            return userDao;
-        }
-    }
-
-    /**
-     * The UserDao class provides data access functionality for managing user records in a database.
-     * It supports operations such as user insertion, updating, retrieval, and deletion.
-     * Instances of this class are initialized with a server instance to establish database connections.
-     * This class utilizes the `java.sql` package for database interactions and assumes a table named "users"
-     * exists with appropriate schema.
-     */
-    public static final class UserDao {
-
-        private final Server server;
-
-        /**
-         * Represents a database connection used by the UserDao to perform various
-         * user-related operations such as inserting, updating, retrieving, and
-         * deleting user data. This connection is established and maintained
-         * internally by the class.
-         * <p>
-         * The connection is designed to interact with a database instance to
-         * execute SQL queries and is immutable to ensure thread safety and consistency
-         * within the UserDao class.
-         * <p>
-         * This field is initialized when a UserDao object is created and should not
-         * be directly exposed or modified externally.
-         */
-        private final Connection connection;
-
-        @Contract(pure = true)
-        public UserDao(@NotNull Server server) {
-            this.server = server;
-            try {
-                connection = getConnection();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        /**
-         * Establishes a connection to the database using the server's configuration settings.
-         * <p>
-         * This method retrieves the database URL, username, and password from the server's settings
-         * and uses them to create a connection via the {@link DriverManager#getConnection(String, String, String)} method.
-         * <p>
-         * Preconditions:
-         * - The database URL must not be null.
-         * <p>
-         * Exceptions:
-         * - Throws {@link SQLException} if a database access error occurs.
-         *
-         * @return a {@link Connection} object representing the established database connection
-         * @throws SQLException if a database access error occurs
-         */
-        @Contract(pure = true)
-        private Connection getConnection() throws SQLException {
-            final String url = server.getServerSettings().getDatabaseURL();
-            final String username = server.getServerSettings().getDatabaseUsername();
-            final String password = server.getServerSettings().getDatabasePassword();
-
-            assert url != null;
-            return DriverManager.getConnection(url, username, password);
-        }
-
-        /**
-         * Inserts a new user into the database with the specified details.
-         *
-         * @param username        the username of the user
-         * @param password        the plaintext password of the user
-         * @param userID          the unique identifier for the user
-         * @param userIP          the IP address associated with the user
-         * @param userRole        the role assigned to the user (e.g., admin, user)
-         * @param userEmail       the email address of the user
-         * @param phoneNumber     the phone number of the user
-         * @param isActiveAccount the status of the user account (true if active, false otherwise)
-         * @throws SQLException if a database access error occurs or the SQL statement fails
-         */
-        public void insertUser(String username,
-                               String password,
-                               String userID,
-                               String userIP,
-                               String userRole,
-                               String userEmail,
-                               String phoneNumber,
-                               boolean isActiveAccount) throws SQLException {
-
-            final String sql = "INSERT INTO users (userID, userIP, userRole, username, password, userEmail, phoneNumber, isActiveAccount) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, userID);
-                stmt.setString(2, userIP);
-                stmt.setString(3, userRole);
-                stmt.setString(4, username);
-                stmt.setString(5, password);
-                stmt.setString(6, userEmail);
-                stmt.setString(7, phoneNumber);
-                stmt.setBoolean(8, isActiveAccount);
-                stmt.executeUpdate();
-            }
-        }
-
-        /**
-         * Updates a specific user's information in the database by modifying a specified column's value.
-         * The update is performed based on the column to match and the specified value.
-         *
-         * @param column       the column name to be used for identifying the specific user
-         * @param targetColumn the column name that needs to be updated
-         * @param specific     the specific value in the column used to identify the user
-         * @param newValue     the new value to be assigned to the target column
-         * @throws SQLException if a database access error occurs or the SQL statement fails
-         */
-        public void updateUser(String column, String targetColumn, String specific, String newValue) throws SQLException {
-            final String sql = "UPDATE users SET %s = ? WHERE %s = ?".formatted(targetColumn, column);
-            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, newValue);
-                stmt.setString(2, specific);
-                stmt.executeUpdate();
-            }
-        }
-
-        /**
-         * Deletes a user from the database based on the specified column and value.
-         *
-         * @param element  the column name that serves as the criteria for deletion
-         * @param specific the value corresponding to the specified column to identify the user for deletion
-         * @throws SQLException if a database access error occurs or the SQL execution fails
-         */
-        public void deleteUser(String element, String specific) throws SQLException {
-            final String sql = "DELETE FROM users WHERE %s = ?".formatted(element);
-            try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, specific);
-                stmt.executeUpdate();
-            }
-        }
-
-        /**
-         * Retrieves user details from the database based on a specified column and value.
-         *
-         * @param column   the database column to be used for filtering the query
-         * @param specific the specific value to match in the specified column
-         * @return a UserDetails object containing the user's details if a match is found, or null if no match is found
-         * @throws SQLException if a database access error occurs
-         */
-        public @Nullable UserDetails getUser(String column, String specific) throws SQLException {
-            final String sql = "SELECT * FROM users WHERE %s = ?".formatted(column);
-
-            try (final PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, specific);
-                final ResultSet rs = statement.executeQuery();
-                if (rs.next()) {
-                    UserDetails user = new UserDetails();
-                    user.setUserID(rs.getString("userID"));
-                    user.setUserIP(rs.getString("userIP"));
-                    user.setUserRole(Role.valueOf(rs.getString("userRole")));
-                    user.setUsername(rs.getString("username"));
-                    user.setUserEmail(rs.getString("userEmail"));
-                    user.setPhoneNumber(rs.getString("phoneNumber"));
-                    user.setActiveAccount(rs.getBoolean("isActiveAccount"));
-                    return user;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Retrieves the hashed password of a user from the database based on the provided username.
-         * If the username exists in the database, the hashed password is returned; otherwise, null is returned.
-         *
-         * @param username the username of the user whose hashed password is to be retrieved; must not be null
-         * @return the hashed password associated with the username, or null if the username does not exist in the database
-         * @throws SQLException if a database access error occurs
-         */
-        public @Nullable String getHashedPassword(String username) throws SQLException {
-            final String sql = "SELECT * FROM users WHERE username = ?";
-
-            try (final PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, username);
-                final ResultSet rs = statement.executeQuery();
-                if (rs.next()) {
-                    return rs.getString("password");
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Closes the database connection if it is open.
-         * <p>
-         * This method checks whether the database connection is still open and, if so,
-         * closes it to release the associated resources. It also logs a message indicating
-         * that the connection has been successfully closed. If an SQL exception occurs during
-         * the process, the error is logged.
-         */
-        public void closeConnection() {
-            try {
-                if (!connection.isClosed()) {
-                    connection.close();
-                    server.getServerLogger().info("database connection is closed !.");
-                }
-            } catch (SQLException e) {
-                server.getServerLogger().error(e);
-            }
-        }
-    }
 
     /**
      * The {@code ServerMemoryMonitor} class is a utility class designed to monitor the memory usage

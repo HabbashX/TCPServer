@@ -43,20 +43,17 @@ public final class User extends ClientFoundation {
     @Override
     public void run() {
         try {
-            // initialize SSL socket via ClientFoundation
             super.run();
 
             input = new DataInputStream(getUserSocket().getInputStream());
             output = new DataOutputStream(getUserSocket().getOutputStream());
 
-            // start console handler in separate thread
             new Thread(userConsoleInputHandler).start();
 
-            // main loop to process server packets
             while (running) {
                 Packet packet = PacketFactory.readPacket(input);
-                if (packet instanceof TextPacket textPacket) {
-                    System.out.println(textPacket.message());
+                if (packet instanceof TextPacket(String message)) {
+                    System.out.println(message);
                 } else {
                     System.out.println("Received unknown packet type: " + packet.getType());
                 }
@@ -91,7 +88,7 @@ public final class User extends ClientFoundation {
         }
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         User user = new User();
         user.run();
     }

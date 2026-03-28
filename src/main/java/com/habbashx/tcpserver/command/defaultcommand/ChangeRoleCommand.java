@@ -21,7 +21,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 import static com.habbashx.tcpserver.security.Permission.CHANGE_ROLE_PERMISSION;
@@ -145,9 +148,16 @@ public final class ChangeRoleCommand extends CommandExecutor {
                 }
             }
             final Role role = Role.valueOf(specifiedRole);
-            Objects.requireNonNull(server.getServerDataManager().getOnlineUserByUsername(targetUsername)).getUserDetails().setUserRole(role);
-            changeRoleInUsersFile(targetUsername, role);
-            sendMessage(commandContext.getSender(), RANK_CHANGED_MESSAGE);
+
+            UserHandler userHandler = server.getServerDataManager().getOnlineUserByUsername(targetUsername);
+
+            if (userHandler != null) {
+                userHandler.getUserDetails().setUserRole(role);
+                changeRoleInUsersFile(targetUsername, role);
+                sendMessage(commandContext.getSender(), RANK_CHANGED_MESSAGE);
+            }
+
+
         } else {
             sendMessage(commandContext.getSender(), AVAILABLE_ROLES_MESSAGE);
         }

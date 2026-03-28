@@ -17,13 +17,13 @@ import java.util.Objects;
  */
 public final class UserDetails {
 
-    private final String userIP;
-    private final String userID;
-    private final Role userRole;
-    private final String username;
-    private final String userEmail;
-    private final String phoneNumber;
-    private final boolean isActiveAccount;
+    private String userIP;
+    private String userID;
+    private Role userRole;
+    private String username;
+    private String userEmail;
+    private String phoneNumber;
+    private boolean isActiveAccount;
 
     public UserDetails(UserDetailsBuilder builder) {
         this.userIP = builder.userIP;
@@ -61,6 +61,34 @@ public final class UserDetails {
 
     public boolean isActiveAccount() {
         return isActiveAccount;
+    }
+
+    public void setUserID(String userID) {
+        this.userID = userID;
+    }
+
+    public void setUserIP(String userIP) {
+        this.userIP = userIP;
+    }
+
+    public void setUserRole(Role userRole) {
+        this.userRole = userRole;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setActiveAccount(boolean activeAccount) {
+        isActiveAccount = activeAccount;
     }
 
     public static UserDetailsBuilder builder() {

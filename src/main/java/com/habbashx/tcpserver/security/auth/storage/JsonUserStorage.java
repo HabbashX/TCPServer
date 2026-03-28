@@ -49,17 +49,18 @@ public final class JsonUserStorage implements UserStorage {
         if (!JSON_FILE.exists()) return null;
         List<Map<String, Object>> users = MAPPER.readValue(JSON_FILE, new TypeReference<>() {
         });
+
         for (var user : users) {
             if (user.get("username").equals(username)) {
-                return new UserDetails(
-                        (String) user.get("userIP"),
-                        (String) user.get("userID"),
-                        (Role) user.get("userRole"),
-                        username,
-                        (String) user.get("userEmail"),
-                        (String) user.get("phoneNumber"),
-                        (boolean) user.get("isActiveAccount")
-                );
+                return UserDetails.builder()
+                        .userIP((String) user.get("userIP"))
+                        .userID((String) user.get("userID"))
+                        .userRole(Role.valueOf("userRole"))
+                        .userEmail((String) user.get("userEmail"))
+                        .username(username)
+                        .phoneNumber((String) user.get("phoneNumber"))
+                        .activeAccount(Boolean.parseBoolean((String) user.get("isActiveAccount")))
+                        .build();
             }
         }
         return null;
