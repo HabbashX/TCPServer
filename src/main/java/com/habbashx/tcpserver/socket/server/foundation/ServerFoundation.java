@@ -49,7 +49,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      *
      * <p>This configuration helps balance computational load while supporting concurrent task execution.</p>
      */
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+    private final ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
 
     private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
 
@@ -164,11 +164,10 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      * @param autoExecute       if true, the connection handler will be executed in the thread pool
      */
     public void connect(@NotNull ConnectionHandler connectionHandler, boolean autoExecute) {
-
+        connect(connectionHandler);
         if (autoExecute) {
             threadPool.execute(connectionHandler);
         }
-        connect(connectionHandler);
     }
 
     public void registerAuthenticatedUser(String username, UserHandler handler) {
@@ -267,10 +266,9 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      */
     @Override
     public void shutdown() throws IOException, InterruptedException {
-        if (serverSocket.isClosed()) {
+        if (serverSocket != null && !serverSocket.isClosed()) {
             serverSocket.close();
         }
-
         if (!threadPool.isShutdown()) {
             threadPool.shutdown();
         }
