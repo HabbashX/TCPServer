@@ -20,10 +20,10 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
@@ -200,7 +200,7 @@ public final class Server extends ServerFoundation {
      * <p>
      * This map allows efficient retrieval and management of private groups based on their owners.
      */
-    private final Map<UserHandler, PrivateGroup> privateGroups = new HashMap<>();
+    private final Map<UserHandler, PrivateGroup> privateGroups = new ConcurrentHashMap<>();
 
     /**
      * Indicates whether the server is currently running.
@@ -208,7 +208,7 @@ public final class Server extends ServerFoundation {
      * When set to {@code true}, the server is running and active.
      * When set to {@code false}, the server is in a shutdown or inactive state.
      */
-    private boolean running = true;
+    private volatile boolean running = true;
 
     public Server() {
         super();
@@ -276,11 +276,13 @@ public final class Server extends ServerFoundation {
             final ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
             getThreadPool().execute(serverConsoleHandler);
 
-            if (running) {
-                do {
-                    final SSLSocket user = (SSLSocket) getServerSocket().accept();
+            while (running && !getServerSocket().isClosed()) {
+                try {
+                    SSLSocket user = (SSLSocket) getServerSocket().accept();
                     connect(new UserHandler(user, this), true);
-                } while (running);
+                } catch (IOException e) {
+                    if (running) throw e;
+                }
             }
         } catch (IOException e) {
             getServerLogger().error(e);
@@ -720,7 +722,7 @@ public final class Server extends ServerFoundation {
          * currently added to the private group. It is initialized as an empty list
          * and can be modified by adding or removing users.
          */
-        private final List<UserHandler> users = new ArrayList<>();
+        private final List<UserHandler> users = new CopyOnWriteArrayList<>();
         /**
          * The owner of the private group.
          * <p>

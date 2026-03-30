@@ -2,6 +2,7 @@ package com.habbashx.tcpserver.connection.console;
 
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
 import com.habbashx.tcpserver.connection.packet.TextPacket;
 import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
@@ -41,8 +42,8 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
                 } else {
                     TextPacket packet = PacketFactory.createText(message);
 
-                    for (var handler : server.getConnectionHandlers()) {
-                        if (handler instanceof UserHandler user) {
+                    for (ConnectionHandler handler : server.getConnectionHandlers()) {
+                        if (handler instanceof final UserHandler user) {
                             try {
                                 user.sendPacket(packet);
                             } catch (Exception e) {
