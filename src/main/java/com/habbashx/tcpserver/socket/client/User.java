@@ -60,7 +60,6 @@ public final class User extends ClientFoundation {
             }
         } catch (IOException e) {
             shutdown();
-            e.printStackTrace();
         }
     }
 
@@ -83,8 +82,7 @@ public final class User extends ClientFoundation {
             super.shutdown();
             if (input != null) input.close();
             if (output != null) output.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ignored) {
         }
     }
 

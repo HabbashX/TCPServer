@@ -13,12 +13,17 @@ public final class DefaultPrivateGroupChatHandler implements Listener<PrivateGro
 
 
     @Override
+    public Class<PrivateGroupChatEvent> getEventType() {
+        return PrivateGroupChatEvent.class;
+    }
+
+    @Override
     public void onEvent(@NotNull PrivateGroupChatEvent event) {
 
         final String rolePrefix = event.getUserHandler().getUserDetails().getUserRole().getPrefix();
         final String username = event.getUserHandler().getUserDetails().getUsername();
         final String privateGroupPrefix = BRIGHT_RED + "[Private-Group] ";
 
-        event.getPrivateGroup().broadcast(privateGroupPrefix + rolePrefix + username + ": " +WHITE+ event.getMessage());
+        event.getPrivateGroup().broadcast(privateGroupPrefix + rolePrefix + username + ": " + WHITE + event.getMessage());
     }
 }

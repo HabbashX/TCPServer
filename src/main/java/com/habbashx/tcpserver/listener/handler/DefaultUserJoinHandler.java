@@ -30,6 +30,11 @@ public final class DefaultUserJoinHandler implements Listener<UserJoinEvent> {
     }
 
     @Override
+    public Class<UserJoinEvent> getEventType() {
+        return UserJoinEvent.class;
+    }
+
+    @Override
     public void onEvent(@NotNull UserJoinEvent userJoinEvent) {
 
         if (!server.getBanCommandManager().isUserBanned(userJoinEvent.getUsername())) {

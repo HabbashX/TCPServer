@@ -8,7 +8,6 @@ import com.habbashx.tcpserver.command.manager.MuteCommandManager;
 import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
 import com.habbashx.tcpserver.data.ServerDataManager;
-import com.habbashx.tcpserver.delayevent.BroadcastEvent;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
 import com.habbashx.tcpserver.listener.handler.*;
@@ -215,7 +214,6 @@ public final class Server extends ServerFoundation {
         authentication = new DefaultAuthentication(this);
         serverDataManager = new ServerDataManager(this);
         registerDefaultEvents();
-        registerDefaultDelayEvents();
         registerDefaultCommands();
         registerKeystore();
         disableDefaultConsoleHandler();
@@ -334,55 +332,11 @@ public final class Server extends ServerFoundation {
             getEventManager().registerEvent(new DefaultUserExecuteCommandHandler(this));
             getEventManager().registerEvent(new DefaultPrivateGroupChatHandler());
 
-            if (eventRegistrationLogging) {
-                getEventManager().getRegisteredListeners().stream()
-                        .forEach(listener ->
-                                getServerLogger().info("Registering event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
-            }
-
         } else {
             getServerLogger().info("dumbing events initialization.");
         }
     }
 
-    /**
-     * Registers the default delay-based event handlers with the {@code DelayEventManager}.
-     * <p>
-     * This method initializes and registers predefined delay-based event listeners, which manage
-     * specific delayed operations within the server. It is designed to set up the basic handlers
-     * required for the server's delayed event management system to function appropriately.
-     * <p>
-     * Current implementation registers the {@code DefaultBroadcastHandler}, a listener that handles
-     * {@link BroadcastEvent} instances. This handler is configured with a low priority and a predefined
-     * delay of 6000 milliseconds for processing broadcast messages. The {@code DefaultBroadcastHandler}
-     * ensures that broadcast messages are sent to connected users after the specified delay.
-     * <p>
-     * Preconditions:
-     * - The {@code DelayEventManager} instance must be initialized prior to invoking this method.
-     * <p>
-     * Post conditions:
-     * - The {@code DefaultBroadcastHandler} is registered with the {@code DelayEventManager}.
-     * <p>
-     * Responsibilities:
-     * - Configuring the server's delay-based event system with the default listener.
-     * - Ensuring proper scheduling and execution of delayed events like broadcasting.
-     * <p>
-     * Notes:
-     * - Additional delay-based event handlers could be added in the future by modifying this method.
-     */
-    private void registerDefaultDelayEvents() {
-        if (!dumbDelayEvent) {
-            getDelayEventManager().registerEvent(new DefaultBroadcastHandler());
-
-            if (delayEventRegistrationLogging) {
-                getDelayEventManager().getRegisteredListeners().stream()
-                        .forEach(listener -> getServerLogger().info("Registering the delay event handler: " + listener + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
-            }
-            return;
-        }
-        getServerLogger().info("dumbing delay events initialization.");
-
-    }
 
     /**
      * Registers the default set of commands to the command manager.
@@ -609,6 +563,13 @@ public final class Server extends ServerFoundation {
         delayEventRegistrationLogging = false;
     }
 
+    public boolean isEventRegistrationLogging() {
+        return eventRegistrationLogging;
+    }
+
+    public boolean isDelayEventRegistrationLogging() {
+        return delayEventRegistrationLogging;
+    }
 
     public Map<UserHandler, PrivateGroup> getPrivateGroups() {
         return privateGroups;

@@ -62,7 +62,7 @@ public final class CommandManager {
      * Note that it is important to properly shut down the executor service to release resources when
      * the system or application is being terminated.
      */
-    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService asyncExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
 
     public CommandManager(Server server) {
@@ -101,6 +101,7 @@ public final class CommandManager {
         if (commandExecutorClass.isAnnotationPresent(Command.class)) {
             final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
             final String commandName = commandInformation.name();
+
             registerCommand(commandName, commandExecutor);
 
             if (0 < commandInformation.aliases().length) {
@@ -141,13 +142,13 @@ public final class CommandManager {
         final String commandName = parts[0].toLowerCase();
         final List<String> args = Arrays.stream(parts).skip(1).toList();
 
-        CommandExecutor executor = executors.get(commandName);
+        final CommandExecutor executor = executors.get(commandName);
         if (executor == null) {
             sendMessage(commandSender, UNKNOWN_COMMAND_MESSAGE);
             return;
         }
 
-        Command info = executor.getClass().getAnnotation(Command.class);
+        final Command info = executor.getClass().getAnnotation(Command.class);
         if (info == null) {
             sendMessage(commandSender, ERROR_IN_EXECUTING_MESSAGE);
             return;

@@ -1,37 +1,67 @@
 package com.habbashx.tcpserver.listener;
 
 import com.habbashx.tcpserver.event.Event;
+import com.habbashx.tcpserver.event.manager.EventManager;
 
 /**
- * The Listener interface represents a generic contract for handling events of a specific type.
- * It serves as a base abstraction for all event listeners, allowing the implementation of custom
- * event-handling logic for any event subtype.
+ * Represents a generic event listener that can handle a specific type of event.
  *
- * @param <E> the type of event that this listener handles; must extend from the base {@link Event} class
+ * <p>
+ * Implementations of this interface are responsible for defining the logic
+ * to be executed when a particular event occurs. Each listener explicitly
+ * declares the type of event it handles via {@link #getEventType()}, which
+ * allows the event system to avoid runtime reflection and perform efficient
+ * dispatching.
+ * </p>
  *
- * Responsibilities:
- * - Defines the behavior for responding to an event via the {@code onEvent(E event)} method.
- * - Allows implementations to specialize event handling for various types of events.
+ * <p>
+ * This interface works in conjunction with the {@link EventManager}, which
+ * manages registration, prioritization, and execution of listeners.
+ * </p>
  *
- * Key Method:
- * - {@code onEvent(E event)}:
- *   - This method is invoked when an event of type {@code E} occurs.
- *   - Implementing classes should override this method to provide the specific event-handling logic.
+ * <p><b>Example usage:</b></p>
+ * <pre>{@code
+ * public class UserChatListenerHandler implements Listener<UserChatEvent> {
  *
- * Design Details:
- * - The Listener interface is parameterized with a generic type, ensuring type safety when handling events.
- * - This interface extends {@link EventListenerConfiguration}, which may provide additional configuration
- *   options or behaviors for event listeners.
+ *     @Override
+ *     public Class<UserChatEvent> getEventType() {
+ *         return UserChatEvent.class;
+ *     }
  *
- * Usage:
- * - Implementing classes must specify the type of event they handle by defining the generic parameter {@code E}.
- * - The implementation of the {@code onEvent(E event)} method contains the custom logic for processing the specified event type.
+ *     @Override
+ *     public void onEvent(UserChatEvent event) {
+ *         System.out.println(event.getUsername()+": "+event.getMessage());
+ *     }
+ * }
+ * }</pre>
  *
- * Thread-Safety:
- * - The thread-safety of the implementation depends on the specific use case and event system.
- * - Implementers should consider synchronization or concurrency mechanisms if required.
+ * @param <E> the type of event this listener handles
  */
 public interface Listener<E extends Event> extends EventListenerConfiguration {
 
+    /**
+     * Returns the class type of the event this listener is designed to handle.
+     *
+     * <p>
+     * This method eliminates the need for runtime generic type inspection,
+     * enabling the event system to directly map listeners to their corresponding
+     * event types during registration.
+     * </p>
+     *
+     * @return the class object representing the event type
+     */
+    Class<E> getEventType();
+
+    /**
+     * Handles the given event.
+     *
+     * <p>
+     * This method is invoked by the {@link EventManager} when an event of the
+     * corresponding type is triggered. The implementation should contain the
+     * logic required to respond to the event.
+     * </p>
+     *
+     * @param event the event instance to handle
+     */
     void onEvent(E event);
 }

@@ -51,6 +51,11 @@ public final class DefaultChatHandler implements Listener<UserChatEvent> {
     }
 
     @Override
+    public Class<UserChatEvent> getEventType() {
+        return UserChatEvent.class;
+    }
+
+    @Override
     public void onEvent(@NotNull UserChatEvent userChatEvent) {
 
         if (!userChatEvent.getMessage().isEmpty()) {

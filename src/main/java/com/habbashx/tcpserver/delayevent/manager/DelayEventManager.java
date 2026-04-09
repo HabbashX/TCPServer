@@ -3,176 +3,220 @@ package com.habbashx.tcpserver.delayevent.manager;
 import com.habbashx.tcpserver.delayevent.DelayEvent;
 import com.habbashx.tcpserver.delayevent.handler.DelayEventHandler;
 import com.habbashx.tcpserver.listener.DelayListener;
+import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
- * DelayEventManager is responsible for managing and triggering events with
- * associated delays. It facilitates registering, unregistering, and triggering
- * events that are associated with listeners annotated with {@code DelayEventHandler}.
+ * The DelayEventManager is responsible for managing and dispatching delayed events
+ * to registered listeners in an efficient and scalable manner.
+ *
  * <p>
- * This class ensures listeners are executed according to their priority and delay
- * intervals, using a scheduled executor service.
+ * Unlike traditional event managers, this implementation supports delayed execution,
+ * allowing listeners to handle events after a specified time interval. Each listener
+ * defines its delay and priority via the {@link DelayEventHandler} annotation.
+ * </p>
+ *
+ * <p>
+ * This implementation is optimized for performance by:
+ * <ul>
+ *     <li>Avoiding runtime reflection during event dispatch</li>
+ *     <li>Precomputing listener metadata during registration</li>
+ *     <li>Indexing listeners by event type for fast lookup</li>
+ *     <li>Using a scheduled executor for controlled delayed execution</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * The manager also supports event inheritance, meaning that listeners registered
+ * for a parent event class will also receive events of its subclasses.
+ * </p>
  */
 public class DelayEventManager {
 
     private final ServerFoundation serverFoundation;
+
     /**
-     * A single-threaded scheduled executor service used to handle delayed execution of events.
-     * This ensures that tasks are executed in a sequential and thread-safe manner.
-     * It is primarily utilized for managing and triggering delayed events within the
-     * DelayEventManager class.
+     * A mapping between event types and their corresponding delayed listeners.
+     *
+     * <p>
+     * Each key represents an event class, and its value is a list of listeners
+     * that should be executed when that event (or its subclass) is triggered.
+     * </p>
+     */
+    private final Map<Class<?>, List<RegisteredDelayListener<?>>> listenerMap = new ConcurrentHashMap<>();
+
+    /**
+     * A single-threaded scheduled executor responsible for executing delayed tasks.
+     *
+     * <p>
+     * Tasks submitted to this executor are executed sequentially in a dedicated thread,
+     * ensuring predictable execution order and avoiding race conditions for delayed events.
+     * </p>
      */
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    /**
-     * A list that stores all the registered delay listeners for handling delay-based events.
-     * <p>
-     * This list maintains the listeners that implement the {@link DelayListener} interface.
-     * The listeners are registered to handle specific {@link DelayEvent} instances.
-     * <p>
-     * It is utilized internally by the {@code DelayEventManager} class for the following:
-     * - Registering new listeners.
-     * - Unregistering existing listeners.
-     * - Sorting listeners based on priority or delay.
-     * - Triggering events on all relevant listeners.
-     * <p>
-     * The list is declared as final to ensure its reference cannot be changed,
-     * providing a consistent collection of listeners throughout the lifecycle of the
-     * {@code DelayEventManager} instance.
-     */
-    private final List<DelayListener<?>> registeredListeners = new ArrayList<>();
 
-    public DelayEventManager(ServerFoundation serverFoundation) {
+    /**
+     * Constructs a new DelayEventManager instance.
+     *
+     * @param serverFoundation the server foundation providing logging and core services
+     */
+    public DelayEventManager(final @NotNull ServerFoundation serverFoundation) {
         this.serverFoundation = serverFoundation;
     }
 
+
     /**
-     * Registers an event listener for handling delayed events. The listener must be annotated with
-     * {@code @DelayEventHandler} to be successfully registered. If the annotation is missing,
-     * the listener will not be registered and a warning will be logged.
+     * Registers a delay listener with the event manager.
      *
-     * @param listener the event listener to register, must not be null and must be annotated with {@code @DelayEventHandler}
+     * <p>
+     * The listener must be annotated with {@link DelayEventHandler}. During registration,
+     * its delay, priority, and event type are extracted and stored for efficient dispatching.
+     * </p>
+     *
+     * @param listener the listener to register
+     * @param <E>      the type of delayed event handled by the listener
      */
-    public <E extends DelayEvent> void registerEvent(@NotNull DelayListener<E> listener) {
+    public <E extends DelayEvent> void registerEvent(@NotNull final DelayListener<E> listener) {
 
-        if (listener.getClass().isAnnotationPresent(DelayEventHandler.class)) {
 
-            registeredListeners.add(listener);
-            sortListeners();
-        } else {
+        final Class<?> clazz = listener.getClass();
+
+        if (!clazz.isAnnotationPresent(DelayEventHandler.class)) {
             serverFoundation.getServerLogger().warning("""
                     the listener %s is missing the annotation @DelayEventHandler
-                    Please ensure that listener is annotated with @DelayEventHandler
-                    the listener %s will not be listening for specific events until properly annotated.
-                    """.formatted(listener, listener));
+                    """.formatted(clazz.getSimpleName()));
+            return;
+        }
+
+        final DelayEventHandler annotation = clazz.getAnnotation(DelayEventHandler.class);
+
+        final long delay = annotation.delayMilliSeconds();
+        final int priority = annotation.priority().getPriority();
+
+        final Class<?> eventClass = listener.getEventType();
+
+        final RegisteredDelayListener<E> reg =
+                new RegisteredDelayListener<>(listener, delay, priority);
+
+        listenerMap
+                .computeIfAbsent(eventClass, k -> new CopyOnWriteArrayList<>())
+                .add(reg);
+
+        listenerMap.get(eventClass)
+                .sort(Comparator.comparingInt((RegisteredDelayListener<?> l) -> l.priority));
+
+        logDelayEventRegisteration(listener, eventClass, delay, priority);
+    }
+
+
+    /**
+     * Unregisters a delay listener by its class name.
+     *
+     * <p>
+     * All listeners with a matching class simple name will be removed from all
+     * event mappings.
+     * </p>
+     *
+     * @param listenerName the simple class name of the listener to remove
+     */
+    public void unregisterEvent(final String listenerName) {
+        for (final List<RegisteredDelayListener<?>> list : listenerMap.values()) {
+            list.removeIf(l -> l.listener.getClass().getSimpleName().equals(listenerName));
         }
     }
 
     /**
-     * Unregisters an event listener by its class name.
+     * Triggers a delayed event and schedules its execution for all relevant listeners.
+     *
      * <p>
-     * This method removes the listener from the registeredListeners collection
-     * if the class name of the listener matches the specified listener name.
+     * Each listener is scheduled to execute once after its configured delay.
+     * This method performs a lookup based on the event type and also considers
+     * its superclass hierarchy to support inheritance.
+     * </p>
      *
-     * @param listenerName the simple name of the listener's class to be unregistered
-     */
-    public void unregisterEvent(String listenerName) {
-        registeredListeners.removeIf(listener -> listener.getClass().getSimpleName().equals(listenerName));
-    }
-
-
-    /**
-     * Triggers an event and dispatches it to all registered listeners compatible with the event's type.
-     * The listeners execute the event handling logic with the specified delay.
-     * This method utilizes scheduled tasks to respect the delay configuration of each listener.
+     * <p>
+     * Execution is handled asynchronously by the internal {@link ScheduledExecutorService}.
+     * </p>
      *
-     * @param <E>   the type of the event, which must extend {@code DelayEvent}
-     * @param event the event to be triggered, not null
+     * @param event the event to trigger
+     * @param <E>   the type of the delayed event
      */
     @SuppressWarnings("unchecked")
-    public <E extends DelayEvent> void triggerEvent(E event) {
+    public <E extends DelayEvent> void triggerEvent(final @NotNull E event) {
 
-        for (DelayListener<?> listener : registeredListeners) {
-            Type[] typeArguments = listener.getClass().getGenericInterfaces();
+        Class<?> clazz = event.getClass();
 
+        while (clazz != null) {
 
-            for (Type typeArgument : typeArguments) {
-                if (typeArgument instanceof ParameterizedType) {
+            final List<RegisteredDelayListener<?>> listeners = getRegisteredListeners().get(clazz);
 
-                    Type actualType = ((ParameterizedType) typeArgument).getActualTypeArguments()[0];
-                    if (actualType instanceof Class<?> && ((Class<?>) actualType).isAssignableFrom(event.getClass())) {
+            if (listeners != null) {
+                for (final RegisteredDelayListener<?> reg : listeners) {
 
-                        final long delay = getDelay(listener);
-                        Runnable eventTask = () -> ((DelayListener<E>) listener).onEvent(event);
-                        executor.scheduleAtFixedRate(eventTask, 0, delay, TimeUnit.MILLISECONDS);
-                    }
+                    final RegisteredDelayListener<E> listener = (RegisteredDelayListener<E>) reg;
+
+                    executor.schedule(
+                            () -> listener.listener.onEvent(event),
+                            listener.delay,
+                            TimeUnit.MILLISECONDS
+                    );
                 }
             }
+
+            clazz = clazz.getSuperclass();
         }
     }
 
-    /**
-     * Sorts the registered event listeners based on their priority.
-     * <p>
-     * This method organizes the {@code registeredListeners} list by arranging the listeners
-     * in ascending order of their priority. The priority is determined by invoking the {@code getPriority}
-     * method, which retrieves the priority value from the {@code @DelayEventHandler} annotation
-     * on the listener's class.
-     * <p>
-     * It ensures that listeners with higher precedence (lower priority values) are processed
-     * before those with lower precedence (higher priority values) during event handling.
-     * <p>
-     * This method is called internally after a new listener is registered to maintain the
-     * correct order of execution among all registered listeners.
-     */
-    private void sortListeners() {
-        registeredListeners.sort(Comparator.comparingInt(this::getPriority));
+    private void logDelayEventRegisteration(DelayListener<?> listener, Class<?> eventClass, long delay, int priority) {
+
+        if (((Server) serverFoundation).isDelayEventRegistrationLogging()) {
+            serverFoundation.getServerLogger().info(
+                    "Registered delay listener: "
+                            + listener.getClass().getSimpleName()
+                            + " | Event: "
+                            + eventClass.getSimpleName()
+                            + " | Delay: "
+                            + delay
+                            + "ms | Priority: "
+                            + priority
+            );
+        }
+
     }
 
     /**
-     * Determines the delay in milliseconds for a given event listener by retrieving
-     * the value specified in the {@code @DelayEventHandler} annotation on the listener's class.
+     * Retrieves the internal mapping of registered delay listeners.
      *
-     * @param listener the event listener whose delay is to be determined; must not be null
-     *                 and must have a {@code @DelayEventHandler} annotation present on its class.
-     * @return the delay in milliseconds as specified in the {@code delayMilliSeconds}
-     * attribute of the {@code @DelayEventHandler} annotation.
+     * <p>
+     * This method is primarily intended for debugging or inspection purposes.
+     * </p>
+     *
+     * @return a map of event types to their corresponding delayed listeners
      */
-    private long getDelay(@NotNull DelayListener<?> listener) {
-        return listener.getClass().getAnnotation(DelayEventHandler.class).delayMilliSeconds();
+    public Map<Class<?>, List<RegisteredDelayListener<?>>> getRegisteredListeners() {
+        return listenerMap;
     }
 
     /**
-     * Retrieves the priority of the specified delay event listener. The priority is determined
-     * based on the {@code @DelayEventHandler} annotation applied to the listener's class.
+     * Internal wrapper class that stores precomputed metadata for delayed listeners.
      *
-     * @param listener the delay event listener whose priority should be retrieved; must not be null and
-     *                 must be annotated with {@code @DelayEventHandler}.
-     * @return the priority value of the listener as defined in the {@code @DelayEventHandler} annotation.
-     * A higher priority value indicates higher precedence during event processing.
-     * @throws NullPointerException if the listener is null or the {@code @DelayEventHandler} annotation is missing.
+     * <p>
+     * This avoids repeated reflection and annotation lookups during event dispatch,
+     * significantly improving performance.
+     * </p>
+     *
+     * @param <E>      the type of event handled by the listener
+     * @param listener The listener instance
+     * @param delay    The delay in milliseconds before execution
+     * @param priority The priority of the listener
      */
-    private int getPriority(@NotNull DelayListener<?> listener) {
-        return listener.getClass().getAnnotation(DelayEventHandler.class).priority().getPriority();
+    private record RegisteredDelayListener<E extends DelayEvent>(DelayListener<E> listener, long delay, int priority) {
     }
 
-    /**
-     * Retrieves the list of registered listeners that handle delayed events.
-     * The returned list contains all listeners which have been successfully registered
-     * and are managed by this instance of the DelayEventManager.
-     *
-     * @return a list of registered {@code DelayListener} objects managing delayed events
-     */
-    public List<DelayListener<?>> getRegisteredListeners() {
-        return registeredListeners;
-    }
 }

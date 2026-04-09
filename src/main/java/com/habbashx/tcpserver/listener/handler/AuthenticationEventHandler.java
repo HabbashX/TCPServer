@@ -40,6 +40,11 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 public final class AuthenticationEventHandler implements Listener<AuthenticationEvent> {
 
     @Override
+    public Class<AuthenticationEvent> getEventType() {
+        return AuthenticationEvent.class;
+    }
+
+    @Override
     public void onEvent(@NotNull AuthenticationEvent event) {
 
         final String username = event.getUserHandler().getUserDetails().getUsername();

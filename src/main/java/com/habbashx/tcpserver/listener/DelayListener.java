@@ -8,25 +8,25 @@ import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
  * This interface serves as a contract for event listeners that handle delayed events.
  * The events must extend the {@link DelayEvent} class, and implementing classes are
  * expected to define the logic for processing those events with a delay.
- *
+ * <p>
  * Responsibilities:
  * - Defines a type-safe mechanism for handling delayed events of a specific type.
  * - Ensures that implementing classes provide an implementation of the {@code onEvent(E event)} method
- *   to process the event logic.
- *
+ * to process the event logic.
+ * <p>
  * Generic Type:
  * - {@code <E>} is a generic type parameter that must extend {@link DelayEvent}, ensuring that the listener
- *   handles only delayed events.
- *
+ * handles only delayed events.
+ * <p>
  * Common Use Cases:
  * - This interface is commonly implemented in event-driven systems requiring scheduled or delayed execution
- *   of specific actions.
+ * of specific actions.
  * - Used by the {@code DelayEventManager} to register, manage, and execute delayed event listeners.
- *
+ * <p>
  * Integration with Annotations:
  * - Implementing classes are typically annotated with {@code @DelayEventHandler}, which defines
- *   configuration such as the delay in milliseconds and the priority level of the processing.
- *
+ * configuration such as the delay in milliseconds and the priority level of the processing.
+ * <p>
  * See Also:
  * - {@link DelayEvent}
  * - {@link DelayEventHandler}
@@ -34,11 +34,13 @@ import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
  *
  * @param <E> the type of delayed event, which must extend {@link DelayEvent}.
  */
-public interface DelayListener<E extends DelayEvent> extends EventListenerConfiguration{
+public interface DelayListener<E extends DelayEvent> extends EventListenerConfiguration {
+
+    Class<E> getEventType();
 
     /**
      * Handles the processing of a delayed event of a specific type.
-     *
+     * <p>
      * This method is invoked when an event of type {@code E} is triggered, allowing the
      * implementing listener to define custom logic for handling the delayed event.
      * The method ensures that the event is processed after the delay specified in

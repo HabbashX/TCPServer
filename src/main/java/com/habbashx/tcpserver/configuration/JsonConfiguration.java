@@ -32,6 +32,7 @@ public final class JsonConfiguration extends Configuration {
      *                          occur during file reading or parsing.
      */
     public JsonConfiguration(@NotNull String configurationFile, Server server) {
+        super(server);
         this.configurationFile = new File(configurationFile);
         try {
             final ObjectMapper mapper = new ObjectMapper();

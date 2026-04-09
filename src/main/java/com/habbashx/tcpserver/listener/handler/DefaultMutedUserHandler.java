@@ -41,6 +41,11 @@ public final class DefaultMutedUserHandler implements Listener<UserChatEvent> {
     }
 
     @Override
+    public Class<UserChatEvent> getEventType() {
+        return UserChatEvent.class;
+    }
+
+    @Override
     public void onEvent(@NotNull UserChatEvent userChatEvent) {
         if (muteCommandManager.isUserMuted(userChatEvent.getUsername())) {
             userChatEvent.setCancelled(true);
