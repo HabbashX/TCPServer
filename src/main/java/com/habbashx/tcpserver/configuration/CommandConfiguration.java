@@ -4,52 +4,119 @@ import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The CommandConfiguration class is responsible for loading and managing configurations related to
- * commands. It retrieves the configuration file path defined in the {@link Command} annotation
- * on the command class and initializes a configuration object for further operations. This class
- * assumes that the configuration files are in JSON format and delegates the file parsing and
- * management to the {@link JsonConfiguration} class.
+ * Responsible for loading and resolving configuration files associated with
+ * command executors based on their {@link Command} annotation metadata.
+ * <p>
+ * This class acts as a bridge between command definitions and their
+ * corresponding configuration sources (e.g., JSON files).
+ * <p>
+ * It also includes an internal caching mechanism for {@link Command}
+ * annotations to avoid repeated reflection lookups and improve performance
+ * in high-frequency command execution environments.
  */
 public final class CommandConfiguration {
 
-    public @Nullable Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor,
-                                                     @NotNull Configuration configuration) {
+    /**
+     * Cache of {@link Command} annotations indexed by command executor class.
+     * <p>
+     * This avoids repeated reflection lookups and improves performance in
+     * systems where commands are executed frequently.
+     */
+    private final Map<Class<?>, Command> commandCache = new ConcurrentHashMap<>();
 
-        final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
+    /**
+     * Loads the configuration associated with a command executor.
+     * <p>
+     * The configuration file path is retrieved from the {@link Command}
+     * annotation of the executor class.
+     * <p>
+     * If the annotation is missing or the config file is blank, an error
+     * is logged and an {@link IllegalStateException} is thrown.
+     *
+     * @param server   the server instance used for logging and context
+     * @param executor the command executor whose configuration is being loaded
+     * @return a {@link Configuration} instance initialized from the command's config file
+     * @throws IllegalStateException if the command has no valid configFile defined
+     */
+    public @NotNull Configuration loadConfiguration(
+            @NotNull Server server,
+            @NotNull CommandExecutor executor
+    ) {
 
-        if (configFile != null) {
-            return configuration;
+        Command command = getCommand(executor);
+
+        if (command == null || command.configFile().isBlank()) {
+            logError(server, executor);
+            throw new IllegalStateException(
+                    "Missing configFile for command: " + executor.getClass().getSimpleName()
+            );
         }
-        server.getServerLogger().error("error in configuration loading for the command: " + commandExecutor +
-                "\n" + "configFile is null please ensure if you`ve add config file for this command");
 
-        return null;
+        return new JsonConfiguration(command.configFile(), server);
     }
 
     /**
-     * Loads the configuration file associated with the command and initializes
-     * a JSON-based configuration object. The configuration file path is derived
-     * from the {@link Command} annotation of the class.
+     * Loads the configuration associated with a command executor,
+     * returning a fallback configuration if none is defined.
+     * <p>
+     * If the {@link Command} annotation is missing or does not define
+     * a valid config file, the provided fallback configuration is returned.
      *
-     * @param server the server instance used to provide context or logging during
-     *               the configuration loading process.
-     * @return a {@link JsonConfiguration} object representing the loaded configuration,
-     * which enables interaction with configuration data stored in a JSON file.
+     * @param server   the server instance used for context and logging
+     * @param executor the command executor whose configuration is being resolved
+     * @param fallback the fallback configuration to use if no valid config exists
+     * @return the resolved {@link Configuration} or the fallback configuration
      */
-    public @Nullable Configuration loadConfiguration(Server server, @NotNull CommandExecutor commandExecutor) {
+    public @NotNull Configuration loadConfiguration(
+            @NotNull Server server,
+            @NotNull CommandExecutor executor,
+            @NotNull Configuration fallback
+    ) {
 
-        final @Nullable String configFile = commandExecutor.getClass().getAnnotation(Command.class).configFile();
+        Command command = getCommand(executor);
 
-        if (configFile != null) {
-            return new JsonConfiguration(configFile, server);
+        if (command == null || command.configFile().isBlank()) {
+            logError(server, executor);
+            return fallback;
         }
-        server.getServerLogger().error("error in configuration loading for the command: " + commandExecutor +
-                "\n" + "configFile is null please ensure if you`ve add config file for this command");
-        return null;
+
+        return fallback;
     }
 
 
+    /**
+     * Retrieves the {@link Command} annotation associated with the given executor class.
+     * <p>
+     * Uses an internal cache to avoid repeated reflection lookups and improve performance.
+     *
+     * @param executor the command executor instance
+     * @return the cached or newly resolved {@link Command} annotation, or null if not present
+     */
+    private Command getCommand(@NotNull CommandExecutor executor) {
+        return commandCache.computeIfAbsent(
+                executor.getClass(),
+                c -> c.getAnnotation(Command.class)
+        );
+    }
+
+
+    /**
+     * Logs an error when a command configuration cannot be loaded due to
+     * a missing or invalid {@code configFile} value in the {@link Command} annotation.
+     *
+     * @param server   the server used for logging
+     * @param executor the command executor that failed configuration loading
+     */
+    private void logError(@NotNull Server server, @NotNull CommandExecutor executor) {
+        server.getServerLogger().error(
+                "Configuration loading failed for command: " +
+                        executor.getClass().getSimpleName() +
+                        "\nReason: missing @Command(configFile)"
+        );
+    }
 }

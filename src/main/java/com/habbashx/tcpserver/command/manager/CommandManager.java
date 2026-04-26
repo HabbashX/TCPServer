@@ -8,9 +8,13 @@ import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.event.UserExecuteCommandEvent;
 import com.habbashx.tcpserver.socket.server.Server;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,36 +22,65 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 
 /**
- * The CommandManager class is responsible for managing the registration, execution,
- * and lifecycle of commands within a server environment. It allows commands to be
- * registered with specified executors and provides an interface for executing those
- * commands with proper checks for permissions, cooldowns, and other command-specific configurations.
+ * Central manager responsible for handling the full lifecycle of commands
+ * in the server system.
  * <p>
- * This class ensures that commands follow specified rules and restrictions as determined
- * by annotations, such as permission requirements and cooldown times. It supports both
- * synchronous and asynchronous execution of commands. Additionally, all registered
- * commands can be disabled individually or in bulk.
+ * This includes:
+ * <ul>
+ *     <li>Command registration (with name and aliases)</li>
+ *     <li>Command execution (sync and async)</li>
+ *     <li>Permission validation</li>
+ *     <li>Cooldown handling</li>
+ *     <li>Event triggering</li>
+ *     <li>Command lifecycle management (enable/disable)</li>
+ * </ul>
+ * <p>
+ * The manager supports high-concurrency environments using virtual threads
+ * and thread-safe data structures.
+ * <p>
+ * Command metadata is resolved through the {@link Command} annotation
+ * and cached for performance optimization.
  */
 public final class CommandManager {
 
+    /**
+     * Message sent when a user lacks permission to execute a command.
+     */
     private static final String NO_PERMISSION_MESSAGE = RED + "you don`t have permission to execute this command." + RESET;
+    /**
+     * Message sent when a command execution fails due to internal error.
+     */
     private static final String ERROR_IN_EXECUTING_MESSAGE = RED + "Error in executing" + RESET;
+    /**
+     * Message sent when a user enters an unknown command.
+     */
     private static final String UNKNOWN_COMMAND_MESSAGE = "unknown command try /help.";
+
+    /**
+     * Message sent when a user is still under command cooldown.
+     */
     private static final String ON_COOLDOWN_MESSAGE = RED + "you`re on cooldown for %s %s" + RESET;
 
     /**
-     * A thread-safe map that stores the registered command executors associated with their command names.
-     * The map ensures synchronization when modifying or accessing its contents, thereby supporting
-     * concurrent access in a multi-threaded environment.
+     * Thread-safe registry of all registered commands.
      * <p>
-     * Key: The name of the command to which the executor is bound.
-     * Value: The {@link CommandExecutor} responsible for handling the execution logic of the command.
-     * <p>
-     * This map is utilized throughout the {@code CommandManager} class to manage command registration,
-     * lookup, and execution. It acts as the central storage for all command executors.
+     * Key: command name or alias (lowercased)
+     * Value: executor responsible for handling the command
      */
-    private final Map<String, CommandExecutor> executors = Collections.synchronizedMap(new HashMap<>());
+    private final ConcurrentHashMap<String, CommandExecutor> executors = new ConcurrentHashMap<>();
 
+    /**
+     * Cache of {@link Command} annotations to avoid repeated reflection lookups.
+     * <p>
+     * Key: executor class
+     * Value: cached annotation metadata
+     */
+    private final ConcurrentHashMap<Class<?>, Command> commandCache = new ConcurrentHashMap<>();
+
+
+    /**
+     * Server instance used for logging, events, and global context.
+     */
     private final Server server;
 
     /**
@@ -64,251 +97,281 @@ public final class CommandManager {
      */
     private final ExecutorService asyncExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-
+    /**
+     * Creates a new CommandManager instance.
+     *
+     * @param server the server instance used for logging, events, and context
+     */
     public CommandManager(Server server) {
         this.server = server;
     }
 
     /**
-     * Registers a command with the given name and associates it with a specified {@link CommandExecutor}.
-     * The registered command can later be executed by using its name.
+     * Registers a command with the given commandName and associates it with a specified {@link CommandExecutor}.
+     * The registered command can later be executed by using its commandName.
      *
-     * @param commandName     the name of the command to register
+     * @param commandName     the commandName of the command to register
      * @param commandExecutor the {@link CommandExecutor} instance responsible for handling the command logic
      */
     public void registerCommand(String commandName, CommandExecutor commandExecutor) {
-        executors.put(commandName, commandExecutor);
-
+        executors.put(commandName.toLowerCase(Locale.ROOT), commandExecutor);
     }
 
     /**
-     * Registers a command with the system by mapping the provided {@code CommandExecutor} to the
-     * command's name and aliases. The method first checks if the given {@code CommandExecutor} is
-     * annotated with the {@code @Command} annotation to retrieve the necessary command metadata
-     * (name, aliases). If the annotation is missing, an error is logged, and the registration process
-     * is aborted for this specific command.
+     * Registers a command using its {@link Command} annotation metadata.
+     * <p>
+     * Automatically registers:
+     * <ul>
+     *     <li>Main command name</li>
+     *     <li>All defined aliases</li>
+     * </ul>
+     * <p>
+     * If the annotation is missing, the command is ignored and a warning is logged.
      *
-     * @param commandExecutor the command executor to register. This object must be annotated with
-     *                        {@code @Command} to provide metadata about the command,
-     *                        including its name and optional aliases. If the annotation is missing,
-     *                        the command will not be registered, and an error message will
-     *                        be logged.
+     * @param executor the command executor to register
      */
-    public void registerCommand(@NotNull CommandExecutor commandExecutor) {
+    public void registerCommand(@NotNull CommandExecutor executor) {
 
-        final Class<? extends CommandExecutor> commandExecutorClass = commandExecutor.getClass();
+        Command cmd = getCommandAnnotation(executor);
 
-        if (commandExecutorClass.isAnnotationPresent(Command.class)) {
-            final Command commandInformation = commandExecutorClass.getAnnotation(Command.class);
-            final String commandName = commandInformation.name();
+        if (cmd == null) {
+            server.getServerLogger().warning(
+                    executor.getClass().getSimpleName() +
+                            " missing @Command annotation"
+            );
+            return;
+        }
 
-            registerCommand(commandName, commandExecutor);
+        registerCommand(cmd.name(), executor);
 
-            if (0 < commandInformation.aliases().length) {
-                for (final String alias : commandInformation.aliases()) {
-                    registerCommand(alias, commandExecutor);
-                }
-            }
-        } else {
-            final String command = commandExecutorClass.getName();
-            server.getServerLogger().warning("""
-                    %s is missing the @Command annotation.
-                    Please ensure that the command class is annotated with @Command and includes the 'name' and optional 'aliases' attributes.
-                    The command %s will not be executed until properly annotated.
-                    """.formatted(command, command));
-
+        for (String alias : cmd.aliases()) {
+            registerCommand(alias, executor);
         }
     }
 
+    private Command getCommandAnnotation(CommandExecutor executor) {
+        return commandCache.computeIfAbsent(
+                executor.getClass(),
+                c -> c.getAnnotation(Command.class)
+        );
+    }
+
     /**
-     * Parses and dispatches a command from a raw message string.
+     * Executes a command from a raw input message.
      * <p>
-     * This implementation utilizes Modern Java 21+ features including:
+     * The method performs:
      * <ul>
-     * <li><b>Pattern Matching for switch:</b> To handle different {@link CommandSender} types.</li>
-     * <li><b>Guard Clauses (when):</b> To handle permissions and cooldowns as distinct states.</li>
-     * <li><b>Early Returns:</b> To reduce nesting and improve scannability.</li>
+     *     <li>Command parsing</li>
+     *     <li>Command lookup</li>
+     *     <li>Permission validation</li>
+     *     <li>Cooldown validation</li>
+     *     <li>Sync or async execution</li>
      * </ul>
      *
-     * @param senderName    The unique identifier/name of the entity sending the command.
-     * @param message       The raw input string (must start with '/' to be processed).
-     * @param commandSender The source of the command (e.g., UserHandler, Console).
-     * @throws NullPointerException if any argument is null.
+     * @param sender        identifier of the command sender
+     * @param message       raw input message (must start with '/')
+     * @param commandSender sender implementation (user or console)
      */
-    public void executeCommand(@NotNull final String senderName, @NotNull final String message, @NotNull final CommandSender commandSender) {
-        if (!message.startsWith("/")) return;
+    public void executeCommand(
+            @NotNull String sender,
+            @NotNull String message,
+            @NotNull CommandSender commandSender
+    ) {
 
-        final String[] parts = message.substring(1).split(" ");
-        final String commandName = parts[0].toLowerCase();
-        final List<String> args = Arrays.stream(parts).skip(1).toList();
+        if (message.isEmpty() || message.charAt(0) != '/') return;
 
-        final CommandExecutor executor = executors.get(commandName);
+        int space = message.indexOf(' ');
+        String commandName = (space == -1
+                ? message.substring(1)
+                : message.substring(1, space)
+        ).toLowerCase(Locale.ROOT);
+
+        List<String> args = (space == -1)
+                ? List.of()
+                : List.of(message.substring(space + 1).split(" "));
+
+        CommandExecutor executor = executors.get(commandName);
+
         if (executor == null) {
-            sendMessage(commandSender, UNKNOWN_COMMAND_MESSAGE);
+            send(commandSender, UNKNOWN_COMMAND_MESSAGE);
             return;
         }
 
-        final Command info = executor.getClass().getAnnotation(Command.class);
-        if (info == null) {
-            sendMessage(commandSender, ERROR_IN_EXECUTING_MESSAGE);
+        Command cmd = getCommandAnnotation(executor);
+
+        if (cmd == null) {
+            send(commandSender, ERROR_IN_EXECUTING_MESSAGE);
             return;
         }
 
-        long cooldownMs = getCooldownTimeUnit(info.cooldownTime(), info.cooldownTimeUnit());
+        long cooldownMs = convertCooldown(cmd.cooldownTime(), cmd.cooldownTimeUnit());
         executor.getCooldownManager().setCooldownTime(cooldownMs);
 
-        switch (commandSender) {
-            case UserHandler user when !hasPermission(info.permission(), user) ->
-                    user.sendTextMessage(NO_PERMISSION_MESSAGE);
+        if (commandSender instanceof UserHandler user) {
 
-            case UserHandler user when executor.getCooldownManager().isOnCooldown(senderName) ->
-                    handleCooldownMessage(user, executor, info, senderName);
-
-            case UserHandler user -> {
-                executeAndLog(senderName, args, user, executor, info);
-                executor.getCooldownManager().setCooldown(senderName);
+            if (!hasPermission(cmd.permission(), user)) {
+                user.sendTextMessage(NO_PERMISSION_MESSAGE);
+                return;
             }
 
-            default -> executeCommand(executor, new CommandContext(senderName, args, commandSender), info.isAsync());
+            if (executor.getCooldownManager().isOnCooldown(sender)) {
+                handleCooldown(user, executor, cmd, sender);
+                return;
+            }
+
+            executeWithLifecycle(sender, args, user, executor, cmd);
+
+        } else {
+            run(executor, new CommandContext(sender, args, commandSender), cmd.isAsync());
         }
     }
 
-    private void handleCooldownMessage(@NotNull final UserHandler user, @NotNull final CommandExecutor executor, @NotNull final Command info, final String name) {
+    /**
+     * Executes a command and handles post-execution lifecycle tasks.
+     * <p>
+     * This includes:
+     * <ul>
+     *     <li>Command execution</li>
+     *     <li>Cooldown assignment</li>
+     *     <li>Event triggering (if enabled)</li>
+     * </ul>
+     */
+    private void executeWithLifecycle(
+            String sender,
+            List<String> args,
+            UserHandler user,
+            CommandExecutor executor,
+            Command cmd
+    ) {
+        run(executor, new CommandContext(sender, args, user), cmd.isAsync());
+
+        executor.getCooldownManager().setCooldown(sender);
+
+        if (cmd.executionLog()) {
+            server.getEventManager().triggerEvent(
+                    new UserExecuteCommandEvent(sender, user, executor)
+            );
+        }
+    }
+
+    /**
+     * Executes a command either synchronously or asynchronously.
+     *
+     * @param executor command executor
+     * @param ctx      command context
+     * @param async    whether execution should be asynchronous
+     */
+    private void run(CommandExecutor executor, CommandContext ctx, boolean async) {
+        if (async) {
+            asyncExecutor.execute(() -> executor.execute(ctx));
+        } else {
+            executor.execute(ctx);
+        }
+    }
+
+    /**
+     * Handles cooldown notification for a user.
+     *
+     * @param user     command sender
+     * @param executor command executor
+     * @param cmd      command metadata
+     * @param name     sender identifier
+     */
+    private void handleCooldown(
+            UserHandler user,
+            CommandExecutor executor,
+            Command cmd,
+            String name
+    ) {
         int remaining = (int) executor.getCooldownManager().getRemainingTime(name);
-        String unitLabel = String.valueOf(info.cooldownTimeUnit());
-        user.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(remaining, unitLabel));
-    }
-
-    private void executeAndLog(final String name, final List<String> args, final UserHandler user, @NotNull final CommandExecutor exec, @NotNull final Command info) {
-        executeCommand(exec, new CommandContext(name, args, user), info.isAsync());
-        if (info.executionLog()) {
-            server.getEventManager().triggerEvent(new UserExecuteCommandEvent(name, user, exec));
-        }
+        user.sendTextMessage(ON_COOLDOWN_MESSAGE.formatted(
+                remaining,
+                cmd.cooldownTime()
+        ));
     }
 
     /**
-     * Executes a command using the given {@link CommandExecutor} and {@link CommandContext}.
-     * The execution can be done either synchronously or asynchronously depending on the value of {@code isAsync}.
+     * Converts cooldown value into milliseconds depending on time unit.
      *
-     * @param commandExecutor the executor responsible for handling the command logic
-     * @param commandContext  the context of the command containing details such as sender and arguments
-     * @param isAsync         indicates whether the command should be executed asynchronously
+     * @param value cooldown value
+     * @param unit  time unit (seconds or milliseconds)
+     * @return cooldown in milliseconds
      */
-    private void executeCommand(CommandExecutor commandExecutor, CommandContext commandContext, boolean isAsync) {
-
-        if (isAsync) {
-            asyncExecutor.submit(() -> commandExecutor.execute(commandContext));
-        } else {
-            commandExecutor.execute(commandContext);
-        }
-    }
-
-    private void sendMessage(final CommandSender commandSender, final String message) {
-
-        if (commandSender instanceof final UserHandler userHandler) {
-            userHandler.sendTextMessage(message);
-        } else {
-            System.out.println(message);
-        }
+    private long convertCooldown(long value, int unit) {
+        return unit == TimeUnit.SECONDS ? value : value / 1000;
     }
 
     /**
-     * Calculates the cooldown time in the specified time unit.
-     * If the provided time unit is invalid, logs an error and returns the cooldown unchanged.
+     * Sends a message to either a user or console.
      *
-     * @param cooldown The cooldown value to be converted.
-     * @param timeUnit The time unit to which the cooldown value should be converted.
-     *                 Accepted values are {@link TimeUnit#MILLI_SECONDS} and {@link TimeUnit#SECONDS}.
-     * @return The cooldown value converted to the specified time unit, or the original cooldown if the time unit is invalid.
+     * @param sender command sender
+     * @param msg    message to send
      */
-    private long getCooldownTimeUnit(final long cooldown, final int timeUnit) {
-        if (timeUnit == TimeUnit.MILLI_SECONDS) {
-            return cooldown / 1000;
-        } else if (timeUnit == TimeUnit.SECONDS) {
-            return cooldown;
+    private void send(CommandSender sender, String msg) {
+        if (sender instanceof UserHandler u) {
+            u.sendTextMessage(msg);
         } else {
-            server.getServerLogger().warning("invalid time unit: " + timeUnit);
-            return cooldown;
+            System.out.println(msg);
         }
     }
 
     /**
-     * Disables all registered commands by clearing the internal mapping of command executors.
-     * After invoking this method, no commands will be executable until they are re-registered.
+     * Checks whether a user has permission to execute a command.
+     *
+     * @param perm required permission level
+     * @param user user attempting execution
+     * @return true if allowed, false otherwise
+     */
+    private boolean hasPermission(int perm, UserHandler user) {
+        return perm == 0 ||
+                user.isRoleHasPermission(perm) ||
+                user.hasVolatilePermission(perm) ||
+                user.getNonVolatilePermissionContainer().hasPermission(perm);
+    }
+
+    /**
+     * Removes all registered commands from the system.
      */
     public void disableAllCommands() {
         executors.clear();
     }
 
     /**
-     * Disables a specified command by removing it and its aliases
-     * from the command executors registry.
+     * Disables a specific command by name.
      *
-     * @param command the command to be disabled
-     * @return {@code true} if the command and its aliases are successfully removed,
-     * {@code false} if the command does not exist in the registry
+     * @param name command name
+     * @return true if removed successfully, false if not found
      */
-    public boolean disableCommand(String command) {
-
-        final CommandExecutor executor = executors.get(command);
-
-        if (executor != null) {
-            final Command commandInformation = executor.getClass().getAnnotation(Command.class);
-
-            if (0 < commandInformation.aliases().length) Arrays.stream(commandInformation.aliases())
-                    .forEach(executors::remove);
-            executors.remove(command);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-    /**
-     * Retrieves a mapping of command names to their corresponding {@link CommandExecutor} instances.
-     * This map represents all currently registered commands and their executors.
-     *
-     * @return a {@link Map} where the keys are command names (as {@link String}) and the values are
-     * {@link CommandExecutor} instances responsible for handling the command logic.
-     */
-    public Map<String, CommandExecutor> getExecutors() {
-        return executors;
+    public boolean disableCommand(String name) {
+        return executors.remove(name) != null;
     }
 
     /**
-     * Retrieves a list of all registered command names.
-     *
-     * @return a list of command names that have been registered with the system.
+     * @return list of all registered command names
      */
+    @Contract(" -> new")
     public @NotNull List<String> getAllCommands() {
         return new ArrayList<>(executors.keySet());
     }
 
     /**
-     * Retrieves a list of all executor names currently registered in the system.
-     *
-     * @return a non-null list of all registered executor names as strings.
+     * @return internal annotation cache (class → @Command metadata)
      */
-    public @NotNull List<String> getAllExecutors() {
-
-        return new ArrayList<>(executors.keySet());
+    public ConcurrentHashMap<Class<?>, Command> getCommandCache() {
+        return commandCache;
     }
 
     /**
-     * Checks if a user has the specified permission.
-     *
-     * @param permissionValue the value of the permission to check
-     * @param userHandler     the user handler responsible for managing user permissions
-     * @return {@code true} if the user has the specified permission or meets at least one of the required conditions;
-     * {@code false} otherwise
+     * @return command registry (name → executor)
      */
-    private boolean hasPermission(int permissionValue, UserHandler userHandler) {
-        return permissionValue == 0X00 ||
-                userHandler.isRoleHasPermission(permissionValue) ||
-                userHandler.isRoleHasPermission(0X0EFA) ||
-                userHandler.getNonVolatilePermissionContainer().hasPermission(permissionValue) ||
-                userHandler.hasVolatilePermission(permissionValue);
+    public ConcurrentHashMap<String, CommandExecutor> getExecutors() {
+        return executors;
     }
 
+    /**
+     * @return executor service used for async command execution
+     */
+    public ExecutorService getAsyncExecutor() {
+        return asyncExecutor;
+    }
 }
