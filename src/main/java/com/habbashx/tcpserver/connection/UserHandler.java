@@ -168,6 +168,8 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
 
     private final ExecutorService uploadWorker = Executors.newSingleThreadExecutor();
 
+    private final NonVolatilePermissionContainer nonVolatilePermissionContainer = new NonVolatilePermissionContainer(this);
+
     /**
      * Constructs a UserHandler for a user connection.
      *
@@ -628,8 +630,9 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      * @return the non-volatile permission container
      */
     @Override
+    @Contract(pure = true)
     public NonVolatilePermissionContainer getNonVolatilePermissionContainer() {
-        return super.getNonVolatilePermissionContainer();
+        return nonVolatilePermissionContainer;
     }
 
     /**
