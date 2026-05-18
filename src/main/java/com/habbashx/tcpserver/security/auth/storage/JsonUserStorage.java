@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.user.UserDetails;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,17 +32,7 @@ public final class JsonUserStorage implements UserStorage {
                 ? MAPPER.readValue(JSON_FILE, new TypeReference<>() {
         }) : new ArrayList<>();
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("userIP", details.getUserIP());
-        map.put("userID", details.getUserID());
-        map.put("userRole", details.getUserRole());
-        map.put("username", details.getUsername());
-        map.put("password", hashedPassword);
-        map.put("userEmail", details.getUserEmail());
-        map.put("phoneNumber", details.getPhoneNumber());
-        map.put("isActiveAccount", details.isActiveAccount());
-
-        users.add(map);
+        users.add(addUserDetails(details, hashedPassword));
         MAPPER.writerWithDefaultPrettyPrinter().writeValue(JSON_FILE, users);
     }
 
@@ -73,5 +65,21 @@ public final class JsonUserStorage implements UserStorage {
         });
         for (var user : users) if (user.get("username").equals(username)) return (String) user.get("password");
         return null;
+    }
+
+    @Contract("_,_ -> new")
+    private @NotNull @Unmodifiable Map<String, Object> addUserDetails(UserDetails details, String hashedPassword) {
+
+        return Map.of(
+                "userIP", details.getUserID(),
+                "userID", details.getUserID(),
+                "userRole", details.getUserRole(),
+                "username", details.getUsername(),
+                "password", hashedPassword,
+                "userEmail", details.getUserEmail(),
+                "phoneNumber", details.getPhoneNumber(),
+                "isActiveAccount", details.isActiveAccount()
+
+        );
     }
 }
