@@ -1,20 +1,15 @@
 package com.habbashx.tcpserver.command.defaultcommand;
 
-import com.habbashx.tcpserver.annotation.MaybeEmpty;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.command.CommandSender;
 import com.habbashx.tcpserver.connection.UserHandler;
-import com.habbashx.tcpserver.cooldown.CooldownManager;
 import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.time.Year;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
@@ -65,17 +60,10 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
 )
 public final class UserDetailsCommand extends CommandExecutor {
 
-    private static final String COMMAND_USAGE_MESSAGE = "usage: /find <username|id>";
+    private static final String USAGE = "usage: /find <username|id>";
 
-    /**
-     * A template message used to provide comprehensive details of an administrator user.
-     * This message includes placeholders for user-specific information such as IP address,
-     * ID, role, username, email, phone number, and account status.
-     * The placeholders, denoted by `%s`, are dynamically replaced with actual user information
-     * when the message is formatted.
-     */
-    private static final String ADMINISTRATOR_USER_DETAILS_MESSAGE = """
-            User found !
+    private static final String ADMIN_MSG = """
+            User found!
             userIP: %s
             userID: %s
             userRole: %s
@@ -85,26 +73,13 @@ public final class UserDetailsCommand extends CommandExecutor {
             isActiveAccount: %s
             """;
 
-    /**
-     * A constant string used as a template to represent user details messages.
-     * The message includes placeholders for user-specific information such as
-     * userID, userRole, and username.
-     * <p>
-     * The format includes:
-     * - userID: The unique identifier for the user.
-     * - userRole: The role assigned to the user.
-     * - username: The name associated with the user.
-     * <p>
-     * This string is expected to be formatted with actual user details
-     * before being sent or displayed.
-     */
-    private static final String USER_DETAILS_MESSAGE = """
+    private static final String USER_MSG = """
             userID: %s
             userRole: %s
             username: %s
             """;
 
-    private static final String USER_NOT_FOUND_MESSAGE = RED + "user not found" + RESET;
+    private static final String NOT_FOUND = RED + "user not found" + RESET;
 
     private final Server server;
 
@@ -112,94 +87,86 @@ public final class UserDetailsCommand extends CommandExecutor {
         this.server = server;
     }
 
-    /**
-     * Executes the given command based on the provided context. This method processes
-     * the command arguments to fetch user details either by username or user ID and
-     * sends the appropriate response to the command sender.
-     * <p>
-     * If no arguments are provided or an error occurs during processing, a usage
-     * message is sent to the sender.
-     *
-     * @param commandContext the context of the command execution, containing
-     *                       the sender, command arguments, and other metadata; cannot be null
-     */
     @Override
-    public void execute(@NotNull CommandContext commandContext) {
+    public void execute(@NotNull CommandContext ctx) {
 
-        if (commandContext.getArgs().isEmpty()) {
-            sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
+        if (ctx.getArgs().isEmpty()) {
+            send(ctx.getSender(), USAGE);
+            return;
         }
 
-        try {
-            @MaybeEmpty final String target = commandContext.getArgs().get(0);
+        String target = ctx.getArgs().getFirst();
 
-            @Nullable
-            UserDetails userDetails;
-
-            final boolean targetID = target.startsWith(String.valueOf(Year.now()));
-            if (!target.isEmpty()) {
-                if (!targetID) {
-                    userDetails = server.getServerDataManager().getUserByUsername(target);
-                } else {
-                    userDetails = server.getServerDataManager().getUserById(target);
-                }
-                if (commandContext.getSender() instanceof final UserHandler userHandler) {
-                    Role userRole = userHandler.getUserDetails().getUserRole();
-                    sendUserDetails(userRole, userDetails, userHandler);
-                } else {
-                    sendUserDetails(Role.SUPER_ADMINISTRATOR, userDetails, commandContext.getSender());
-                }
-            } else {
-                sendMessage(commandContext.getSender(), "username or id field may not be empty");
-            }
-        } catch (IndexOutOfBoundsException ignore) {
-            sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
+        if (target.isBlank()) {
+            send(ctx.getSender(), "username or id cannot be empty");
+            return;
         }
+
+        UserDetails user = resolveUser(target);
+
+        if (user == null) {
+            send(ctx.getSender(), NOT_FOUND);
+            return;
+        }
+
+        Role role = extractRole(ctx.getSender());
+
+        sendUserDetails(role, user, ctx.getSender());
     }
 
-    /**
-     * Sends user details to the specified command sender based on their role.
-     *
-     * @param commandSenderRole the role of the command sender, which determines the level of detail provided
-     * @param userDetails       the details of the user to be sent; may include properties such as IP, ID, role, username, email, etc.
-     * @param sender            the recipient of the message, which can be a user or console command sender
-     */
-    private void sendUserDetails(Role commandSenderRole, UserDetails userDetails, CommandSender sender) {
 
-        if (userDetails != null) {
-            if (commandSenderRole.equals(Role.SUPER_ADMINISTRATOR) || commandSenderRole.equals(Role.ADMINISTRATOR)) {
-                sendMessage(sender, ADMINISTRATOR_USER_DETAILS_MESSAGE.formatted(
-                        userDetails.getUserIP(),
-                        userDetails.getUserID(),
-                        userDetails.getUserRole().toString(),
-                        userDetails.getUsername(),
-                        userDetails.getUserEmail(),
-                        userDetails.getPhoneNumber(),
-                        userDetails.isActiveAccount()
-                ));
-            } else {
-                sendMessage(sender, USER_DETAILS_MESSAGE.formatted(
-                        userDetails.getUserID(),
-                        userDetails.getUserRole().toString(),
-                        userDetails.getUsername()
-                ));
-            }
+    private UserDetails resolveUser(String target) {
+
+        if (isNumeric(target)) {
+            return server.getServerDataManager().getUserById(target);
+        }
+
+        return server.getServerDataManager().getUserByUsername(target);
+    }
+
+    private boolean isNumeric(String value) {
+        for (char c : value.toCharArray()) {
+            if (!Character.isDigit(c)) return false;
+        }
+        return true;
+    }
+
+    private Role extractRole(CommandSender sender) {
+        if (sender instanceof UserHandler user) {
+            return user.getUserDetails().getUserRole();
+        }
+        return Role.SUPER_ADMINISTRATOR;
+    }
+
+    private void sendUserDetails(Role role, UserDetails user, CommandSender sender) {
+
+        if (role == Role.ADMINISTRATOR || role == Role.SUPER_ADMINISTRATOR) {
+
+            send(sender, ADMIN_MSG.formatted(
+                    user.getUserIP(),
+                    user.getUserID(),
+                    user.getUserRole(),
+                    user.getUsername(),
+                    user.getUserEmail(),
+                    user.getPhoneNumber(),
+                    user.isActiveAccount()
+            ));
+
         } else {
-            sendMessage(sender, USER_NOT_FOUND_MESSAGE);
+
+            send(sender, USER_MSG.formatted(
+                    user.getUserID(),
+                    user.getUserRole(),
+                    user.getUsername()
+            ));
         }
     }
 
-    private void sendMessage(CommandSender commandSender, String message) {
-
-        if (commandSender instanceof final UserHandler userHandler) {
-            userHandler.sendTextMessage(message);
+    private void send(CommandSender sender, String msg) {
+        if (sender instanceof UserHandler user) {
+            user.sendTextMessage(msg);
         } else {
-            System.out.println(message);
+            System.out.println(msg);
         }
-    }
-
-    @Override
-    public CooldownManager getCooldownManager() {
-        return super.getCooldownManager();
     }
 }
