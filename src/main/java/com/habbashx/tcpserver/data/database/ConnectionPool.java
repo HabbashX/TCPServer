@@ -66,12 +66,10 @@ public class ConnectionPool {
      * </ul>
      */
     private void setupHikariConnectionConfiguration() {
-        // Basic Connectivity
         hikariConfig.setJdbcUrl(dbcs.getUrl());
         hikariConfig.setUsername(dbcs.getUsername());
         hikariConfig.setPassword(dbcs.getPassword());
 
-        // Performance Tuning Properties
         hikariConfig.addDataSourceProperty(
                 "cachePrepStmts", valueOf(dbcs.isCachePrepStmt())
         );
@@ -91,11 +89,9 @@ public class ConnectionPool {
                 "rewriteBatchedStatements", valueOf(dbcs.isRewriteBatchedStatements())
         );
 
-        // Pool Sizing
         hikariConfig.setMaximumPoolSize(dbcs.getConnectionPoolSize());
         hikariConfig.setMinimumIdle(dbcs.getMinimumIdle());
 
-        // Finalize DataSource creation
         hikariDataSource = new HikariDataSource(hikariConfig);
     }
 
@@ -116,5 +112,9 @@ public class ConnectionPool {
      */
     public HikariDataSource getHikariDataSource() {
         return hikariDataSource;
+    }
+
+    public HikariConfig getHikariConfig() {
+        return hikariConfig;
     }
 }
