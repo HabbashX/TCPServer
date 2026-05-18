@@ -4,6 +4,7 @@ import com.habbashx.tcpserver.connection.console.UserConsoleInputHandler;
 import com.habbashx.tcpserver.connection.packet.Packet;
 import com.habbashx.tcpserver.connection.packet.TextPacket;
 import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
+import com.habbashx.tcpserver.connection.packet.registry.PacketInit;
 import com.habbashx.tcpserver.socket.client.foundation.ClientFoundation;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 
@@ -42,6 +43,7 @@ public final class User extends ClientFoundation {
 
     @Override
     public void run() {
+        PacketInit.init();
         try {
             super.run();
 

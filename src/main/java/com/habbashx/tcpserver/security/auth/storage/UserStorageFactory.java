@@ -3,6 +3,7 @@ package com.habbashx.tcpserver.security.auth.storage;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,11 +29,13 @@ public final class UserStorageFactory {
      * <p>
      * This map defines all supported storage backends.
      */
-    private static final Map<String, Function<Server, UserStorage>> REGISTRY = Map.of(
-            "CSV", s -> new CsvUserStorage(),
-            "SQL", SqlUserStorage::new,
-            "JSON", s -> new JsonUserStorage()
-    );
+    private static final Map<String, Function<Server, UserStorage>> REGISTRY = new HashMap<>();
+
+    static {
+        REGISTRY.put("CSV", server -> new CsvUserStorage());
+        REGISTRY.put("SQL", SqlUserStorage::new);
+        REGISTRY.put("JSON", server -> new JsonUserStorage());
+    }
 
     /**
      * Private constructor to prevent instantiation.
@@ -61,9 +64,9 @@ public final class UserStorageFactory {
     public static @NotNull UserStorage create(@NotNull final String type,
                                               final Server server) {
 
-        String key = type.toUpperCase(Locale.ROOT);
+        final String key = type.toUpperCase(Locale.ROOT);
 
-        Function<Server, UserStorage> creator = REGISTRY.get(key);
+        final Function<Server, UserStorage> creator = REGISTRY.get(key);
 
         if (creator == null) {
             throw new IllegalArgumentException("Unknown storage type: " + type);

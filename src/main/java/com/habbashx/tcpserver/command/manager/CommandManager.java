@@ -113,7 +113,7 @@ public final class CommandManager {
      * @param commandName     the commandName of the command to register
      * @param commandExecutor the {@link CommandExecutor} instance responsible for handling the command logic
      */
-    public void registerCommand(String commandName, CommandExecutor commandExecutor) {
+    public void registerCommand(@NotNull String commandName, CommandExecutor commandExecutor) {
         executors.put(commandName.toLowerCase(Locale.ROOT), commandExecutor);
     }
 
@@ -149,7 +149,7 @@ public final class CommandManager {
         }
     }
 
-    private Command getCommandAnnotation(CommandExecutor executor) {
+    private Command getCommandAnnotation(@NotNull CommandExecutor executor) {
         return commandCache.computeIfAbsent(
                 executor.getClass(),
                 c -> c.getAnnotation(Command.class)
@@ -241,7 +241,7 @@ public final class CommandManager {
             List<String> args,
             UserHandler user,
             CommandExecutor executor,
-            Command cmd
+            @NotNull Command cmd
     ) {
         run(executor, new CommandContext(sender, args, user), cmd.isAsync());
 
@@ -278,9 +278,9 @@ public final class CommandManager {
      * @param name     sender identifier
      */
     private void handleCooldown(
-            UserHandler user,
-            CommandExecutor executor,
-            Command cmd,
+            @NotNull UserHandler user,
+            @NotNull CommandExecutor executor,
+            @NotNull Command cmd,
             String name
     ) {
         int remaining = (int) executor.getCooldownManager().getRemainingTime(name);

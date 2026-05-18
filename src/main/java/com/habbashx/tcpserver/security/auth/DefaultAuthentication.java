@@ -20,8 +20,11 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class DefaultAuthentication extends Authentication {
 
     private final Server server;
+
     private final UserStorage storage;
+
     private final List<UserValidator> validators = new ArrayList<>();
+
     private final ReentrantLock lock = new ReentrantLock();
 
     public DefaultAuthentication(@NotNull Server server) {
@@ -111,7 +114,7 @@ public final class DefaultAuthentication extends Authentication {
 
     static final class UsernameValidator implements UserValidator {
         @Override
-        public void validate(UserDetails details) {
+        public void validate(@NotNull UserDetails details) {
             if (details.getUsername() == null || !details.getUsername().matches("^[a-zA-Z0-9_]{3,20}$")) {
                 throw new IllegalArgumentException("Invalid username");
             }
@@ -120,7 +123,7 @@ public final class DefaultAuthentication extends Authentication {
 
     static final class EmailValidator implements UserValidator {
         @Override
-        public void validate(UserDetails details) {
+        public void validate(@NotNull UserDetails details) {
             if (details.getUserEmail() != null && !details.getUserEmail().matches("^[\\w-.]+@[\\w-]+\\.[a-z]{2,}$")) {
                 throw new IllegalArgumentException("Invalid email");
             }
@@ -129,7 +132,7 @@ public final class DefaultAuthentication extends Authentication {
 
     static final class PhoneValidator implements UserValidator {
         @Override
-        public void validate(UserDetails details) {
+        public void validate(@NotNull UserDetails details) {
             if (details.getPhoneNumber() != null && !details.getPhoneNumber().matches("^[0-9+]{7,15}$")) {
                 throw new IllegalArgumentException("Invalid phone number");
             }

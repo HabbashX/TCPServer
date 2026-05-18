@@ -16,7 +16,7 @@ public class PacketFactory {
         return new TextPacket(message);
     }
 
-    public static Packet readPacket(DataInputStream input) throws IOException {
+    public static Packet readPacket(@NotNull DataInputStream input) throws IOException {
         int type = input.readInt();
         return PacketRegistry.decode(type, input);
     }

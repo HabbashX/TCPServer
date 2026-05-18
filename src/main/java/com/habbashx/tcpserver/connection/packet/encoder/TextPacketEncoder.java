@@ -2,6 +2,7 @@ package com.habbashx.tcpserver.connection.packet.encoder;
 
 import com.habbashx.tcpserver.connection.packet.Packet;
 import com.habbashx.tcpserver.connection.packet.TextPacket;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,7 +26,7 @@ public class TextPacketEncoder implements PacketEncoder {
      * @throws IOException if writing fails or packet type is invalid
      */
     @Override
-    public void encode(Packet packet, DataOutputStream out) throws IOException {
+    public void encode(Packet packet, @NotNull DataOutputStream out) throws IOException {
 
         TextPacket text = (TextPacket) packet;
 

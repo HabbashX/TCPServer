@@ -4,9 +4,12 @@ import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 
+@SuppressWarnings("deprecation")
 public final class CsvUserStorage implements UserStorage {
     private static final File CSV_FILE = new File("server/data/users.csv");
     private static final CSVFormat FORMAT = CSVFormat.DEFAULT.withHeader(
@@ -22,7 +25,7 @@ public final class CsvUserStorage implements UserStorage {
     }
 
     @Override
-    public void registerUser(UserDetails details, String hashedPassword) throws IOException {
+    public void registerUser(@NotNull UserDetails details, String hashedPassword) throws IOException {
         try (CSVPrinter printer = new CSVPrinter(new FileWriter(CSV_FILE, true), FORMAT)) {
             printer.printRecord(
                     details.getUserIP(),
@@ -38,7 +41,7 @@ public final class CsvUserStorage implements UserStorage {
     }
 
     @Override
-    public UserDetails getUser(String username) throws IOException {
+    public @Nullable UserDetails getUser(String username) throws IOException {
         if (!CSV_FILE.exists()) return null;
         try (Reader reader = new FileReader(CSV_FILE)) {
             for (var record : FORMAT.parse(reader)) {
@@ -59,7 +62,7 @@ public final class CsvUserStorage implements UserStorage {
     }
 
     @Override
-    public String getHashedPassword(String username) throws IOException {
+    public @Nullable String getHashedPassword(String username) throws IOException {
         if (!CSV_FILE.exists()) return null;
         try (Reader reader = new FileReader(CSV_FILE)) {
             for (var record : FORMAT.parse(reader)) {

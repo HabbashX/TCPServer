@@ -3,6 +3,7 @@ package com.habbashx.tcpserver.connection.packet.registry;
 import com.habbashx.tcpserver.connection.packet.Packet;
 import com.habbashx.tcpserver.connection.packet.decoder.PacketDecoder;
 import com.habbashx.tcpserver.connection.packet.encoder.PacketEncoder;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -65,7 +66,7 @@ public class PacketRegistry {
      * @throws IOException          if writing to the stream fails
      * @throws NullPointerException if no encoder is registered for the packet type
      */
-    public static void encode(Packet packet, DataOutputStream out) throws IOException {
+    public static void encode(@NotNull Packet packet, DataOutputStream out) throws IOException {
         ENCODERS.get(packet.getType()).encode(packet, out);
     }
 }
