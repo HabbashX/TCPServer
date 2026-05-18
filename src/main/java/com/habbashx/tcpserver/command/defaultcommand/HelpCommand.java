@@ -6,8 +6,11 @@ import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.terminal.HelpBoard;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Represents a command that displays the help board content to the command sender.
@@ -22,25 +25,38 @@ import java.io.IOException;
 @Command(name = "help", aliases = "?")
 public final class HelpCommand extends CommandExecutor {
 
-    private static final File HELP_BOARD_PATH = new File("data/helpBoard.txt");
-    public final Server server;
+    private static final Path HELP_BOARD_PATH =
+            Paths.get("server", "data", "helpBoard.txt");
+
+    private final Server server;
 
     public HelpCommand(Server server) {
         this.server = server;
     }
 
     @Override
-    public void execute(CommandContext commandContext) {
+    public void execute(CommandContext context) {
 
         try {
-            if (HELP_BOARD_PATH.exists()) {
+            ensureFileExists();
 
-                commandContext.getSender().printMessage(HelpBoard.getHelpBoard());
-            } else {
-                HELP_BOARD_PATH.createNewFile();
-            }
+            context.getSender().printMessage(HelpBoard.getHelpBoard());
+
         } catch (IOException e) {
             server.getServerLogger().error(e);
+        }
+    }
+
+    private void ensureFileExists() throws IOException {
+        Path parent = HELP_BOARD_PATH.getParent();
+
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
+        try {
+            Files.createFile(HELP_BOARD_PATH);
+        } catch (FileAlreadyExistsException ignored) {
         }
     }
 }
