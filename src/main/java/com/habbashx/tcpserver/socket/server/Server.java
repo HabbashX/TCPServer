@@ -7,6 +7,7 @@ import com.habbashx.tcpserver.command.manager.CommandManager;
 import com.habbashx.tcpserver.command.manager.MuteCommandManager;
 import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.connection.console.ServerConsoleHandler;
+import com.habbashx.tcpserver.connection.packet.registry.PacketInit;
 import com.habbashx.tcpserver.data.ServerDataManager;
 import com.habbashx.tcpserver.delayevent.manager.DelayEventManager;
 import com.habbashx.tcpserver.event.manager.EventManager;
@@ -269,6 +270,7 @@ public final class Server extends ServerFoundation {
     @Override
     public void run() {
         super.run();
+        PacketInit.init();
         try {
 
             final ServerConsoleHandler serverConsoleHandler = new ServerConsoleHandler(this);
