@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,6 +77,12 @@ public final class CommandManager {
      * Value: cached annotation metadata
      */
     private final ConcurrentHashMap<Class<?>, Command> commandCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache of resolved cooldown durations (in ms) per executor class, to avoid
+     * recomputing the cooldown conversion and re-applying it on every single command execution.
+     */
+    private final ConcurrentHashMap<Class<?>, Long> cooldownCache = new ConcurrentHashMap<>();
 
 
     /**
@@ -144,7 +151,7 @@ public final class CommandManager {
 
         registerCommand(cmd.name(), executor);
 
-        for (String alias : cmd.aliases()) {
+        for (final String alias : cmd.aliases()) {
             registerCommand(alias, executor);
         }
     }
@@ -188,7 +195,7 @@ public final class CommandManager {
 
         List<String> args = (space == -1)
                 ? List.of()
-                : List.of(message.substring(space + 1).split(" "));
+                : Arrays.asList(message.substring(space + 1).split(" "));
 
         CommandExecutor executor = executors.get(commandName);
 
@@ -204,19 +211,26 @@ public final class CommandManager {
             return;
         }
 
-        long cooldownMs = convertCooldown(cmd.cooldownTime(), cmd.cooldownTimeUnit());
-        executor.getCooldownManager().setCooldownTime(cooldownMs);
+        if (!commandSender.isConsole()) {
 
-        if (commandSender instanceof UserHandler user) {
+            UserHandler user = (UserHandler) commandSender;
 
             if (!hasPermission(cmd.permission(), user)) {
                 user.sendTextMessage(NO_PERMISSION_MESSAGE);
                 return;
             }
 
-            if (executor.getCooldownManager().isOnCooldown(sender)) {
-                handleCooldown(user, executor, cmd, sender);
-                return;
+            if (cmd.cooldownTime() > 0) {
+                Long cooldownMs = cooldownCache.computeIfAbsent(
+                        executor.getClass(),
+                        c -> convertCooldown(cmd.cooldownTime(), cmd.cooldownTimeUnit())
+                );
+                executor.getCooldownManager().setCooldownTime(cooldownMs);
+
+                if (executor.getCooldownManager().isOnCooldown(sender)) {
+                    handleCooldown(user, executor, cmd, sender);
+                    return;
+                }
             }
 
             executeWithLifecycle(sender, args, user, executor, cmd);
@@ -342,8 +356,8 @@ public final class CommandManager {
      * @param name command name
      * @return true if removed successfully, false if not found
      */
-    public boolean disableCommand(String name) {
-        return executors.remove(name) != null;
+    public boolean disableCommand(@NotNull String name) {
+        return executors.remove(name.toLowerCase(Locale.ROOT)) != null;
     }
 
     /**
