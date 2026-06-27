@@ -40,4 +40,8 @@ public interface CommandSender {
     default ReentrantLock getReentrantLock() {
         return new ReentrantLock();
     }
+
+    default boolean isConsole() {
+        return false;
+    }
 }
