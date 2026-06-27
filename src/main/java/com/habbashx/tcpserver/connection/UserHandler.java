@@ -747,4 +747,10 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     public @NotNull String getHandlerDescription() {
         return "";
     }
+
+
+    @Override
+    public boolean isConsole() {
+        return CommandSender.super.isConsole();
+    }
 }
