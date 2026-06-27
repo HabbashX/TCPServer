@@ -7,6 +7,7 @@ import com.habbashx.tcpserver.connection.packet.TextPacket;
 import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
 import com.habbashx.tcpserver.socket.server.Server;
+import org.jetbrains.annotations.Contract;
 
 import java.io.IOException;
 
@@ -58,5 +59,11 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Contract(pure = true)
+    @Override
+    public boolean isConsole() {
+        return true;
     }
 }
