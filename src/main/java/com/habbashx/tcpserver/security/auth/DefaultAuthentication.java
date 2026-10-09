@@ -2,17 +2,20 @@ package com.habbashx.tcpserver.security.auth;
 
 import com.habbashx.tcpserver.connection.UserHandler;
 import com.habbashx.tcpserver.event.AuthenticationEvent;
-import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.security.auth.storage.UserStorage;
 import com.habbashx.tcpserver.security.auth.storage.UserStorageFactory;
 import com.habbashx.tcpserver.socket.server.Server;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.NotNull;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.habbashx.tcpserver.security.Role.DEFAULT;
+import static com.habbashx.tcpserver.user.UserDetails.builder;
+import static java.lang.System.currentTimeMillis;
+import static org.mindrot.jbcrypt.BCrypt.*;
 
 /**
  * Clean, pattern-based DefaultAuthentication implementation.
@@ -42,11 +45,11 @@ public final class DefaultAuthentication extends Authentication {
     public void register(@NotNull String username, @NotNull String password, String email, String phoneNumber, @NotNull UserHandler userHandler) {
         lock.lock();
         try {
-            UserDetails details = UserDetails.builder()
+            UserDetails details = builder()
                     .username(username)
                     .userEmail(email)
                     .phoneNumber(phoneNumber)
-                    .userRole(Role.DEFAULT)
+                    .userRole(DEFAULT)
                     .activeAccount(true)
                     .build();
 
@@ -58,7 +61,7 @@ public final class DefaultAuthentication extends Authentication {
                 return;
             }
 
-            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+            String hashedPassword = hashpw(password, gensalt());
 
             storage.registerUser(details, hashedPassword);
 
@@ -76,7 +79,7 @@ public final class DefaultAuthentication extends Authentication {
     @Override
     public void login(@NotNull String username, @NotNull String password, @NotNull UserHandler userHandler) {
 
-        long start = System.currentTimeMillis();
+        long start = currentTimeMillis();
         lock.lock();
         try {
             if (server.getAuthenticatedUsers().containsKey(username)) {
@@ -86,7 +89,7 @@ public final class DefaultAuthentication extends Authentication {
             }
 
             UserDetails details = storage.getUser(username);
-            long end = System.currentTimeMillis();
+            long end = currentTimeMillis();
             server.getServerLogger().info("operation took: " + (end - start) + "ms");
             if (details == null) {
                 server.getEventManager().triggerEvent(new AuthenticationEvent(userHandler, false, false));
@@ -95,7 +98,7 @@ public final class DefaultAuthentication extends Authentication {
 
 
             String hashed = storage.getHashedPassword(username);
-            if (BCrypt.checkpw(password, hashed)) {
+            if (checkpw(password, hashed)) {
                 userHandler.setUserDetails(details);
                 server.getEventManager().triggerEvent(new AuthenticationEvent(userHandler, true, false));
             } else {

@@ -51,6 +51,7 @@ public final class PrivateGroupCommand extends CommandExecutor {
     private final PrivateGroupManager groupManager;
 
     public PrivateGroupCommand(Server server) {
+        super(server);
         this.groupManager = new PrivateGroupManager(server);
     }
 

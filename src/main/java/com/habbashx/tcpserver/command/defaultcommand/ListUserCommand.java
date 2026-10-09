@@ -28,10 +28,9 @@ import org.jetbrains.annotations.NotNull;
 @Command(name = "online", executionLog = true)
 public final class ListUserCommand extends CommandExecutor {
 
-    private final Server server;
-
     public ListUserCommand(Server server) {
-        this.server = server;
+        super(server);
+
     }
 
     @Override

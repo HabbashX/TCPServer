@@ -6,6 +6,7 @@ import com.habbashx.tcpserver.security.Role;
 import com.habbashx.tcpserver.user.UserDetails;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class JsonUserStorage implements UserStorage {
+
     private static final File JSON_FILE = new File("server/data/users.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -37,7 +39,7 @@ public final class JsonUserStorage implements UserStorage {
     }
 
     @Override
-    public UserDetails getUser(String username) throws IOException {
+    public @Nullable UserDetails getUser(String username) throws IOException {
         if (!JSON_FILE.exists()) return null;
         List<Map<String, Object>> users = MAPPER.readValue(JSON_FILE, new TypeReference<>() {
         });
@@ -59,7 +61,7 @@ public final class JsonUserStorage implements UserStorage {
     }
 
     @Override
-    public String getHashedPassword(String username) throws IOException {
+    public @Nullable String getHashedPassword(String username) throws IOException {
         if (!JSON_FILE.exists()) return null;
         List<Map<String, Object>> users = MAPPER.readValue(JSON_FILE, new TypeReference<>() {
         });
@@ -68,7 +70,7 @@ public final class JsonUserStorage implements UserStorage {
     }
 
     @Contract("_,_ -> new")
-    private @NotNull @Unmodifiable Map<String, Object> addUserDetails(UserDetails details, String hashedPassword) {
+    private @NotNull @Unmodifiable Map<String, Object> addUserDetails(@NotNull UserDetails details, String hashedPassword) {
 
         return Map.of(
                 "userIP", details.getUserID(),

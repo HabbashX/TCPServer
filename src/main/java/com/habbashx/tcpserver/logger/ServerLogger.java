@@ -1,12 +1,8 @@
 package com.habbashx.tcpserver.logger;
 
 import com.habbashx.tcpserver.util.ExceptionUtils;
-import org.jetbrains.annotations.NotNull;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A utility class for logging messages on the server with formatting and color-coded levels.
@@ -15,58 +11,54 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
  */
 public final class ServerLogger {
 
-    private final SimpleDateFormat simpleDateFormat;
 
     public ServerLogger() {
-        this.simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
     }
 
-    private @NotNull String formatMessage(String message, @NotNull Level level) {
-        String formatedDate = simpleDateFormat.format(new Date());
-        String color = null;
-        switch (level) {
-            case INFO -> color = ConsoleColor.BRIGHT_GREEN;
-            case WARNING -> color = ConsoleColor.BRIGHT_RED;
-            case ERROR -> color = ConsoleColor.RED;
-            case MONITOR -> color = ConsoleColor.BRIGHT_BLUE;
-
-        }
-        String messageColor = null;
-        switch (level) {
-            case INFO, WARNING -> messageColor = RESET;
-            case ERROR -> messageColor = ConsoleColor.RED;
-            case MONITOR -> messageColor = ConsoleColor.LIME_GREEN;
-        }
-
-        assert color != null;
-        assert messageColor != null;
-        return String.format("%s[%s%s%s] %s[%s%s%s]%s: %s%s",
-                RESET, ConsoleColor.BRIGHT_PURPLE, formatedDate, RESET,
-                RESET, color, level, RESET, messageColor, message, RESET
-        );
-    }
-
-    private void log(String message, Level level) {
-        System.out.println(formatMessage(message, level));
-    }
 
     public void info(String message) {
-        log(message, Level.INFO);
+        Logger logger = LoggerFactory.getLogger(getCallerClass());
+        logger.info(message);
     }
 
     public void warning(String message) {
-        log(message, Level.WARNING);
+        Logger logger = LoggerFactory.getLogger(getCallerClass());
+
+        logger.warn(message);
+
     }
 
     public void error(Exception e) {
-        log(ExceptionUtils.getStackTrace(e), Level.ERROR);
+        Logger logger = LoggerFactory.getLogger(getCallerClass());
+
+        logger.error(ExceptionUtils.getStackTrace(e));
     }
 
     public void error(String message) {
-        log(message, Level.ERROR);
+        Logger logger = LoggerFactory.getLogger(getCallerClass());
+
+        logger.error(message);
     }
 
     public void monitor(String message) {
-        log(message, Level.MONITOR);
+        Logger logger = LoggerFactory.getLogger(getCallerClass());
+
+        logger.debug(message);
+    }
+
+    private Class<?> getCallerClass() {
+        return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(frames -> frames
+                        .filter(frame ->
+                                frame.getDeclaringClass() != ServerLogger.class
+                        )
+                        .findFirst()
+                        .map(StackWalker.StackFrame::getDeclaringClass)
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Unable to determine caller class"
+                                )
+                        )
+                );
     }
 }

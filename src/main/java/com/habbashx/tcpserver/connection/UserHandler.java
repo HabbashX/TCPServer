@@ -171,6 +171,15 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
     private final NonVolatilePermissionContainer nonVolatilePermissionContainer = new NonVolatilePermissionContainer(this);
 
     /**
+     * Per-connection guard used by commands and by {@code Server.getWrittenBytes()} to serialise
+     * mutations of this handler's state.
+     * <p>
+     * This must be a stable instance: acquiring a freshly constructed lock provides no mutual
+     * exclusion at all, since each caller would be holding a different monitor.
+     */
+    private final ReentrantLock reentrantLock = new ReentrantLock();
+
+    /**
      * Constructs a UserHandler for a user connection.
      *
      * @param user   the SSL socket representing the user's connection
@@ -416,12 +425,25 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
         });
     }
 
-    /**
+/**
      * Sends a packet to the user immediately, synchronized on the output stream.
+     * <p>
+     * Prefer {@link #queuePacket} for ordinary traffic so that writes are drained off the
+     * calling thread. This method blocks until the packet has been written and flushes it.
      *
      * @param packet the packet to send
      */
     public void sendPacket(Packet packet) {
+        sendPacketInternal(packet);
+    }
+
+    /**
+     * Internal helper for sending packets, used by {@link #queuePacket} and {@link #sendPacket}.
+     * <p>
+     * A file packet's payload stream is closed once it has been written, regardless of which
+     * entry point was used.
+     */
+    private void sendPacketInternal(Packet packet) {
         synchronized (output) {
             try {
                 switch (packet.getType()) {
@@ -432,45 +454,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
                         output.writeInt(data.length);
                         output.write(data);
                     }
-                    case 2 -> {
-                        FilePacket p = (FilePacket) packet;
-                        byte[] nameBytes = p.fileName().getBytes();
-                        output.writeInt(2);
-                        output.writeInt(nameBytes.length);
-                        output.write(nameBytes);
-
-                        output.writeLong(p.fileSize());
-                        InputStream fileData = p.data();
-                        byte[] buffer = new byte[4096];
-                        int read;
-                        while ((read = fileData.read(buffer)) != -1) {
-                            output.write(buffer, 0, read);
-                        }
-                    }
-                    default -> throw new IOException("Unknown packet type");
-                }
-                output.flush();
-            } catch (IOException e) {
-                shutdown();
-            }
-        }
-    }
-
-    /**
-     * Internal helper for sending packets, used by {@link #queuePacket} and {@link #sendPacket}.
-     */
-    private void sendPacketInternal(Packet packet) {
-        synchronized (output) {
-            try {
-                switch (packet.getType()) {
-                    case 1 -> {
-                        TextPacket p = (TextPacket) packet;
-                        byte[] data = p.message().getBytes();
-                        output.writeInt(1);
-                        output.writeInt(data.length);
-                        output.write(data);
-                    }
-                    case 2 -> {
+                    case 2 -> { // FILE
                         FilePacket p = (FilePacket) packet;
                         byte[] nameBytes = p.fileName().getBytes();
                         output.writeInt(2);
@@ -696,7 +680,7 @@ public final class UserHandler extends ConnectionHandler implements CommandSende
      */
     @Override
     public ReentrantLock getReentrantLock() {
-        return CommandSender.super.getReentrantLock();
+        return reentrantLock;
     }
 
     /**

@@ -10,7 +10,6 @@ import com.habbashx.tcpserver.logger.ServerLogger;
 import com.habbashx.tcpserver.socket.server.settings.ServerSettings;
 import com.habbashx.tcpserver.socket.server.settings.annotation.Settings;
 import com.habbashx.tcpserver.socket.server.settings.annotation.manager.SettingsManager;
-import com.habbashx.tcpserver.util.ServerUtils;
 import com.habbashx.tcpserver.version.VersionChecker;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +18,17 @@ import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+
+import static com.habbashx.tcpserver.util.ServerUtils.injectServerSettings;
+import static com.habbashx.tcpserver.version.VersionChecker.checkProjectVersion;
+import static java.lang.Runtime.getRuntime;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
+import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static javax.net.ssl.SSLServerSocketFactory.getDefault;
 
 /**
  * ServerFoundation is an abstract base class that provides a secure, configurable, and concurrent
@@ -49,9 +58,9 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      *
      * <p>This configuration helps balance computational load while supporting concurrent task execution.</p>
      */
-    private final ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService threadPool = newVirtualThreadPerTaskExecutor();
 
-    private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
+    private final Set<ConnectionHandler> connectionHandlers = newKeySet();
 
     private final ConcurrentMap<String, UserHandler> authenticatedUsers = new ConcurrentHashMap<>();
 
@@ -131,7 +140,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
                 threadPool.execute(defaultServerConsoleHandler);
             }
 
-            SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) getDefault();
             serverSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
             assert serverSettings.getHost() != null;
             serverSocket.bind(new InetSocketAddress(serverSettings.getHost(), serverSettings.getPort()));
@@ -241,7 +250,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
                 settingsManager.initSettings();
 
             } else {
-                ServerUtils.injectServerSettings(serverSettings);
+                injectServerSettings(serverSettings);
             }
 
             serverLogger.info("initialized server settings successfully.");
@@ -273,7 +282,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
             threadPool.shutdown();
         }
 
-        if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+        if (!threadPool.awaitTermination(60, SECONDS)) {
             threadPool.shutdownNow();
         }
     }
@@ -285,7 +294,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      */
     @Deprecated()
     private void initializeShutdownHookOperation() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 shutdown();
             } catch (IOException | InterruptedException e) {
@@ -336,7 +345,7 @@ public abstract class ServerFoundation implements Shutdownable, Runnable {
      * Executes the version check logic via {@link VersionChecker}.
      */
     public void checkVersion() {
-        VersionChecker.checkProjectVersion(this);
+        checkProjectVersion(this);
     }
 
     /**

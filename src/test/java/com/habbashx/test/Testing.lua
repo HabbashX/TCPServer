@@ -1,17 +1,11 @@
-local Testing = {}
-Testing.__index = Testing
+local ffi = require("ffi")
 
-function Testing.new()
-    local self = setmetatable({}, Testing)
-    self.name = name
-    self.age = age
+ffi.cdef [[
 
-    return self
-end
+  bool setCursorPos(int x, int y)
 
-function Testing:sayHello()
-    print("Hi i`m, " .. self.name)
-end
+]]
 
-local t = Testing.new("Abood", 42)
-t.sayHello()
+local user32 = ffi.load("user32")
+
+user32.setCursorPos(500, 300)

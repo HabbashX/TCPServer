@@ -1,15 +1,12 @@
 package com.habbashx.tcpserver.connection.console;
 
 import com.habbashx.tcpserver.command.CommandSender;
-import com.habbashx.tcpserver.connection.UserHandler;
-import com.habbashx.tcpserver.connection.handler.ConnectionHandler;
-import com.habbashx.tcpserver.connection.packet.TextPacket;
-import com.habbashx.tcpserver.connection.packet.factory.PacketFactory;
 import com.habbashx.tcpserver.event.ServerConsoleChatEvent;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.Contract;
 
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -29,6 +26,13 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
 
     private final Server server;
 
+    /**
+     * Stable per-handler guard. Commands dispatched from the console may run asynchronously
+     * ({@code @Command(isAsync = true)}), so this has to be a single shared instance rather
+     * than a lock minted per call.
+     */
+    private final ReentrantLock reentrantLock = new ReentrantLock();
+
     public ServerConsoleHandler(Server server) {
         this.server = server;
     }
@@ -41,18 +45,7 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
                 if (message.startsWith("/")) {
                     server.getCommandManager().executeCommand("Server", message, this);
                 } else {
-                    TextPacket packet = PacketFactory.createText(message);
-
-                    for (ConnectionHandler handler : server.getConnectionHandlers()) {
-                        if (handler instanceof final UserHandler user) {
-                            try {
-                                user.sendPacket(packet);
-                            } catch (Exception e) {
-                                user.shutdown();
-                            }
-                        }
-                    }
-
+                    server.broadcast(message);
                     server.getEventManager().triggerEvent(new ServerConsoleChatEvent(message));
                 }
             }
@@ -65,5 +58,11 @@ public final class ServerConsoleHandler extends ConsoleHandler implements Comman
     @Override
     public boolean isConsole() {
         return true;
+    }
+
+    @Contract(pure = true)
+    @Override
+    public ReentrantLock getReentrantLock() {
+        return reentrantLock;
     }
 }

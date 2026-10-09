@@ -12,6 +12,8 @@ import java.util.List;
 
 import static com.habbashx.tcpserver.logger.ConsoleColor.RED;
 import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
 
 /**
  * Represents the "checkpermissions" command, used to verify user permissions within the system.
@@ -51,10 +53,8 @@ public final class CheckPermissionCommand extends CommandExecutor {
     private static final String COMMAND_USAGE = "usage: /checkpermissions <username> <permission> <isVolatile>";
     private static final String USER_NOT_FOUND = RED + "User not found." + RESET;
 
-    private final Server server;
-
     public CheckPermissionCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override
@@ -68,7 +68,7 @@ public final class CheckPermissionCommand extends CommandExecutor {
         try {
             final String username = commandContext.getArgs().get(0);
             final String permission = commandContext.getArgs().get(1);
-            final boolean isVolatile = Boolean.parseBoolean(commandContext.getArgs().get(2));
+            final boolean isVolatile = parseBoolean(commandContext.getArgs().get(2));
 
             final var userHandler = server.getServerDataManager().getOnlineUserByUsername(username);
 
@@ -89,12 +89,12 @@ public final class CheckPermissionCommand extends CommandExecutor {
                 } else {
                     if (!isVolatile) {
                         boolean hasPermission = userHandler.getNonVolatilePermissionContainer()
-                                .hasPermission(Integer.parseInt(permission));
+                                .hasPermission(parseInt(permission));
 
                         commandContext.getSender().printMessage("has permission: " + hasPermission);
                         return;
                     }
-                    final boolean hasPermission = userHandler.hasVolatilePermission(Integer.parseInt(permission));
+                    final boolean hasPermission = userHandler.hasVolatilePermission(parseInt(permission));
                     commandContext.getSender().printMessage("has permission: " + hasPermission);
                 }
                 return;

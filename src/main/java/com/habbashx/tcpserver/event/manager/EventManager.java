@@ -42,6 +42,32 @@ import java.util.concurrent.Executors;
  */
 public class EventManager {
 
+
+    /**
+     * Returns the internal mapping of registered listeners.
+     *
+     * <p>
+     * This method is primarily intended for debugging or inspection purposes.
+     * </p>
+     *
+     * @return a map of event types to their corresponding listeners
+     */
+    public Map<Class<?>, List<RegisteredListener<?>>> getRegisteredListeners() {
+        return registeredListeners;
+    }
+
+    /**
+     * Internal wrapper record class that stores precomputed metadata for a listener.
+     *
+     * <p>
+     * This avoids repeated reflection and annotation lookups during event dispatch.
+     * </p>
+     *
+     * @param <E> the type of event handled by the listener
+     */
+    public record RegisteredListener<E extends Event>(Listener<E> listener, boolean async, int priority) {
+    }
+
     private final ServerFoundation serverFoundation;
 
     /**
@@ -169,14 +195,14 @@ public class EventManager {
 
         while (clazz != null) {
 
-            final List<RegisteredListener<?>> listeners = registeredListeners.get(clazz);
+            final var listeners = registeredListeners.get(clazz);
 
             if (listeners != null) {
-                for (final RegisteredListener<?> reg : listeners) {
+                for (final var reg : listeners) {
 
                     if (event.isCancelled()) return;
 
-                    final RegisteredListener<E> listener = (RegisteredListener<E>) reg;
+                    final var listener = (RegisteredListener<E>) reg;
 
                     if (listener.async) {
                         asyncExecutor.submit(() -> listener.listener().onEvent(event));
@@ -201,7 +227,7 @@ public class EventManager {
      * @return the priority value associated with the listener
      */
     private int getPriority(@NotNull Listener<?> listener) {
-        EventHandler annotation = listener.getClass().getAnnotation(EventHandler.class);
+        var annotation = listener.getClass().getAnnotation(EventHandler.class);
         return (annotation != null) ? annotation.priority().getPriority() : Priority.NORMAL.getPriority();
     }
 
@@ -217,30 +243,5 @@ public class EventManager {
                             + priority
             );
         }
-    }
-
-    /**
-     * Returns the internal mapping of registered listeners.
-     *
-     * <p>
-     * This method is primarily intended for debugging or inspection purposes.
-     * </p>
-     *
-     * @return a map of event types to their corresponding listeners
-     */
-    public Map<Class<?>, List<RegisteredListener<?>>> getRegisteredListeners() {
-        return registeredListeners;
-    }
-
-    /**
-     * Internal wrapper record class that stores precomputed metadata for a listener.
-     *
-     * <p>
-     * This avoids repeated reflection and annotation lookups during event dispatch.
-     * </p>
-     *
-     * @param <E> the type of event handled by the listener
-     */
-    private record RegisteredListener<E extends Event>(Listener<E> listener, boolean async, int priority) {
     }
 }

@@ -1,18 +1,20 @@
 package com.habbashx.tcpserver.event;
 
+import org.jetbrains.annotations.Contract;
+
 /**
  * Represents the priority levels that can be assigned to event listeners or handlers.
  * This enum is primarily used to determine the order in which listeners are invoked
  * when handling events. Higher priority levels imply earlier execution.
- *
+ * <p>
  * The priority levels, in ascending order of precedence, are:
  * - LOW: Assigned the lowest precedence, typically the default value.
  * - NORMAL: Represents the standard or default priority level.
  * - HIGH: Indicates a higher precedence than LOW and NORMAL.
  * - HIGHEST: Assigned the second-highest precedence level.
  * - MONITOR: Primarily utilized for logging or monitoring purposes and is not intended
- *   to directly influence event flow.
- *
+ * to directly influence event flow.
+ * <p>
  * Each priority level is associated with an integer value, which can be retrieved
  * using the {@link #getPriority()} method.
  */
@@ -27,7 +29,7 @@ public enum Priority {
     LOW(0x00),
     /**
      * Represents the standard or default priority level```java
-     /**
+     * /**
      * Represents the standard or default priority level for event listeners or handlers.
      * NORMAL priority signifies a baseline precedence, typically used in most cases
      * where no higher or lower priority is explicitly required.
@@ -58,7 +60,7 @@ public enum Priority {
      * Represents the priority level associated with a specific priority enumeration constant.
      * This variable defines the numeric value assigned to each priority level, determining
      * the precedence of execution for event listeners or handlers.
-     *
+     * <p>
      * Higher integer values indicate higher precedence, meaning listeners or handlers
      * with higher priority values are executed earlier during event processing.
      */
@@ -71,10 +73,12 @@ public enum Priority {
      *
      * @param priority the integer value representing the precedence of the priority level
      */
-    private Priority(int priority) {
+    @Contract(pure = true)
+    Priority(int priority) {
         this.priority = priority;
     }
 
+    @Contract(pure = true)
     public int getPriority() {
         return priority;
     }

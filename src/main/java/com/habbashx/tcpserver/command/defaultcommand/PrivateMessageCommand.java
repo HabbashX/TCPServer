@@ -49,12 +49,11 @@ import static com.habbashx.tcpserver.logger.ConsoleColor.*;
 public final class PrivateMessageCommand extends CommandExecutor {
 
     private static final String COMMAND_USAGE_MESSAGE = "usage: /msg <username> <message>";
-    private final Server server;
 
     private final Configuration config;
 
     public PrivateMessageCommand(Server server) {
-        this.server = server;
+        super(server);
         this.config = getCommandConfiguration().loadConfiguration(server, this);
     }
 

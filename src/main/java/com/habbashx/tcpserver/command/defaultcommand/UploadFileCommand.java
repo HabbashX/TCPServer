@@ -26,6 +26,10 @@ import java.io.FileNotFoundException;
 )
 public class UploadFileCommand extends CommandExecutor {
 
+    public UploadFileCommand() {
+        super(null);
+    }
+
     @Override
     public void execute(@NotNull final CommandContext context) {
 

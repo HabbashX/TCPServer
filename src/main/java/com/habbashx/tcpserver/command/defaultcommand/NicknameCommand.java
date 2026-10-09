@@ -52,6 +52,10 @@ public final class NicknameCommand extends CommandExecutor {
     private static final String INVALID_USERNAME_CONTEXT_MESSAGE = RED + "invalid username please try to select name without any symbols and spaces" + RESET;
     private static final String CONSOLE_EXECUTED_COMMAND_WARNING_MESSAGE = RED + "this command cannot be executed by console" + RESET;
 
+    public NicknameCommand() {
+        super(null);
+    }
+
     @Override
     public void execute(@NotNull CommandContext commandContext) {
 

@@ -70,7 +70,7 @@ public final class BanCommand extends CommandExecutor {
     private static final String COMMAND_USAGE_MESSAGE = "usage: /ban <username>";
     private static final String USER_NOT_FOUND_MESSAGE = RED + "user not found" + RESET;
     private static final String CANNOT_BAN_SELF_MESSAGE = RED + "you cannot ban yourself :D" + RESET;
-    private final Server server;
+
 
     /**
      * Manages the banning operations for the {@link BanCommand} execution.
@@ -81,7 +81,7 @@ public final class BanCommand extends CommandExecutor {
     private final BanCommandManager banManager;
 
     public BanCommand(Server server, BanCommandManager banManager) {
-        this.server = server;
+        super(server);
         this.banManager = banManager;
     }
 

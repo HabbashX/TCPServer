@@ -109,10 +109,9 @@ public final class ChangeRoleCommand extends CommandExecutor {
     private static final String[] AVAILABLE_ROLES = {"DEFAULT", "MODERATOR", "OPERATOR", "ADMINISTRATOR", "SUPER_ADMINISTRATOR"};
     private static final String RANK_CHANGED_MESSAGE = LIME_GREEN + "role have been changed successfully." + RESET;
     private static final String CANNOT_CHANGE_ROLE_MESSAGE = RED + "you cannot change your role" + RESET;
-    private final Server server;
 
     public ChangeRoleCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     /**

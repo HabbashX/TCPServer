@@ -1,23 +1,26 @@
-package com.habbashx.test;
+import static java.lang.IO.println;
+import static java.lang.IO.readln;
 
-import com.habbashx.tcpserver.socket.server.foundation.ServerFoundation;
+void main() {
 
-import java.io.IOException;
+    println("please enter username");
+    String username = readln();
 
-public class NewServer extends ServerFoundation {
+
+    println("please enter age");
+    int age = readInteger();
 
 
-    @Override
-    public void run() {
-        super.run();
-    }
+    println("please enter email");
+    String email = readln();
 
-    @Override
-    public void shutdown() throws IOException, InterruptedException {
-        super.shutdown();
-    }
 
-    public static void main(String[] args) {
-        new NewServer().run();
-    }
+    println("username: " + username);
+    println("email: " + email);
+    println("age: " + age);
+
+}
+
+int readInteger() {
+    return Integer.parseInt(readln());
 }

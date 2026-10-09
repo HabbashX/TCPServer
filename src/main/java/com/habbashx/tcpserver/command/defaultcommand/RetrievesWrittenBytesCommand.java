@@ -19,10 +19,9 @@ import org.jetbrains.annotations.NotNull;
 @Command(name = "bytes", permission = Permission.RETRIEVES_WRITTEN_BYTES_PERMISSION)
 public final class RetrievesWrittenBytesCommand extends CommandExecutor {
 
-    private final Server server;
 
     public RetrievesWrittenBytesCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

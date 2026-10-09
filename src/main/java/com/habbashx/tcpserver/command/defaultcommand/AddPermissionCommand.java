@@ -62,10 +62,9 @@ public final class AddPermissionCommand extends CommandExecutor {
     private static final String USER_NOT_FOUND_MESSAGE = RED + "User not found." + RESET;
     private static final String PERMISSION_ADDED_SUCCESSFULLY = LIME_GREEN + "permission added successfully" + RESET;
     private static final String FAILED_TO_ADD_PERMISSION = RED + "failed to add permission" + RESET;
-    private final Server server;
 
     public AddPermissionCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

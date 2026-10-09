@@ -28,10 +28,9 @@ public final class HelpCommand extends CommandExecutor {
     private static final Path HELP_BOARD_PATH =
             Paths.get("server", "data", "helpBoard.txt");
 
-    private final Server server;
 
     public HelpCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

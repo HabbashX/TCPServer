@@ -3,8 +3,8 @@ package com.habbashx.tcpserver.command.defaultcommand;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandContext;
 import com.habbashx.tcpserver.command.CommandExecutor;
-import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.connection.UserHandler;
+import com.habbashx.tcpserver.cooldown.TimeUnit;
 import com.habbashx.tcpserver.security.Permission;
 import com.habbashx.tcpserver.socket.server.Server;
 import org.jetbrains.annotations.NotNull;
@@ -58,10 +58,9 @@ public final class RemovePermissionCommand extends CommandExecutor {
     private static final String PERMISSION_REMOVED = LIME_GREEN + "permission removed successfully." + RESET;
     private static final String PERMISSION_NOT_REMOVED = RED + "permission not removed." + RESET;
     private static final String USER_NOT_FOUND = RED + "User not found." + RESET;
-    private final Server server;
 
     public RemovePermissionCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

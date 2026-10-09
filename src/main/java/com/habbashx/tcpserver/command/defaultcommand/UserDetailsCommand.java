@@ -81,10 +81,9 @@ public final class UserDetailsCommand extends CommandExecutor {
 
     private static final String NOT_FOUND = RED + "user not found" + RESET;
 
-    private final Server server;
 
     public UserDetailsCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

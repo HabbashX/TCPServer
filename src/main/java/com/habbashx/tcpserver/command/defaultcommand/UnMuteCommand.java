@@ -57,34 +57,33 @@ public final class UnMuteCommand extends CommandExecutor {
     private static final String COMMAND_USAGE_MESSAGE = "usage: /unmute <username>";
     private static final String USER_NOT_FOUND_MESSAGE = RED + "cannot find user with this name" + RESET;
 
-    private final Server server;
     private final MuteCommandManager muteCommandManager;
 
     public UnMuteCommand(Server server, MuteCommandManager muteCommandManager) {
-        this.server = server;
+        super(server);
         this.muteCommandManager = muteCommandManager;
 
     }
 
     @Override
-    public void execute(@NotNull CommandContext commandContext) {
+    public void execute(@NotNull CommandContext ctx) {
 
-        if (commandContext.getArgs().isEmpty()) {
-            sendMessage(commandContext.getSender(), COMMAND_USAGE_MESSAGE);
+        if (isEmptyArgs(ctx.getArgs())) {
+            sendMessage(ctx.getSender(), COMMAND_USAGE_MESSAGE);
             return;
         }
 
-        @MaybeEmpty final String username = commandContext.getArgs().get(0);
+        @MaybeEmpty final String username = ctx.getArgs().getFirst();
         @Nullable final UserHandler targetUser = server.getServerDataManager().getOnlineUserByUsername(username);
 
-        final ReentrantLock reentrantLock = commandContext.getSender().getReentrantLock();
+        final ReentrantLock reentrantLock = ctx.getSender().getReentrantLock();
         reentrantLock.lock();
 
         try {
             if (targetUser != null) {
-                muteCommandManager.unMuteUser(targetUser, commandContext.getSender());
+                muteCommandManager.unMuteUser(targetUser, ctx.getSender());
             } else {
-                sendMessage(commandContext.getSender(), USER_NOT_FOUND_MESSAGE);
+                sendMessage(ctx.getSender(), USER_NOT_FOUND_MESSAGE);
             }
         } finally {
             reentrantLock.unlock();

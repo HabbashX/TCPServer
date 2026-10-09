@@ -11,6 +11,7 @@ module TCPServer {
     requires property.parser;
     requires jdk.jfr;
     requires com.zaxxer.hikari;
+    requires org.slf4j;
 
     exports com.habbashx.tcpserver.security;
     exports com.habbashx.tcpserver.socket.server;

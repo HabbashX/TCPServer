@@ -47,8 +47,8 @@ public final class AuthenticationEventHandler implements Listener<Authentication
     @Override
     public void onEvent(@NotNull AuthenticationEvent event) {
 
-        final String username = event.getUserHandler().getUserDetails().getUsername();
-        final UserJoinEvent userJoinEvent = new UserJoinEvent(username, event.getUserHandler());
+        final var username = event.getUserHandler().getUserDetails().getUsername();
+        final var userJoinEvent = new UserJoinEvent(username, event.getUserHandler());
         if (event.isRegisterOperation()) {
             if (event.isAuthenticated()) {
                 event.getUserHandler().sendTextMessage(LIME_GREEN + "Register Successfully" + RESET);

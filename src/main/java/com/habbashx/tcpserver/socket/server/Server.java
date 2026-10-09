@@ -26,9 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.habbashx.tcpserver.logger.ConsoleColor.LIME_GREEN;
-import static com.habbashx.tcpserver.logger.ConsoleColor.RESET;
-
 /**
  * Represents a secure server that handles client connections, supports SSL/TLS protocols,
  * and manages events, commands, and user connections. The server is designed to be highly
@@ -381,7 +378,7 @@ public final class Server extends ServerFoundation {
             commandManager.registerCommand(new PrivateGroupCommand(this));
             if (commandRegistrationLogging) {
                 commandManager.getExecutors().values().stream().forEach(
-                        commandExecutor -> getServerLogger().info("Registering command: " + commandExecutor + " is Successfully!. " + LIME_GREEN + "[✔️]" + RESET));
+                        commandExecutor -> getServerLogger().info("Registering command: " + commandExecutor + " is Successfully!. "));
             }
 
             return;

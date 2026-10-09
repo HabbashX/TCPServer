@@ -24,10 +24,9 @@ import org.jetbrains.annotations.NotNull;
 @Command(name = "memoryusage")
 public final class ServerMemoryUsageCommand extends CommandExecutor {
 
-    private final Server server;
 
     public ServerMemoryUsageCommand(Server server) {
-        this.server = server;
+        super(server);
     }
 
     @Override

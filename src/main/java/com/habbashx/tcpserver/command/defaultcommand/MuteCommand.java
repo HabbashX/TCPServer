@@ -62,8 +62,6 @@ public final class MuteCommand extends CommandExecutor {
     private static final String COMMAND_USAGE_MESSAGE = "usage: /mute <username>";
     private static final String USER_NOT_FOUND_MESSAGE = RED + "user is not found" + RESET;
 
-    private final Server server;
-
     /**
      * Manages operations related to the mute command, such as muting and unmuting users,
      * tracking muted users, and maintaining corresponding data persistence.
@@ -72,7 +70,7 @@ public final class MuteCommand extends CommandExecutor {
     private final MuteCommandManager muteCommandManager;
 
     public MuteCommand(Server server, MuteCommandManager muteCommandManager) {
-        this.server = server;
+        super(server);
         this.muteCommandManager = muteCommandManager;
     }
 

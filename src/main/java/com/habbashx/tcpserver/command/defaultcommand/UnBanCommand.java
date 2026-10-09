@@ -71,11 +71,10 @@ public final class UnBanCommand extends CommandExecutor {
     private static final String USER_NOT_FOUND_MESSAGE = RED + "user is not found" + RESET;
 
     private final BanCommandManager banCommandManager;
-    private final Server server;
 
     public UnBanCommand(Server server, BanCommandManager banCommandManager) {
 
-        this.server = server;
+        super(server);
         this.banCommandManager = banCommandManager;
     }
 

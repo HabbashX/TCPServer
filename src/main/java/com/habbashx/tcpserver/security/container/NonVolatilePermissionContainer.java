@@ -9,9 +9,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.habbashx.tcpserver.socket.server.Server.getInstance;
+import static java.util.Collections.singletonList;
 
 /**
  * This class manages non-volatile permission data for users, leveraging a JSON-based
@@ -134,7 +138,8 @@ public class NonVolatilePermissionContainer extends ContainerManager {
         try {
             List<Map<String, Object>> per = mapper.readValue(
                     nonVolatilePermissionFile,
-                    new TypeReference<>() {}
+                    new TypeReference<>() {
+                    }
             );
 
             boolean userUpdated = false;
@@ -168,7 +173,7 @@ public class NonVolatilePermissionContainer extends ContainerManager {
             if (!userUpdated) {
                 Map<String, Object> newMap = new HashMap<>();
                 newMap.put("userID", userHandler.getUserDetails().getUserID());
-                newMap.put("permissions", Collections.singletonList(permission));
+                newMap.put("permissions", singletonList(permission));
                 per.add(newMap);
             }
 

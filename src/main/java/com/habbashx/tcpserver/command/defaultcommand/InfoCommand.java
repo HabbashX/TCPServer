@@ -33,6 +33,10 @@ public final class InfoCommand extends CommandExecutor {
 
     private static final String CONSOLE_EXECUTE_COMMAND_WARNING_MESSAGE = RED + "this command cannot be executed by console" + RESET;
 
+    public InfoCommand() {
+        super(null);
+    }
+
     /**
      * Executes a command in the given command context. If the sender is a user, displays
      * user details through a message. If the sender is from the console, displays a warning message.

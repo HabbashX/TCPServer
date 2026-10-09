@@ -3,6 +3,7 @@ package com.habbashx.tcpserver.configuration;
 import com.habbashx.tcpserver.command.Command;
 import com.habbashx.tcpserver.command.CommandExecutor;
 import com.habbashx.tcpserver.socket.server.Server;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -43,6 +44,7 @@ public final class CommandConfiguration {
      * @return a {@link Configuration} instance initialized from the command's config file
      * @throws IllegalStateException if the command has no valid configFile defined
      */
+    @Contract("_, _ -> new")
     public @NotNull Configuration loadConfiguration(
             @NotNull Server server,
             @NotNull CommandExecutor executor
@@ -72,6 +74,7 @@ public final class CommandConfiguration {
      * @param fallback the fallback configuration to use if no valid config exists
      * @return the resolved {@link Configuration} or the fallback configuration
      */
+    @Contract("_, _, _ -> param3")
     public @NotNull Configuration loadConfiguration(
             @NotNull Server server,
             @NotNull CommandExecutor executor,

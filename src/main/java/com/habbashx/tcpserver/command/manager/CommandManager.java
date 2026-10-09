@@ -371,6 +371,7 @@ public final class CommandManager {
     /**
      * @return internal annotation cache (class → @Command metadata)
      */
+    @Contract(pure = true)
     public ConcurrentHashMap<Class<?>, Command> getCommandCache() {
         return commandCache;
     }
@@ -378,6 +379,7 @@ public final class CommandManager {
     /**
      * @return command registry (name → executor)
      */
+    @Contract(pure = true)
     public ConcurrentHashMap<String, CommandExecutor> getExecutors() {
         return executors;
     }
@@ -385,6 +387,7 @@ public final class CommandManager {
     /**
      * @return executor service used for async command execution
      */
+    @Contract(pure = true)
     public ExecutorService getAsyncExecutor() {
         return asyncExecutor;
     }
